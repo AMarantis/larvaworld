@@ -1,3 +1,7 @@
+---
+mermaid: true
+---
+
 # Larvaworld Architecture Diagrams
 
 ## 1. Project Structure Diagram
