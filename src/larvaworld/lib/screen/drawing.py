@@ -27,14 +27,8 @@ from ..param import (
     PositiveNumber,
 )
 
-from ..screen import (
-    ScreenMsgText,
-    ScreenTextBoxRect,
-    SidePanel,
-    SimulationClock,
-    SimulationScale,
-    SimulationState,
-)
+from ..screen import rendering as _rendering
+from ..screen import side_panel as _side_panel
 
 __all__ = [
     "MediaDrawOps",
@@ -290,6 +284,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
         if self.caption is None:
             self.caption = str(m.id)
 
+        import pygame
         pygame.init()
         os.environ["SDL_VIDEO_WINDOW_POS"] = "%d,%d" % (1550, 400)
         self.v = self.init_screen()
@@ -303,14 +298,17 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
 
     @property
     def mouse_position(self):
+        import pygame
         p = np.array(pygame.mouse.get_pos()) - self._translation
         return np.linalg.inv(self._scale).dot(p)
 
     @property
     def new_display_surface(self):
+        import pygame
         return pygame.Surface(self.display_size, pygame.SRCALPHA)
 
     def _draw_arena(self, tank_color, screen_color):
+        import pygame
         surf1 = self.new_display_surface
         surf2 = self.new_display_surface
         vs = [self._transform(v) for v in self.model.space.vertices]
@@ -320,6 +318,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
         self.v.blit(surf2, (0, 0))
 
     def init_screen(self):
+        import pygame
         flags = pygame.HWSURFACE | pygame.DOUBLEBUF
         if self.show_display:
             v = pygame.display.set_mode((self.w + self.panel_width, self.h), flags)
@@ -332,6 +331,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
     def draw_circle(
         self, position=(0, 0), radius=0.1, color=(0, 0, 0), filled=True, width=0.01
     ):
+        import pygame
         p = self._transform(position)
         r = int(self._scale[0, 0] * radius)
         w = 0 if filled else int(self._scale[0, 0] * width)
@@ -339,6 +339,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
 
     def draw_polygon(self, vertices, color=(0, 0, 0), filled=True, width=0.01):
         if vertices is not None and len(vertices) > 1:
+            import pygame
             vs = [self._transform(v) for v in vertices]
             w = 0 if filled else int(self._scale[0, 0] * width)
             pygame.draw.polygon(self.v, color, vs, w)
@@ -359,6 +360,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
             pygame.draw.polygon(self.v, c, vs, w)
 
     def draw_polyline(self, vertices, color=(0, 0, 0), closed=False, width=0.01):
+        import pygame
         vs = [self._transform(v) for v in vertices]
         w = int(self._scale[0, 0] * width)
         if isinstance(color, list):
@@ -368,6 +370,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
             pygame.draw.lines(self.v, color, closed=closed, points=vs, width=w)
 
     def draw_line(self, start, end, color=(0, 0, 0), width=0.01):
+        import pygame
         start = self._transform(start)
         end = self._transform(end)
         w = int(self._scale[0, 0] * width)
@@ -376,6 +379,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
     def draw_transparent_circle(
         self, position=(0, 0), radius=0.1, color=(0, 0, 0, 125), filled=True, width=0.01
     ):
+        import pygame
         r = int(self._scale[0, 0] * radius)
         s = pygame.Surface((2 * r, 2 * r), pygame.HWSURFACE | pygame.SRCALPHA)
         w = 0 if filled else int(self._scale[0, 0] * width)
@@ -383,6 +387,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
         self.v.blit(s, self._transform(position) - r)
 
     def draw_text_box(self, font, rect):
+        import pygame
         self.v.blit(font, rect)
 
     def draw_envelope(self, points, **kwargs):
@@ -392,6 +397,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
     def draw_arrow_line(
         self, start, end, color=(0, 0, 0), width=0.01, dl=0.02, phi=0, s=10
     ):
+        import math
         a0 = math.atan2(end[1] - start[1], end[0] - start[0])
         l0 = np.sqrt((end[0] - start[0]) ** 2 + (end[1] - start[1]) ** 2)
         w = int(self._scale[0, 0] * width)
@@ -414,6 +420,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
             l += dl
 
     def set_background(self):
+        import pygame
         path = f"{ROOT_DIR}/lib/screen/background.png"
         print("Loading background image from", path)
         self.bgimage = pygame.image.load(path)
@@ -424,6 +431,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
         self.tw_max = int(self.v.get_width() / self.tw) + 2
 
     def draw_background(self, bg=[0, 0, 0]):
+        import pygame
         if self.bgimage is not None and self.bgimagerect is not None:
             x, y, a = bg
             try:
@@ -510,6 +518,7 @@ class ScreenManager(ScreenAreaPygame):
 
     @staticmethod
     def close_requested():
+        import pygame
         if pygame.display.get_init():
             return pygame.event.peek(pygame.QUIT)
         return False
@@ -534,10 +543,12 @@ class ScreenManager(ScreenAreaPygame):
 
     def _render(self):
         if self.show_display:
+            import pygame
             pygame.display.flip()
             image = pygame.surfarray.pixels3d(self.v)
             # self._t.tick(self.manager._fps)
         else:
+            import pygame
             image = pygame.surfarray.array3d(self.v)
         if self.vid_writer:
             self.vid_writer.append_data(np.flipud(np.rot90(image)))
@@ -687,6 +698,7 @@ class ScreenManager(ScreenAreaPygame):
         if self.pygame_keys is None:
             self.pygame_keys = reg.controls.load()["pygame_keys"]
 
+        import pygame
         ev = pygame.event.get()
         for e in ev:
             if e.type == pygame.QUIT:
@@ -812,6 +824,7 @@ class ScreenManager(ScreenAreaPygame):
                     self.selected_agents.remove(f)
                     m.delete_agent(f)
         elif k == "dynamic graph":
+            # Local import to avoid circular dependency at module import
             from ..model.agents._larva import Larva
 
             if len(self.selected_agents) > 0:
@@ -861,7 +874,7 @@ class ScreenManager(ScreenAreaPygame):
         Generate additional items on screen
         """
         m = self.model
-        self.input_box = ScreenTextBoxRect(
+        self.input_box = _rendering.ScreenTextBoxRect(
             text_color="lightgreen",
             color="white",
             frame_rect=self.get_rect_at_screen_pos(),
@@ -869,7 +882,8 @@ class ScreenManager(ScreenAreaPygame):
             font_size=40,
         )
         if self.intro_text:
-            box = ScreenTextBoxRect(
+            import pygame
+            box = _rendering.ScreenTextBoxRect(
                 text=m.configuration_text,
                 text_color="lightgreen",
                 color="white",
@@ -889,14 +903,14 @@ class ScreenManager(ScreenAreaPygame):
             "color": self.sidepanel_color,
         }
 
-        self.screen_clock = SimulationClock(
+        self.screen_clock = _rendering.SimulationClock(
             sim_step_in_sec=m.dt, pos=self.item_pos("clock"), **kws
         )
-        self.screen_scale = SimulationScale(pos=self.item_pos("scale"), **kws)
-        self.screen_state = SimulationState(model=m, pos=self.item_pos("state"), **kws)
+        self.screen_scale = _rendering.SimulationScale(pos=self.item_pos("scale"), **kws)
+        self.screen_state = _rendering.SimulationState(model=m, pos=self.item_pos("state"), **kws)
         self.screen_texts = util.AttrDict(
             {
-                name: ScreenMsgText(text=name, **kws)
+                name: _rendering.ScreenMsgText(text=name, **kws)
                 for name in [
                     "trail_dt",
                     "trail_color",
@@ -928,7 +942,7 @@ class ScreenManager(ScreenAreaPygame):
             }
         )
 
-        self.side_panel = SidePanel(self) if self.panel_width > 0 else None
+        self.side_panel = _side_panel.SidePanel(self) if self.panel_width > 0 else None
 
     def capture_snapshot(self):
         """

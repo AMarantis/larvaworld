@@ -8,7 +8,6 @@ import os
 import numpy as np
 import pandas as pd
 from matplotlib import patches, ticker
-from matplotlib import pyplot as plt
 from matplotlib.gridspec import GridSpec
 from scipy.stats import ttest_ind
 
@@ -26,16 +25,27 @@ __all__ = [
 
 __displayname__ = "Plotting template classes"
 
-plt_conf = {
-    "axes.labelsize": 20,
-    "axes.titlesize": 25,
-    "figure.titlesize": 25,
-    "xtick.labelsize": 20,
-    "ytick.labelsize": 20,
-    "legend.fontsize": 20,
-    "legend.title_fontsize": 20,
-}
-plt.rcParams.update(plt_conf)
+_MPL_CONFIGURED = False
+
+def _ensure_matplotlib_config():
+    global _MPL_CONFIGURED
+    if not _MPL_CONFIGURED:
+        from matplotlib import pyplot as plt  # local import
+
+        plt_conf = {
+            "axes.labelsize": 20,
+            "axes.titlesize": 25,
+            "figure.titlesize": 25,
+            "xtick.labelsize": 20,
+            "ytick.labelsize": 20,
+            "legend.fontsize": 20,
+            "legend.title_fontsize": 20,
+        }
+        try:
+            plt.rcParams.update(plt_conf)
+        except Exception:
+            pass
+        _MPL_CONFIGURED = True
 
 
 class BasePlot:
@@ -98,11 +108,14 @@ class BasePlot:
         else:
             if dim3:
                 from mpl_toolkits.mplot3d import Axes3D
-
+                from matplotlib import pyplot as plt
+                _ensure_matplotlib_config()
                 self.fig = plt.figure(figsize=(15, 10))
                 ax = Axes3D(self.fig, azim=azim, elev=elev)
                 self.axs = [ax]
             else:
+                from matplotlib import pyplot as plt
+                _ensure_matplotlib_config()
                 self.fig, axs = plt.subplots(
                     **plot.configure_subplot_grid(**self.build_kws)
                 )
@@ -555,6 +568,7 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
             **kwargs,
         }
         if idx is None:
+            from matplotlib import pyplot as plt
             leg = plt.legend(**kws)
         else:
             ax = self.axs[idx]
@@ -760,6 +774,8 @@ class GridPlot(BasePlot):
         ws, hs = scale
         self.width, self.height = width, height
         figsize = (int(width * ws), int(height * hs))
+        from matplotlib import pyplot as plt
+        _ensure_matplotlib_config()
         self.fig = plt.figure(constrained_layout=False, figsize=figsize)
         self.grid = GridSpec(height, width, figure=self.fig)
         self.cur_w, self.cur_h = 0, 0

@@ -1,3 +1,17 @@
+import os
+import warnings
+
+# Deprecation: discourage deep imports from internal registry internals
+if os.getenv("LARVAWORLD_STRICT_DEPRECATIONS") == "1":
+    raise ImportError(
+        "Deep import path deprecated. Access registry via 'from larvaworld.lib import reg'"
+    )
+else:
+    warnings.warn(
+        "Deep import path deprecated. Access registry via 'from larvaworld.lib import reg'",
+        DeprecationWarning,
+        stacklevel=2,
+    )
 """
 Distribution database, registry and associated methods.
 This modules provides classes and methods for managing and generating distributions.

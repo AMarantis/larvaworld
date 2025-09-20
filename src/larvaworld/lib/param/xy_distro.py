@@ -2,7 +2,11 @@ import numpy as np
 import param
 
 from .custom import OptionalPositiveInteger
-from .nested_parameter_group import NestedConf
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .nested_parameter_group import NestedConf
+else:
+    from .nested_parameter_group import NestedConf
 
 __all__ = [
     "Spatial_Distro",

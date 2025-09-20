@@ -4,7 +4,6 @@ Composite grid-structured figure
 
 import os
 
-import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.gridspec import GridSpec
 
@@ -28,6 +27,7 @@ __all__ = [
 
 def calibration_plot(save_to=None, files=None):
     from PIL import Image
+    from matplotlib import pyplot as plt
 
     tick_params = {
         "axis": "both",  # changes apply to the x-axis
@@ -183,6 +183,7 @@ def model_summary(
 def velocity_definition(
     dataset, save_to=None, save_as="vel_definition.pdf", component_vels=True, **kwargs
 ):
+    from matplotlib import pyplot as plt
     if save_to is None:
         save_to = dataset.plot_dir
 

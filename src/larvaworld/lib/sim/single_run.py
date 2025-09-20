@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import time
 
@@ -10,7 +11,7 @@ from ... import vprint
 from .. import reg, util
 from ..reg.larvagroup import LarvaGroup
 from ..process.dataset import LarvaDatasetCollection
-from ..sim.base_run import BaseRun
+from .base_run import BaseRun
 from .conditions import get_exp_condition
 
 __all__ = [

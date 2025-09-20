@@ -3,7 +3,6 @@ Timeseries plotting
 """
 
 import numpy as np
-from matplotlib import collections as mc
 
 from .. import plot, reg, util, funcs
 
@@ -48,6 +47,7 @@ def plot_ethogram(subfolder="timeplots", **kwargs):
                         b0s, b1s = bbs[:, 0], bbs[:, 1]
 
                         lines = [[(b0, j + 1), (b1, j + 1)] for b0, b1 in zip(b0s, b1s)]
+                        from matplotlib import collections as mc
                         lc = mc.LineCollection(lines, colors=bcol, linewidths=2)
                         P.axs[idx].add_collection(lc)
 

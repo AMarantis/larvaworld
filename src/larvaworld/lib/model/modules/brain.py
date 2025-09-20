@@ -1,8 +1,29 @@
+from __future__ import annotations
+
+import os
+import warnings
+
+# Deprecation: discourage deep imports from internal module paths
+if os.getenv("LARVAWORLD_STRICT_DEPRECATIONS") == "1":
+    raise ImportError(
+        "Deep import path deprecated. Use public API: 'from larvaworld.lib.model.modules import Brain'"
+    )
+else:
+    warnings.warn(
+        "Deep import path deprecated. Use public API: 'from larvaworld.lib.model.modules import Brain'",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
 import numpy as np
 
 from ... import util
 from ...param import ClassAttr, NestedConf
-from .. import modules
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    # Type-only import to avoid runtime cycle
+    from .locomotor import Locomotor
 from .module_modes import moduleDB as MD
 
 __all__ = [
@@ -33,7 +54,10 @@ class Brain(NestedConf):
         if dt is None:
             dt = self.agent.model.dt
         self.dt = dt
-        self.locomotor = modules.Locomotor(conf=conf, dt=self.dt)
+        # Local import to avoid import-time cycle with modules package
+        from .locomotor import Locomotor as _Locomotor
+
+        self.locomotor: Locomotor = _Locomotor(conf=conf, dt=self.dt)
         self.modalities = util.AttrDict(
             {
                 "olfaction": {

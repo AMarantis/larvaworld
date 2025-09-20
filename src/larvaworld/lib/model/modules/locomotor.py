@@ -1,5 +1,28 @@
+from __future__ import annotations
+import os
+import warnings
+
+# Deprecation: discourage deep imports from internal module paths
+if os.getenv("LARVAWORLD_STRICT_DEPRECATIONS") == "1":
+    raise ImportError(
+        "Deep import path deprecated. Use public API: 'from larvaworld.lib.model.modules import Locomotor'"
+    )
+else:
+    warnings.warn(
+        "Deep import path deprecated. Use public API: 'from larvaworld.lib.model.modules import Locomotor'",
+        DeprecationWarning,
+        stacklevel=2,
+    )
 from ...param import ClassAttr, NestedConf
 from .module_modes import moduleDB as MD
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .crawler import Crawler
+    from .feeder import Feeder
+    from .turner import Turner
+    from .intermitter import Intermitter
+    from .crawl_bend_interference import Interference as _Interference
 
 __all__ = [
     "Locomotor",

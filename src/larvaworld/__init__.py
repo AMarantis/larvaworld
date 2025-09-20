@@ -62,4 +62,17 @@ SIMTYPES = ["Exp", "Batch", "Ga", "Eval", "Replay"]
 CONFTYPES = ["Env", "LabFormat", "Ref", "Model", "Trial", "Exp", "Batch", "Ga"]
 # GROUPTYPES = ['LarvaGroup', 'FoodGroup', 'epoch']
 
-from . import lib, cli
+def __getattr__(name):
+    """
+    Lazily import selected subpackages to keep root import lightweight.
+
+    This preserves access patterns like `larvaworld.lib` and `larvaworld.cli`
+    without importing them eagerly at package import time.
+    """
+    if name in {"lib", "cli"}:
+        from importlib import import_module
+
+        module = import_module(f"{__name__}.{name}")
+        globals()[name] = module
+        return module
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

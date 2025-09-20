@@ -2,19 +2,36 @@
 Launchers of the diverse available simulation modes
 """
 
-from .ABM_model import ABModel
-from .base_run import BaseRun
-from .dataset_replay import ReplayRun
-
-
-from .single_run import ExpRun
-from .subprocess_run import Exec
-from .model_evaluation import *
-
-
-from .batch_run import BatchRun, OptimizationOps
-
-
-from .genetic_algorithm import GAlauncher
-
 __displayname__ = "Simulation"
+
+__all__ = [
+    "ABModel", "BaseRun", "ReplayRun",
+    "ExpRun", "Exec",
+    "BatchRun", "OptimizationOps",
+    "GAlauncher",
+]
+
+_NAME_TO_MODULE = {
+    "ABModel": "larvaworld.lib.sim.ABM_model",
+    "BaseRun": "larvaworld.lib.sim.base_run",
+    "ReplayRun": "larvaworld.lib.sim.dataset_replay",
+    "ExpRun": "larvaworld.lib.sim.single_run",
+    "Exec": "larvaworld.lib.sim.subprocess_run",
+    "BatchRun": "larvaworld.lib.sim.batch_run",
+    "OptimizationOps": "larvaworld.lib.sim.batch_run",
+    "GAlauncher": "larvaworld.lib.sim.genetic_algorithm",
+}
+
+def __getattr__(name):
+    module_path = _NAME_TO_MODULE.get(name)
+    if module_path is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    from importlib import import_module
+
+    mod = import_module(module_path)
+    obj = getattr(mod, name)
+    globals()[name] = obj
+    return obj
+
+def __dir__():
+    return sorted(list(globals().keys()) + __all__)

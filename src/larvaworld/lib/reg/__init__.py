@@ -18,7 +18,20 @@ __all__ = [
     "loadRef",
 ]
 
+import os
 import warnings
+
+# Deprecation: importing this private subpackage directly is discouraged for users
+if os.getenv("LARVAWORLD_STRICT_DEPRECATIONS") == "1":
+    raise ImportError(
+        "Deep import path deprecated. Use public API: 'from larvaworld.lib import reg' or higher-level APIs"
+    )
+else:
+    warnings.warn(
+        "Deep import path deprecated. Use public API: 'from larvaworld.lib import reg' or higher-level APIs",
+        DeprecationWarning,
+        stacklevel=2,
+    )
 
 warnings.simplefilter(action="ignore")
 
@@ -38,10 +51,19 @@ from . import keymap
 
 controls = keymap.ControlRegistry()
 
-from .data_aux import *
-from .distro import *
+# Removed star-imports of internal helpers to avoid eager heavy dependencies
+# Symbols from `data_aux` and `distro` are now resolved lazily via __getattr__ below
 
 vprint("Function registry complete", 1)
+
+# Provide early aliases for helper functions used by parDB during initialization
+# This avoids a circular import on package init now that star-imports were removed
+from . import data_aux as _data_aux
+
+prepare_LarvaworldParam = _data_aux.prepare_LarvaworldParam
+build_LarvaworldParam = _data_aux.build_LarvaworldParam
+get_LarvaworldParam = _data_aux.get_LarvaworldParam
+sample_ps = _data_aux.sample_ps
 
 from . import parFunc, parDB
 
@@ -57,7 +79,8 @@ from .generators import gen
 
 from . import graph
 
-graphs = graph.GraphRegistry()
+# Lazy graphs registry to avoid heavy initialization at import time
+_GRAPHS = None
 
 from . import stored_confs
 
@@ -167,11 +190,44 @@ def define_default_refID(id="exploration.30controls"):
         raise (ValueError(f"Reference dataset with ID {id} not found"))
 
 
-default_refID = define_default_refID()
+# Lazily compute default_refID to avoid heavy work at import time
+_CACHED_DEFAULT_REFID = None
+
+def __getattr__(name):
+    global _CACHED_DEFAULT_REFID
+    global _GRAPHS
+    if name == "default_refID":
+        if _CACHED_DEFAULT_REFID is None:
+            _CACHED_DEFAULT_REFID = define_default_refID()
+        return _CACHED_DEFAULT_REFID
+    if name == "graphs":
+        if _GRAPHS is None:
+            _GRAPHS = graph.GraphRegistry()
+        return _GRAPHS
+    # Lazy export of symbols from internal submodules to keep import light
+    # This replaces the previous `from .data_aux import *` and `from .distro import *`
+    try:
+        from importlib import import_module
+        for module_path in (
+            "larvaworld.lib.reg.data_aux",
+            "larvaworld.lib.reg.distro",
+        ):
+            try:
+                mod = import_module(module_path)
+                if hasattr(mod, name):
+                    obj = getattr(mod, name)
+                    globals()[name] = obj
+                    return obj
+            except Exception:
+                # Best-effort lazy resolution; ignore and try next module
+                continue
+    except Exception:
+        pass
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def default_ref():
-    return loadRef(default_refID, load=True)
+    return loadRef(__getattr__("default_refID"), load=True)
 
 
 default_modelID = "explorer"
@@ -184,3 +240,11 @@ def default_model():
 config.resetConfs(init=True)
 
 vprint("Registry configured!", 2)
+
+# Ensure CLI-facing registry entries are available (lazy side-effect registration)
+try:
+    # Register CLI-facing generators via side-effects when available
+    from ..sim import model_evaluation as _model_evaluation  # noqa: F401
+    from ..sim import genetic_algorithm as _genetic_algorithm  # noqa: F401
+except Exception:
+    pass

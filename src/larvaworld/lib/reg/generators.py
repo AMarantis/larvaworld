@@ -5,7 +5,6 @@ Configuration and Generator classes for higher-order objects in the larvaworld p
 import os
 import shutil
 
-import matplotlib
 import numpy as np
 import pandas as pd
 import param
@@ -61,7 +60,29 @@ __all__ = [
     "ReplayConf",
 ]
 
-gen = AttrDict(
+class _GenProxy(AttrDict):
+    """Lazy-resolving registry for generator classes.
+
+    If an expected key is missing (e.g., GAselector/Eval), it will import
+    the corresponding module to register it and then return it.
+    """
+
+    def __getattr__(self, name: str):
+        try:
+            return super().__getattr__(name)
+        except AttributeError:
+            # Attempt lazy registration via known module side-effects
+            module_path = _LAZY_GEN_REGISTRATIONS.get(name)
+            if module_path is not None:
+                from importlib import import_module
+
+                import_module(module_path)
+                if name in self:
+                    return self[name]
+            raise
+
+
+gen = _GenProxy(
     {
         "FoodGroup": class_generator(Food, mode="Group"),
         "Food": class_generator(Food),
@@ -81,6 +102,26 @@ gen = AttrDict(
         "AirPuff": class_generator(AirPuff),
     }
 )
+
+# Lazy accessors for registry-generated classes
+_LAZY_GEN_REGISTRATIONS = {
+    # Model evaluation
+    "Eval": "larvaworld.lib.sim.model_evaluation",
+    # Genetic algorithm
+    "GAselector": "larvaworld.lib.sim.genetic_algorithm",
+    "GAevaluation": "larvaworld.lib.sim.genetic_algorithm",
+    "GAconf": "larvaworld.lib.sim.genetic_algorithm",
+    "Ga": "larvaworld.lib.sim.genetic_algorithm",
+}
+
+def __getattr__(name):
+    module_path = _LAZY_GEN_REGISTRATIONS.get(name)
+    if module_path is not None:
+        from importlib import import_module
+        import_module(module_path)
+        if name in gen:
+            return gen[name]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 gen.LarvaGroup = class_generator(LarvaGroup)
 
@@ -239,8 +280,9 @@ def source_generator(
     if qs is None:
         qs = np.linspace(0.1, 1, Ngs)
     if cs is None:
+        from matplotlib import colors as mpl_colors
         cs = [
-            matplotlib.colors.rgb2hex(
+            mpl_colors.rgb2hex(
                 tuple(util.col_range(q, low=(255, 0, 0), high=(0, 128, 0)))
             )
             for q in qs
@@ -439,8 +481,8 @@ class EnvConf(NestedConf):
         """
         Visualize the environment by launching a simulation without agents
         """
-        from ..sim.base_run import BaseRun
-
+        from importlib import import_module
+        BaseRun = getattr(import_module("larvaworld.lib.sim.base_run"), "BaseRun")
         BaseRun.visualize_Env(envConf=self.nestedConf, envID=self.name, **kwargs)
 
     @classmethod

@@ -5,9 +5,6 @@ Sensory landscape plotting
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from matplotlib import cm
-from matplotlib import pyplot as plt
-from scipy.stats import multivariate_normal
 
 from .. import plot, reg, util, funcs
 
@@ -26,6 +23,7 @@ def plot_surface(
 ):
     P = plot.AutoBasePlot(name="3d_surface", dim3=True, azim=azim, elev=elev, **kwargs)
     P.conf_ax_3d(vars=vars, target=target, lims=lims, title=title)
+    from matplotlib import cm
     P.axs[0].plot_surface(x, y, z, cmap=cm.coolwarm, linewidth=0, antialiased=True)
     if z0 is not None:
         P.axs[0].plot_surface(x, y, np.ones(x.shape) * z0, alpha=0.5)
@@ -100,6 +98,7 @@ def odorscape_from_config(
     grid = func(Xmesh, Ymesh)
 
     if mode == "2D":
+        from matplotlib import pyplot as plt
         if fig is None and axs is None:
             fig, axs = plt.subplots(1, 1, figsize=(10, 10 * Ydim / Xdim))
         q = grid.flatten() - np.min(grid)
@@ -138,6 +137,7 @@ def odorscape_with_sample_tracks(
 ):
     scale = 1000 if unit == "mm" else 1
     if fig is None and axs is None:
+        from matplotlib import pyplot as plt
         fig, axs = plt.subplots(1, 1, figsize=(20, 20))
     odorscape_from_config(
         datasets[0].config, mode="2D", fig=fig, axs=axs, show=False, **kwargs
@@ -262,6 +262,7 @@ def plot_heatmap(z, heat_kws={}, ax_kws={}, cbar_kws={}, **kwargs):
     base_cbar_kws.update(cbar_kws)
     P = plot.AutoBasePlot(name="heatmap", **kwargs)
     sns.heatmap(z, ax=P.axs[0], **base_heat_kws, cbar_kws=base_cbar_kws)
+    from matplotlib import pyplot as plt
     cax = plt.gcf().axes[-1]
     cax.tick_params(length=0)
     P.conf_ax(**ax_kws)

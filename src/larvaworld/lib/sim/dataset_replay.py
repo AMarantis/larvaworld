@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import copy
 
 import numpy as np
 
 from .. import reg, util
-from ..sim.base_run import BaseRun
+from .base_run import BaseRun
 from ..util import nam
 
 __all__ = [

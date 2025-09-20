@@ -2243,8 +2243,11 @@ class BaseLarvaDataset(ParamLarvaDataset):
     def initGeo(to_Geo=False, **kwargs):
         if to_Geo:
             try:
-                from ..process.dataset_geo import GeoLarvaDataset
-
+                from importlib import import_module
+                GeoLarvaDataset = getattr(
+                    import_module("larvaworld.lib.process.dataset_geo"),
+                    "GeoLarvaDataset",
+                )
                 return GeoLarvaDataset(**kwargs)
             except:
                 pass

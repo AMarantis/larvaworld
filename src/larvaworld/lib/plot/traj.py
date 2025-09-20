@@ -5,8 +5,6 @@ Agent 2D trajectory-related plotting
 import copy
 
 import numpy as np
-from matplotlib import patches
-from matplotlib import pyplot as plt
 
 from .. import plot, reg, util, funcs
 from ..util import nam
@@ -53,6 +51,7 @@ def traj_1group(
         edgecolor="black",
         linewidth=4,
     )
+    from matplotlib import pyplot as plt
     for sdic in c.env_params.food_params.source_units.values():
         px, py = sdic.pos
         circle = plt.Circle(
@@ -117,10 +116,11 @@ def ax_conf_kws(kws, trange, Ndatasets, Nrows, i=0, ylab=None, ylim=None, xlim=N
         "xvis": True if i == Nrows - 1 else False,
     }
 
+    from matplotlib import patches as mpatches
     leg_kws = {
         "leg_loc": "upper right",
         "leg_handles": [
-            patches.Patch(color=col, label=l)
+            mpatches.Patch(color=col, label=l)
             for l, col in zip(kws.labels, kws.chunk_cols)
         ],
         "leg_labels": kws.labels,
@@ -260,10 +260,11 @@ def track_annotated(
         for s0, s1 in epoch:
             ax.axvspan(trange[s0], trange[s1], color=color, alpha=1.0)
 
+    from matplotlib import patches as mpatches
     leg_kws = {
         "leg_loc": "upper right",
         "leg_handles": [
-            patches.Patch(color=col, label=l)
+            mpatches.Patch(color=col, label=l)
             for l, col in zip(kws.labels, kws.chunk_cols)
         ],
         "leg_labels": kws.labels,
@@ -413,8 +414,9 @@ def plot_marked_strides(
         },
         **kwargs,
     )
+    from matplotlib import patches as mpatches
     handles = [
-        patches.Patch(color=col, label=n)
+        mpatches.Patch(color=col, label=n)
         for n, col in zip(["stride", "pause"], chunk_cols)
     ]
 
@@ -524,8 +526,10 @@ def plot_sample_tracks(
             else:
                 raise
 
+            from matplotlib import patches as mpatches
             handles = [
-                patches.Patch(color=col, label=n) for n, col in zip(chunks, chunk_cols)
+                mpatches.Patch(color=col, label=n)
+                for n, col in zip(chunks, chunk_cols)
             ]
             P.conf_ax(
                 kk,

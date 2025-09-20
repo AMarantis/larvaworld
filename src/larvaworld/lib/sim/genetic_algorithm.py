@@ -11,7 +11,7 @@ import progressbar
 from ... import vprint
 from ..process.dataset import LarvaDatasetCollection, LarvaDataset
 from .. import reg, util
-from ..model import SpaceDict
+from ..model.modules.module_modes import SpaceDict
 from ..param import ClassAttr, OptionalSelector, SimOps, class_generator
 from ..plot.table import diff_df
 from ..process.evaluation import Evaluation

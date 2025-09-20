@@ -12,7 +12,7 @@ import seaborn as sns
 from matplotlib import patches, transforms
 
 # matplotlib.use('Agg')
-from matplotlib import pyplot as plt
+
 from scipy.stats import mannwhitneyu
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
@@ -210,6 +210,7 @@ def circular_hist(ax, x, bins=16, density=True, offset=0, gaps=True, **kwargs):
         radius = n
 
     # Plot data on ax
+    from matplotlib import pyplot as plt
     patches = plt.bar(
         bins[:-1],
         radius,
@@ -372,6 +373,7 @@ def dataset_legend(
     }
 
     if ax is None:
+        from matplotlib import pyplot as plt
         leg = plt.legend(**kws)
     else:
         leg = ax.legend(**kws)
@@ -542,6 +544,7 @@ def dual_half_circle(
 
     """
     if ax is None:
+        from matplotlib import pyplot as plt
         ax = plt.gca()
     theta1, theta2 = angle, angle + 180
     w1 = patches.Wedge(center, radius, theta1, theta2, fc=colors[0], **kwargs)
@@ -571,6 +574,7 @@ def save_plot(fig, filepath, filename):
     """
     fig.savefig(filepath, dpi=300, facecolor=None)
     try:
+        from matplotlib import pyplot as plt
         plt.close(fig)
     except:
         pass
@@ -603,6 +607,7 @@ def process_plot(fig, save_to, filename, return_fig=False, show=False):
 
     """
     if show:
+        from matplotlib import pyplot as plt
         plt.show()
 
     if hasattr(fig, "patch"):

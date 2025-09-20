@@ -1,3 +1,17 @@
+import os
+import warnings
+
+# Deprecation: discourage deep imports from internal module paths
+if os.getenv("LARVAWORLD_STRICT_DEPRECATIONS") == "1":
+    raise ImportError(
+        "Deep import path deprecated. Use public API: 'from larvaworld.lib.model.agents import BaseController, LarvaSim'"
+    )
+else:
+    warnings.warn(
+        "Deep import path deprecated. Use public API: 'from larvaworld.lib.model.agents import BaseController, LarvaSim'",
+        DeprecationWarning,
+        stacklevel=2,
+    )
 import math
 
 import numpy as np

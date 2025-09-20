@@ -2,7 +2,7 @@ import numpy as np
 
 from ... import reg, util, funcs
 from ...param import Epoch, Odor
-from ...sim.batch_run import OptimizationOps
+from importlib import import_module
 from ...util import AttrDict
 
 __all__ = [
@@ -599,6 +599,9 @@ def Ga_dict():
         }
     )
     dID = reg.default_refID
+    # Lazy import to avoid reg<->sim cycles
+    OptimizationOps = getattr(import_module("larvaworld.lib.sim.batch_run"), "OptimizationOps")
+
     l = [
         _ga_conf("interference", refID=dID, cyc=["fov", "foa", "rov"]),
         _ga_conf("exploration", refID=dID, ev=ev1),

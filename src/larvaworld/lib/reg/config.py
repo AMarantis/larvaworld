@@ -296,8 +296,9 @@ class ConfType(param.Parameterized):
             self.dict[id] = conf
         self.save()
         if self.conftype == "Model":
-            from ..sim.genetic_algorithm import GAselector
-
+            # Lazy import to avoid sim/reg cycles
+            from importlib import import_module
+            GAselector = getattr(import_module("larvaworld.lib.sim.genetic_algorithm"), "GAselector")
             GAselector.param.objects()["base_model"].objects = self.confIDs
             reg.larvagroup.LarvaGroupMutator.param.objects()[
                 "modelIDs"

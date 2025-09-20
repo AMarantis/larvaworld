@@ -2,19 +2,56 @@
 Agent classes for the agent-based-modeling simulations.
 """
 
-from ._agent import PointAgent, OrientedAgent, MobileAgent
-
-
-from ._source import Source, Food
-
-# from .controller import BaseController
-from ._larva import Larva, LarvaContoured, LarvaSegmented, LarvaMotile
-
-from ._larva_replay import LarvaReplay, LarvaReplayContoured, LarvaReplaySegmented
-from ._larva_sim import BaseController, LarvaSim
-from .larva_robot import LarvaRobot, ObstacleLarvaRobot
-from .larva_offline import LarvaOffline
-# from .physics_controller import ManualController
-# from .Box2D_larva import Box2DController
-
 __displayname__ = "Agents"
+
+__all__ = [
+    "NonSpatialAgent", "PointAgent", "OrientedAgent", "MobilePointAgent", "MobileAgent",
+    "Source", "Food",
+    "Larva", "LarvaContoured", "LarvaSegmented", "LarvaMotile",
+    "LarvaReplay", "LarvaReplayContoured", "LarvaReplaySegmented",
+    "BaseController", "LarvaSim",
+    "LarvaRobot", "ObstacleLarvaRobot",
+    "LarvaOffline",
+]
+
+_NAME_TO_MODULE = {
+    # Agent bases
+    "NonSpatialAgent": "larvaworld.lib.model.agents._agent",
+    "PointAgent": "larvaworld.lib.model.agents._agent",
+    "OrientedAgent": "larvaworld.lib.model.agents._agent",
+    "MobilePointAgent": "larvaworld.lib.model.agents._agent",
+    "MobileAgent": "larvaworld.lib.model.agents._agent",
+    # Sources
+    "Source": "larvaworld.lib.model.agents._source",
+    "Food": "larvaworld.lib.model.agents._source",
+    # Larvae
+    "Larva": "larvaworld.lib.model.agents._larva",
+    "LarvaContoured": "larvaworld.lib.model.agents._larva",
+    "LarvaSegmented": "larvaworld.lib.model.agents._larva",
+    "LarvaMotile": "larvaworld.lib.model.agents._larva",
+    # Replay & sim
+    "LarvaReplay": "larvaworld.lib.model.agents._larva_replay",
+    "LarvaReplayContoured": "larvaworld.lib.model.agents._larva_replay",
+    "LarvaReplaySegmented": "larvaworld.lib.model.agents._larva_replay",
+    "BaseController": "larvaworld.lib.model.agents._larva_sim",
+    "LarvaSim": "larvaworld.lib.model.agents._larva_sim",
+    # Robots
+    "LarvaRobot": "larvaworld.lib.model.agents.larva_robot",
+    "ObstacleLarvaRobot": "larvaworld.lib.model.agents.larva_robot",
+    # Offline
+    "LarvaOffline": "larvaworld.lib.model.agents.larva_offline",
+}
+
+def __getattr__(name):
+    module_path = _NAME_TO_MODULE.get(name)
+    if module_path is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    from importlib import import_module
+
+    mod = import_module(module_path)
+    obj = getattr(mod, name)
+    globals()[name] = obj
+    return obj
+
+def __dir__():
+    return sorted(list(globals().keys()) + __all__)

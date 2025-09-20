@@ -5,17 +5,53 @@ Modules comprising the layered behavioral architecture modeling the nervous syst
 
 # from . import crawler, turner,crawl_bend_interference,intermitter
 
-from .oscillator import *
-from .basic import *
-from .feeder import *
-from .crawler import *
-from .sensor import *
-from .memory import *
-from .turner import *
-from .crawl_bend_interference import *
-from .intermitter import Intermitter, BranchIntermitter
-from .locomotor import *
-from .brain import *
-from .module_modes import *
-
 __displayname__ = "Modular behavioral architecture"
+
+# Public API: explicit, lazy re-exports of commonly used symbols
+__all__ = [
+    "Brain",
+    "DefaultBrain",
+    "Locomotor",
+    "Crawler",
+    "Turner",
+    "Intermitter",
+    "BranchIntermitter",
+    "Sensor",
+    "Memory",
+    "Feeder",
+    "Oscillator",
+    "moduleDB",
+]
+
+_NAME_TO_MODULE = {
+    "Brain": "larvaworld.lib.model.modules.brain",
+    "DefaultBrain": "larvaworld.lib.model.modules.brain",
+    "Locomotor": "larvaworld.lib.model.modules.locomotor",
+    "Crawler": "larvaworld.lib.model.modules.crawler",
+    "Turner": "larvaworld.lib.model.modules.turner",
+    "Intermitter": "larvaworld.lib.model.modules.intermitter",
+    "BranchIntermitter": "larvaworld.lib.model.modules.intermitter",
+    "Sensor": "larvaworld.lib.model.modules.sensor",
+    "Memory": "larvaworld.lib.model.modules.memory",
+    "Feeder": "larvaworld.lib.model.modules.feeder",
+    "Oscillator": "larvaworld.lib.model.modules.oscillator",
+    "moduleDB": "larvaworld.lib.model.modules.module_modes",
+}
+
+def __getattr__(name):
+    """
+    Lazily resolve public symbols on first access to avoid importing
+    heavy submodules at package import time.
+    """
+    module_path = _NAME_TO_MODULE.get(name)
+    if module_path is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    from importlib import import_module
+
+    mod = import_module(module_path)
+    obj = getattr(mod, name)
+    globals()[name] = obj  # cache for subsequent lookups
+    return obj
+
+def __dir__():  # help tooling: list public symbols
+    return sorted(list(globals().keys()) + __all__)

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import itertools
 
 import agentpy as ap
@@ -9,7 +11,6 @@ from ... import vprint
 from .. import reg, util
 from ..param import ClassAttr, NestedConf, PositiveInteger, PositiveNumber
 from ..plot.scape import plot_2d, plot_3pars, plot_heatmap_PI
-from ..sim import ExpRun
 
 __all__ = [
     "OptimizationOps",
@@ -82,6 +83,9 @@ class BatchRun(reg.generators.SimConfiguration, ap.Experiment):
         """
         # FIXME This causes error when the ap.Experiment.name is set to the model_class.name ('ExpRun')
         # See line 56 in site-packages/agentpy/experiment.py
+        # Local import to avoid sim/__init__ indirection and potential cycles
+        from .single_run import ExpRun  # type: ignore
+
         ap.Experiment.__init__(
             self,
             model_class=ExpRun,

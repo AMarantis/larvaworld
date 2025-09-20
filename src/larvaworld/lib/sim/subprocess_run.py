@@ -1,9 +1,10 @@
+from __future__ import annotations
 import argparse
 import subprocess
 
 import pandas as pd
 
-from .. import sim, util
+from .. import util
 from ... import ROOT_DIR, SIM_DIR
 from ..process.dataset import LarvaDataset
 
@@ -89,11 +90,17 @@ class Exec:
 
     def exec_run(self):
         if self.mode == "sim":
-            self.process = sim.ExpRun(parameters=self.conf)
+            # Local import to avoid importing the sim package and potential cycles
+            from .single_run import ExpRun  # type: ignore
+
+            self.process = ExpRun(parameters=self.conf)
             res = self.process.simulate()
         elif self.mode == "batch":
+            # Local import to avoid importing the sim package and potential cycles
+            from .batch_run import BatchRun  # type: ignore
+
             self.process = None
-            k = sim.BatchRun(**self.conf)
+            k = BatchRun(**self.conf)
             res = k.simulate()
 
         return res

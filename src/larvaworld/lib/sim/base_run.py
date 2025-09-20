@@ -1,6 +1,8 @@
+from __future__ import annotations
 import agentpy
 
-from .. import reg, screen, sim, util
+from .. import reg, screen, util
+from .ABM_model import ABModel
 from ..model import agents, envs
 
 __all__ = [
@@ -8,7 +10,7 @@ __all__ = [
 ]
 
 
-class BaseRun(sim.ABModel):
+class BaseRun(ABModel):
     def __init__(self, screen_kws={}, **kwargs):
         """
         Basic simulation class that extends the agentpy.Model class and creates a larvaworld agent-based model (ABM).

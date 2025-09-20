@@ -5,8 +5,6 @@ Stide-cycle-related plotting
 import os
 
 import numpy as np
-from matplotlib import cm
-from matplotlib import pyplot as plt
 
 from .. import plot, reg, util, funcs
 from ..util import nam
@@ -74,6 +72,7 @@ def plot_vel_during_strides(
     labels = [lin_labels, ang_labels]
     ylabels = [r"scaled velocity $(sec^{-1})$", "angular velocity $(deg/sec)$"]
 
+    from matplotlib import pyplot as plt
     for i in [0, 1]:
         fig, ax = plt.subplots(1, 1, figsize=(10, 5))
         for serie, vel, col, c, l in zip(
@@ -251,6 +250,7 @@ def stride_cycle_all_points(
                 "mediumturquoise",
             ]
         else:
+            from matplotlib import cm
             pointcols = cm.rainbow(np.linspace(0, 1, len(points)))
         y0max = 0.7
         for p, col in zip(points, pointcols):

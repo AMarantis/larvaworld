@@ -20,7 +20,6 @@ from ..param import (
 )
 
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
-import pygame
 
 __all__ = [
     "IDBox",
@@ -83,6 +82,7 @@ class ScreenTextFont(NestedConf):
 
     @param.depends("font_size", watch=True)
     def update_font(self):
+        import pygame
         pygame.init()
         self.font = pygame.font.SysFont(self.font_type, self.font_size)
 
@@ -134,7 +134,7 @@ class ScreenTextFontRel(ScreenTextFont):
 
 class ScreenTextBoxRect(ScreenTextFont, Viewable):
     visible = param.Boolean(False)
-    frame_rect = param.ClassSelector(class_=pygame.Rect, doc="The frame rectangle")
+    frame_rect = param.ClassSelector(class_=object, doc="The frame rectangle")
     linewidth = PositiveNumber(10.0, doc="The linewidth to draw the box")
     show_frame = param.Boolean(True, doc="Draw the rectangular frame around the text")
 
@@ -144,6 +144,7 @@ class ScreenTextBoxRect(ScreenTextFont, Viewable):
 
     def draw(self, v, **kwargs):
         if self.show_frame and self.frame_rect is not None:
+            import pygame
             pygame.draw.rect(
                 v.v,
                 color=self.text_color,
@@ -172,6 +173,7 @@ class ScreenTextBox(ScreenTextFont, ViewableToggleable, Area2DPixel):
             if self.frame_rect is not None:
                 # v.draw_polygon(self.shape, color=self.color, filled=False, width=self.linewidth)
                 # pygame.draw.rect(v._window, color=self.color, rect=self.shape)
+                import pygame
                 pygame.draw.rect(
                     v.v,
                     color=self.color,
@@ -329,6 +331,7 @@ class SimulationScale(PosPixelRel2AreaViewable):
 
     def draw(self, v, **kwargs):
         for line in self.lines:
+            import pygame
             pygame.draw.line(v.v, self.color, line[0], line[1], 1)
         # v.draw_text_box(self.text_font, self.text_font_r)
         self.text_font.draw(v, **kwargs)

@@ -1,7 +1,5 @@
 import math
 
-import pygame
-
 from ... import util
 from .. import Object
 
@@ -28,6 +26,7 @@ class RotSurface(Object):
         self.y += dy
 
     def draw(self, viewer):
+        import pygame
         degrees = math.degrees(self.direction)
         rotated_surf = pygame.transform.rotate(self.surf, degrees)
         rot_rect = rotated_surf.get_rect()
@@ -40,6 +39,7 @@ class RotTriangle(RotSurface):
         self.size = size
         self.color_fg = color_fg
         self.color_bg = color_bg
+        import pygame
         self.surf = pygame.Surface((size, size))
         self.surf.fill(color_bg)
         self.surf.set_colorkey(color_bg)
@@ -58,6 +58,7 @@ class RotTriangle(RotSurface):
 
         # print([v1, v2, v3])
 
+        import pygame
         pygame.draw.polygon(self.surf, self.color_fg, [v1, v2, v3])
 
         super().__init__(x, y, direction, self.surf)
@@ -78,7 +79,7 @@ class LightSource(RotSurface):
         self.color_bg = color_bg
         self.size = emitting_power
         self.label = None
-
+        import pygame
         self.surf = pygame.Surface((self.size, self.size))
         self.surf.fill(color_bg)
         self.surf.set_colorkey(color_bg)

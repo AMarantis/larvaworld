@@ -188,7 +188,10 @@ def class_generator(A0, mode="Unit"):
     A.__name__ = f"{A0.__name__}{mode}"
     invalid = ["name", "closed", "visible", "selected", "centered"]
     if mode == "Group":
-        from .xy_distro import Larva_Distro, Spatial_Distro
+        from importlib import import_module
+        _xy = import_module("larvaworld.lib.param.xy_distro")
+        Larva_Distro = getattr(_xy, "Larva_Distro")
+        Spatial_Distro = getattr(_xy, "Spatial_Distro")
 
         if "pos" not in A0.param.objects():
             raise ValueError(

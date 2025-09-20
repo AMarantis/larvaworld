@@ -8,12 +8,9 @@ See below for further explanation
 
 import warnings
 from datetime import datetime, timedelta
-import geopandas as gpd
 import movingpandas as mpd
 import numpy as np
 import pandas as pd
-import shapely as shp
-from pint_pandas import PintType
 
 warnings.filterwarnings("ignore")
 
@@ -50,6 +47,8 @@ class GeoLarvaDataset(BaseLarvaDataset, mpd.TrajectoryCollection):
     #     return 'geodata'
 
     def init_gdf(self, step, dt):
+        import geopandas as gpd
+        from pint_pandas import PintType
         if len(step.index.names) != 1 or "datetime" not in step.index.names:
             max_tick = step[["x", "y"]].dropna().index.unique("Step").max()
             step = step.query(f"Step<={max_tick}")
@@ -121,6 +120,7 @@ class GeoLarvaDataset(BaseLarvaDataset, mpd.TrajectoryCollection):
 
     @property
     def dt_mag(self):
+        from pint_pandas import PintType
         assert self.config.dt is not None
         _dt = self.config.dt * PintType.ureg.s
         return _dt.magnitude
@@ -135,6 +135,7 @@ class GeoLarvaDataset(BaseLarvaDataset, mpd.TrajectoryCollection):
         Computing also the transosed trajectory that starts from the center.
         Plotting the original and the transposed trajectories
         """
+        import shapely as shp
         for tr in self:
             xy0 = tr.get_start_location()
             tr.df[name] = tr.df["xy"].apply(
@@ -148,6 +149,7 @@ class GeoLarvaDataset(BaseLarvaDataset, mpd.TrajectoryCollection):
         for tr in self:
             tr.add_speed(name=name, **kwargs)
             tr.df = tr.df.loc[tr.df["xy"] != None]
+        from pint_pandas import PintType
         self.set_dtype(name, self.spatial_unit / PintType.ureg.s)
 
     def add_distance(self, name=None, **kwargs):
@@ -164,6 +166,7 @@ class GeoLarvaDataset(BaseLarvaDataset, mpd.TrajectoryCollection):
         for tr in self:
             tr.add_acceleration(name=name, **kwargs)
             tr.df = tr.df.loc[tr.df["xy"] != None]
+        from pint_pandas import PintType
         self.set_dtype(name, self.spatial_unit / PintType.ureg.s**2)
 
     def scale_to_length(self, pars=None, ks=None):
@@ -267,6 +270,7 @@ class GeoLarvaDataset(BaseLarvaDataset, mpd.TrajectoryCollection):
             return None
 
     def build_endpoint_data(self, e=None):
+        import movingpandas as mpd
         if e is None:
             e = pd.DataFrame(index=list(self.traj_dic.keys()))
         e.index.name = "AgentID"

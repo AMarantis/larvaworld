@@ -7,7 +7,6 @@ import itertools
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from matplotlib import pyplot as plt
 from scipy.stats import ttest_ind
 
 from .. import plot, reg, util, funcs
@@ -192,6 +191,7 @@ def boxplot_PI(sort_labels=False, xlabel="Trials", **kwargs):
 
 @funcs.graph("PI (simple)")
 def PIboxplot(df, exp, save_to, ylabel, ylim=None, show=False, suf=""):
+    from matplotlib import pyplot as plt
     f = f"{save_to}/{exp}{suf}.pdf"
     box = plt.boxplot(
         df,

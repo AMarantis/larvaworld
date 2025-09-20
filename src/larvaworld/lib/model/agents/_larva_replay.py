@@ -1,3 +1,17 @@
+import os
+import warnings
+
+# Deprecation: discourage deep imports from internal module paths
+if os.getenv("LARVAWORLD_STRICT_DEPRECATIONS") == "1":
+    raise ImportError(
+        "Deep import path deprecated. Use public API: 'from larvaworld.lib.model.agents import LarvaReplay, LarvaReplayContoured, LarvaReplaySegmented'"
+    )
+else:
+    warnings.warn(
+        "Deep import path deprecated. Use public API: 'from larvaworld.lib.model.agents import LarvaReplay, LarvaReplayContoured, LarvaReplaySegmented'",
+        DeprecationWarning,
+        stacklevel=2,
+    )
 import numpy as np
 
 from ... import util
