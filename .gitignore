@@ -163,5 +163,4 @@ my_work/
 
 # GUI obsolete since pysimplegui v.5
 /src/larvaworld/gui/
-# macOS
-.DS_Store
+
