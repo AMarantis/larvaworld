@@ -165,29 +165,3 @@ my_work/
 /src/larvaworld/gui/
 # macOS
 .DS_Store
-
-# Python caches & build
-__pycache__/
-*.py[cod]
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.tox/
-.nox/
-.pytype/
-htmlcov/
-.coverage*
-build/
-dist/
-*.egg-info/
-.ipynb_checkpoints/
-
-# IDE/OS
-.DS_Store
-.idea/
-.vscode/
-
-# Optional: experiment runs (uncomment if desired)
-# src/larvaworld/data/SimGroup/exp_runs/
-
-src/larvaworld/data/SimGroup/exp_runs/
