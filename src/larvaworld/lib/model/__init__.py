@@ -25,6 +25,8 @@ __all__ = [
     # agents._source
     "Source",
     "Food",
+    # modules
+    "moduleDB",
 ]
 
 _NAME_TO_MODULE = {
@@ -41,6 +43,8 @@ _NAME_TO_MODULE = {
     # agents._source
     "Source": "larvaworld.lib.model.agents._source",
     "Food": "larvaworld.lib.model.agents._source",
+    # modules
+    "moduleDB": "larvaworld.lib.model.modules.module_modes",
 }
 
 

@@ -634,6 +634,9 @@ def Ga_dict():
 
 @funcs.stored_conf("Batch")
 def Batch_dict():
+    # Lazy import to avoid reg<->sim cycles
+    OptimizationOps = getattr(import_module("larvaworld.lib.sim.batch_run"), "OptimizationOps")
+    
     def bb(exp, proc=[], ss={}, o=None, N=5, abs=False, min=True, thr=0.001, **kwargs):
         return AttrDict(
             exp=exp,

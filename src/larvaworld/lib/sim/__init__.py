@@ -8,7 +8,7 @@ __all__ = [
     "ABModel", "BaseRun", "ReplayRun",
     "ExpRun", "Exec",
     "BatchRun", "OptimizationOps",
-    "GAlauncher",
+    "GAlauncher", "EvalRun",
 ]
 
 _NAME_TO_MODULE = {
@@ -20,6 +20,7 @@ _NAME_TO_MODULE = {
     "BatchRun": "larvaworld.lib.sim.batch_run",
     "OptimizationOps": "larvaworld.lib.sim.batch_run",
     "GAlauncher": "larvaworld.lib.sim.genetic_algorithm",
+    "EvalRun": "larvaworld.lib.sim.model_evaluation",
 }
 
 def __getattr__(name):

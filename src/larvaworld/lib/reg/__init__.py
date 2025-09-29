@@ -202,8 +202,24 @@ def __getattr__(name):
         return _CACHED_DEFAULT_REFID
     if name == "graphs":
         if _GRAPHS is None:
+            # Ensure plot modules are loaded before creating GraphRegistry
+            # This loads all @funcs.graph decorators
+            from .. import plot
+            # Force loading of all plot submodules to register @funcs.graph decorators
+            for submodule in ['bar', 'bearing', 'box', 'deb', 'epochs', 'freq', 'grid', 'hist', 'metric', 'scape', 'stridecycle', 'table', 'time', 'traj']:
+                getattr(plot, submodule)
             _GRAPHS = graph.GraphRegistry()
         return _GRAPHS
+    if name == "funcs":
+        # Lazy import of funcs from data_aux and distro modules
+        from . import data_aux, distro
+        # Import all symbols from data_aux and distro
+        for module in [data_aux, distro]:
+            for attr_name in dir(module):
+                if not attr_name.startswith('_'):
+                    globals()[attr_name] = getattr(module, attr_name)
+        # funcs should now be available in globals
+        return globals().get("funcs")
     # Lazy export of symbols from internal submodules to keep import light
     # This replaces the previous `from .data_aux import *` and `from .distro import *`
     try:
