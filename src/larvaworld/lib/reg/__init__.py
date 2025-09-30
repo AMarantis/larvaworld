@@ -253,6 +253,14 @@ def default_model():
     return conf.Model.getID(default_modelID)
 
 
+# Ensure Model_dict decorator is executed before resetConfs
+# This is needed because resetConfs accesses funcs.stored_confs["Model"]
+try:
+    from importlib import import_module
+    import_module("larvaworld.lib.model.modules.module_modes")
+except Exception:
+    pass
+
 config.resetConfs(init=True)
 
 vprint("Registry configured!", 2)
