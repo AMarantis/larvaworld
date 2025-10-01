@@ -15,6 +15,9 @@ __all__ = [
     "MediaDrawOps",
     "AgentDrawOps",
     "ColorDrawOps",
+    # Additional rendering symbols
+    "IDBox",
+    "ScreenTextBox",
 ]
 
 _NAME_TO_MODULE = {
@@ -31,6 +34,8 @@ _SYMBOL_TO_MODULE = {
     "MediaDrawOps": "larvaworld.lib.screen.drawing",
     "AgentDrawOps": "larvaworld.lib.screen.drawing",
     "ColorDrawOps": "larvaworld.lib.screen.drawing",
+    "IDBox": "larvaworld.lib.screen.rendering",
+    "ScreenTextBox": "larvaworld.lib.screen.rendering",
 }
 
 

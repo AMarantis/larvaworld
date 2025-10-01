@@ -29,7 +29,7 @@ def plot_segmentation_definition(subfolder="metric_definition", **kwargs):
             df_reg = d.read("bend2or_regression", file="vel_definition")
             df_corr = d.read("bend2or_correlation", file="vel_definition")
         except:
-            from ..process.calibration import vel_definition
+            from ..process import vel_definition
 
             dic = vel_definition(d)
             df_reg = dic["/bend2or_regression"]
@@ -89,7 +89,7 @@ def plot_stride_variability(
             stvar = d.read("stride_variability", file="vel_definition")
 
         except:
-            from ..process.calibration import vel_definition
+            from ..process import vel_definition
 
             stvar = vel_definition(d)["/stride_variability"]
         stvar.sort_values(by="idx", inplace=True)

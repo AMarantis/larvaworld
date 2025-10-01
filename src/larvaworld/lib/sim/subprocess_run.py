@@ -6,7 +6,7 @@ import pandas as pd
 
 from .. import util
 from ... import ROOT_DIR, SIM_DIR
-from ..process.dataset import LarvaDataset
+from ..process import LarvaDataset
 
 __all__ = [
     "Exec",

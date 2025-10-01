@@ -87,7 +87,7 @@ def calibration_plot(save_to=None, files=None):
 def model_summary(
     mID, refID=None, refDataset=None, Nids=1, model_table=False, **kwargs
 ):
-    from ..sim.agent_simulations import sim_model
+    from ..sim import sim_model
 
     if refDataset is None:
         d = reg.conf.Ref.loadRef(refID)
@@ -620,7 +620,7 @@ def result_summary(datasets, target, **kwargs):
 def model_sample_track(
     mID=None, m=None, dur=2 / 3, dt=1 / 16, Nids=1, min_turn_amp=20, d=None, **kwargs
 ):
-    from ..sim.agent_simulations import sim_model
+    from ..sim import sim_model
 
     if d is None:
         d = sim_model(mID=mID, m=m, duration=dur, dt=dt, Nids=Nids, enrichment=False)

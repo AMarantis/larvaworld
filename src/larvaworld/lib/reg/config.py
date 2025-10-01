@@ -569,7 +569,7 @@ class RefType(ConfType):
         LarvaDataset: The loaded reference dataset.
 
         """
-        from ..process.dataset import LarvaDataset
+        from ..process import LarvaDataset
 
         c = self.getRef(id=id, dir=dir)
         assert c is not None
@@ -730,7 +730,7 @@ class RefType(ConfType):
                 [self.loadRef(dir=dir, **kwargs) for id, dir in d.items()]
             )
         elif to_return == "collection":
-            from ..process.dataset import LarvaDatasetCollection
+            from ..process import LarvaDatasetCollection
 
             return LarvaDatasetCollection(
                 datasets=util.ItemList(

@@ -3,7 +3,7 @@ import warnings
 
 from ... import vprint
 from ..param import class_generator
-from ..process.evaluation import DataEvaluation
+from ..process import DataEvaluation
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
@@ -11,8 +11,8 @@ import numpy as np
 import pandas as pd
 
 from .. import reg, util
-from ..reg.generators import SimConfiguration
-from ..reg.larvagroup import LarvaGroupMutator
+from ..reg import SimConfiguration
+from ..reg import LarvaGroupMutator
 from ..util import AttrDict
 
 __all__ = [

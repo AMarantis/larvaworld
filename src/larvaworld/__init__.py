@@ -18,6 +18,10 @@ __displayname__ = "larvaworld"
 __name__ = "larvaworld"
 
 __all__ = [
+    # Lazy-loaded subpackages (via __getattr__)
+    "lib",
+    "cli",
+    # Functions and constants
     "vprint",
     "ROOT_DIR",
     "DATA_DIR",

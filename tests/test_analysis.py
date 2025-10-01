@@ -1,6 +1,6 @@
 import pytest
 from larvaworld.lib.sim import ExpRun
-from larvaworld.lib.process.dataset import LarvaDataset
+from larvaworld.lib.process import LarvaDataset
 
 expIDs = ["dispersion", "chemorbit"]
 

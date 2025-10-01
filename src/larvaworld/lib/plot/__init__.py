@@ -45,9 +45,18 @@ __all__ = [
     "define_end_ks",
     "get_vs",
     "color_epochs",
+    # Functions from table
+    "diff_df",
+    "mpl_table",
+    # Functions from deb
+    "plot_debs",
+    # Functions from scape
+    "plot_2d",
+    "plot_3pars",
+    "plot_heatmap_PI",
 ]
 
-_SUBMODULES = {name: f"{__name__}.{name}" for name in __all__ if name not in ["AutoBasePlot", "GridPlot"] and not name.startswith(("plot_", "circ", "confidence_", "dataset_", "label_", "annotate_", "dual_", "save_", "process_", "prob_", "single_", "configure_", "define_", "get_", "color_"))}
+_SUBMODULES = {name: f"{__name__}.{name}" for name in __all__ if name not in ["AutoBasePlot", "GridPlot"] and not name.startswith(("plot_", "circ", "confidence_", "dataset_", "label_", "annotate_", "dual_", "save_", "process_", "prob_", "single_", "configure_", "define_", "get_", "color_", "diff_", "mpl_")) and name not in ["diff_df", "mpl_table", "plot_debs", "plot_2d", "plot_3pars", "plot_heatmap_PI"]}
 _CLASS_TO_MODULE = {
     "AutoBasePlot": f"{__name__}.base",
     "GridPlot": f"{__name__}.base",
@@ -70,6 +79,15 @@ _FUNCTION_TO_MODULE = {
     "define_end_ks": f"{__name__}.util",
     "get_vs": f"{__name__}.util",
     "color_epochs": f"{__name__}.util",
+    # Functions from table
+    "diff_df": f"{__name__}.table",
+    "mpl_table": f"{__name__}.table",
+    # Functions from deb
+    "plot_debs": f"{__name__}.deb",
+    # Functions from scape
+    "plot_2d": f"{__name__}.scape",
+    "plot_3pars": f"{__name__}.scape",
+    "plot_heatmap_PI": f"{__name__}.scape",
 }
 
 def __getattr__(name):

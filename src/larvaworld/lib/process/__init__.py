@@ -8,16 +8,21 @@ __displayname__ = "Data management"
 # Public API: expose core dataset classes, evaluation helpers, and lab importers.
 __all__ = [
     # Datasets
-    "ParamLarvaDataset", "BaseLarvaDataset", "LarvaDataset", "LarvaDatasetCollection",
+    "DatasetConfig", "ParamLarvaDataset", "BaseLarvaDataset", "LarvaDataset", "LarvaDatasetCollection",
     # Evaluation
     "Evaluation", "DataEvaluation",
     # Lab-specific importers
     "import_Schleyer", "import_Jovanic", "import_Berni", "import_Arguello",
     "lab_specific_import_functions",
+    # Calibration functions
+    "vel_definition", "comp_stride_variation", "fit_metric_definition", "comp_segmentation",
+    # Import aux functions
+    "read_timeseries_from_raw_files_per_parameter",
 ]
 
 _NAME_TO_MODULE = {
     # Datasets
+    "DatasetConfig": "larvaworld.lib.process.dataset",
     "ParamLarvaDataset": "larvaworld.lib.process.dataset",
     "BaseLarvaDataset": "larvaworld.lib.process.dataset",
     "LarvaDataset": "larvaworld.lib.process.dataset",
@@ -31,6 +36,13 @@ _NAME_TO_MODULE = {
     "import_Berni": "larvaworld.lib.process.importing",
     "import_Arguello": "larvaworld.lib.process.importing",
     "lab_specific_import_functions": "larvaworld.lib.process.importing",
+    # Calibration functions
+    "vel_definition": "larvaworld.lib.process.calibration",
+    "comp_stride_variation": "larvaworld.lib.process.calibration",
+    "fit_metric_definition": "larvaworld.lib.process.calibration",
+    "comp_segmentation": "larvaworld.lib.process.calibration",
+    # Import aux functions
+    "read_timeseries_from_raw_files_per_parameter": "larvaworld.lib.process.import_aux",
 }
 
 def __getattr__(name):

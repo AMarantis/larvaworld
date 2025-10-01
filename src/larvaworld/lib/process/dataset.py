@@ -16,7 +16,7 @@ from scipy.signal import find_peaks
 
 from ... import vprint, DATA_DIR
 from .. import reg, util
-from ..reg.larvagroup import LarvaGroup
+from ..reg import LarvaGroup
 from ..param import (
     ClassAttr,
     ClassDict,
@@ -2407,7 +2407,7 @@ class LarvaDataset(BaseLarvaDataset):
         super().__init__(**kwargs)
 
     def visualize(self, parameters={}, **kwargs):
-        from ..sim.dataset_replay import ReplayRun
+        from ..sim import ReplayRun
 
         kwargs["dataset"] = self
         rep = ReplayRun(parameters=parameters, **kwargs)
@@ -2720,7 +2720,7 @@ def get_larva_dicts(ls, validIDs=None):
         if hasattr(l, "deb") and l.deb is not None:
             deb_dicts[id] = l.deb.finalize_dict()
         try:
-            from ..model.modules.nengobrain import NengoBrain
+            from ..model import NengoBrain
 
             if isinstance(l.brain, NengoBrain):
                 if l.brain.dict is not None:

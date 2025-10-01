@@ -27,7 +27,6 @@ __all__ = [
     "TrackedPointIdx",
     "SimMetricOps",
     "TrackerOps",
-    # 'OptimizationOps',
 ]
 
 __displayname__ = "Configuration parameter groups"

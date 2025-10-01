@@ -16,7 +16,7 @@ import numpy as np
 import param
 
 from ...param import ClassAttr, PositiveNumber, Substrate, xy_uniform_circle
-from ...screen.drawing import ScreenManager
+from ...screen import ScreenManager
 from . import PointAgent
 
 __all__ = [

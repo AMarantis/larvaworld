@@ -3,7 +3,7 @@ import random
 import numpy as np
 
 
-from ... import reg, util
+from .. import reg, util
 from ..param import Larva_Distro
 
 __all__ = [
@@ -103,8 +103,7 @@ def sim_model(
 
 
 def sim_single_agent(m, Nticks=1000, dt=0.1, df_columns=None, p0=None, fo0=None):
-    from ..modules.locomotor import Locomotor
-    from ._larva_sim import BaseController
+    from ..model import Locomotor, BaseController
 
     if fo0 is None:
         fo0 = 0.0

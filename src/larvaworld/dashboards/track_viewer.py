@@ -6,7 +6,7 @@ from panel.template import DarkTheme
 pn.extension()
 
 from larvaworld.lib import reg, util
-from larvaworld.lib.process.dataset import LarvaDataset, LarvaDatasetCollection
+from larvaworld.lib.process import LarvaDataset, LarvaDatasetCollection
 
 __all__ = ["TrackViewer", "track_viewer_app"]
 

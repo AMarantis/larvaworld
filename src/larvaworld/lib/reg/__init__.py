@@ -16,6 +16,9 @@ __all__ = [
     "graphs",
     "getPar",
     "loadRef",
+    # Eagerly imported modules
+    "conf",
+    "gen",
 ]
 
 import os
@@ -227,6 +230,11 @@ def __getattr__(name):
         for module_path in (
             "larvaworld.lib.reg.data_aux",
             "larvaworld.lib.reg.distro",
+            "larvaworld.lib.reg.generators",
+            "larvaworld.lib.reg.larvagroup",
+            "larvaworld.lib.reg.stored_confs.essay_conf",
+            "larvaworld.lib.reg.stored_confs.data_conf",
+            "larvaworld.lib.reg.stored_confs.sim_conf",
         ):
             try:
                 mod = import_module(module_path)

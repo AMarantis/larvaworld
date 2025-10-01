@@ -2,9 +2,11 @@
 Interface between a larvaworld simulation and a remote model
 """
 
-from .ipc import Client, Server
-
 __displayname__ = "Client-Server"
+
+__all__ = ["Client", "Server", "BrianInterfaceMessage"]
+
+from .ipc import Client, Server
 
 
 class BrianInterfaceMessage(ipc.Message):

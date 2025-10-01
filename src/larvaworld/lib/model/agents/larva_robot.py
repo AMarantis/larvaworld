@@ -13,10 +13,9 @@ else:
         stacklevel=2,
     )
 from ... import util
-from ...model.modules.motor_controller import Actuator, MotorController
-from ...model.modules.sensor2 import ProximitySensor
+from ...model.modules import Actuator, MotorController, ProximitySensor
 from ...param import PositiveNumber
-from ...screen.drawing import ScreenManager
+from ...screen import ScreenManager
 from . import LarvaSim
 
 __all__ = [

@@ -15,7 +15,7 @@ from ...param import (
     Substrate,
     Viewable,
 )
-from ...screen.rendering import ScreenTextBox
+from ...screen import ScreenTextBox
 from .. import Object
 
 __all__ = [

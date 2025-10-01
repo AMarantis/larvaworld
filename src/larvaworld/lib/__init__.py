@@ -4,7 +4,23 @@ The core functionalities of the larvaworld platform
 
 __displayname__ = "Core library"
 
-__all__ = ["funcs"]
+__all__ = [
+    # Global registry object
+    "funcs",
+    # Subpackages
+    "param",
+    "reg",
+    "plot",
+    "model",
+    "process",
+    "screen",
+    "sim",
+    # Re-exported from process.dataset
+    "ParamLarvaDataset",
+    "BaseLarvaDataset",
+    "LarvaDataset",
+    "LarvaDatasetCollection",
+]
 
 from .util import AttrDict
 

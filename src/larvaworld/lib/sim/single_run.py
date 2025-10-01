@@ -9,8 +9,8 @@ from typing import Optional
 
 from ... import vprint
 from .. import reg, util
-from ..reg.larvagroup import LarvaGroup
-from ..process.dataset import LarvaDatasetCollection
+from ..reg import LarvaGroup
+from ..process import LarvaDatasetCollection
 from .base_run import BaseRun
 from .conditions import get_exp_condition
 

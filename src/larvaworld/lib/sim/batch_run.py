@@ -10,7 +10,7 @@ import param
 from ... import vprint
 from .. import reg, util
 from ..param import ClassAttr, NestedConf, PositiveInteger, PositiveNumber
-from ..plot.scape import plot_2d, plot_3pars, plot_heatmap_PI
+from ..plot import plot_2d, plot_3pars, plot_heatmap_PI
 
 __all__ = [
     "OptimizationOps",

@@ -21,6 +21,11 @@ __all__ = [
     "Feeder",
     "Oscillator",
     "moduleDB",
+    # Robot/actuator modules
+    "RotTriangle",
+    "Actuator",
+    "MotorController",
+    "ProximitySensor",
 ]
 
 _NAME_TO_MODULE = {
@@ -36,6 +41,11 @@ _NAME_TO_MODULE = {
     "Feeder": "larvaworld.lib.model.modules.feeder",
     "Oscillator": "larvaworld.lib.model.modules.oscillator",
     "moduleDB": "larvaworld.lib.model.modules.module_modes",
+    # Robot/actuator modules
+    "RotTriangle": "larvaworld.lib.model.modules.rot_surface",
+    "Actuator": "larvaworld.lib.model.modules.motor_controller",
+    "MotorController": "larvaworld.lib.model.modules.motor_controller",
+    "ProximitySensor": "larvaworld.lib.model.modules.sensor2",
 }
 
 def __getattr__(name):

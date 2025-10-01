@@ -505,7 +505,7 @@ def plot_EEB_vs_food_quality(
 ):
     if refIDs is None:
         raise ("No sample configurations provided")
-    from ..model.deb.deb import DEB
+    from ..model import DEB
     from ..model.modules.intermitter import get_EEB_poly1d
 
     if name is None:

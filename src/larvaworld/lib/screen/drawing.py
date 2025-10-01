@@ -1029,7 +1029,7 @@ class ScreenManager(ScreenAreaPygame):
             self.side_panel.draw(self)
 
     def load_scene_from_file(self, file_path, m):
-        from ..model.envs.obstacle import Box, Wall
+        from ..model import Box, Wall
 
         obs = []
         with open(file_path) as f:
@@ -1069,7 +1069,7 @@ class ScreenManager(ScreenAreaPygame):
                         )
                     )
                 elif ws[0] == "Light":
-                    from ..model.modules.rot_surface import LightSource
+                    from ..model import LightSource
 
                     obs.append(
                         LightSource(

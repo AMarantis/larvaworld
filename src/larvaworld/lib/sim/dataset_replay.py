@@ -137,7 +137,7 @@ class ReplayRun(BaseRun):
     """
     # NOTE: This has been refactored as a method in LarvaDataset
     def smaller_dataset(self, p, d):
-        from ..process.dataset import DatasetConfig
+        from ..process import DatasetConfig
 
         d.load(h5_ks=["contour", "midline", "angular"])
         c = d.config

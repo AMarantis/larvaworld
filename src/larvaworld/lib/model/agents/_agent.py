@@ -21,9 +21,8 @@ from ...param import (
     RadiallyExtended,
     Viewable,
 )
-from ...param.composition import Odor
-from ...screen.rendering import IDBox
-from ...screen.drawing import ScreenManager
+from ...param import Odor
+from ...screen import IDBox, ScreenManager
 from ..object import GroupedObject
 
 __all__ = [

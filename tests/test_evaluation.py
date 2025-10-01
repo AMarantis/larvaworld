@@ -1,5 +1,5 @@
 from larvaworld.lib import reg
-from larvaworld.lib.process.evaluation import Evaluation
+from larvaworld.lib.process import Evaluation
 from larvaworld.lib.sim import EvalRun
 
 

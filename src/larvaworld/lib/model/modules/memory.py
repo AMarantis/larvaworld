@@ -20,8 +20,7 @@ import numpy as np
 import param
 
 from .... import vprint
-from ...ipc import BrianInterfaceMessage
-from ...ipc.ipc import Client
+from ...ipc import BrianInterfaceMessage, Client
 from ...param import PositiveInteger, PositiveNumber
 from .oscillator import Timer
 

@@ -1,5 +1,5 @@
 from larvaworld.lib import sim
-from larvaworld.lib.process.dataset import LarvaDataset
+from larvaworld.lib.process import LarvaDataset
 
 # NOTE :    This test requires the box2d-py package
 

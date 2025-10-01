@@ -172,8 +172,9 @@ def Env_dict():
 @funcs.stored_conf("Exp")
 def Exp_dict():
     def d():
-        from ...param.composition import Odor
+        from ...param import Odor
         from ...reg import gen
+        # GTRvsS import - deep import required due to circular dependency
         from ...reg.larvagroup import GTRvsS
 
         ENR = reg.gen.EnrichConf

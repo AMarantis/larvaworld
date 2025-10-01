@@ -13,7 +13,7 @@ from scipy.stats import ttest_ind
 
 from ... import vprint
 from .. import plot, reg, util
-from ..process.dataset import LarvaDatasetCollection
+from ..process import LarvaDatasetCollection
 from ..util import AttrDict
 
 __all__ = [

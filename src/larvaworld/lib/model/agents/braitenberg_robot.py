@@ -3,7 +3,7 @@ import random
 import numpy as np
 
 from ... import util
-from ...model.modules.rot_surface import RotTriangle
+from ...model.modules import RotTriangle
 
 __all__ = [
     "DifferentialDriveRobot",

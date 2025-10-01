@@ -69,8 +69,8 @@ class _GenProxy(AttrDict):
 
     def __getattr__(self, name: str):
         try:
-            return super().__getattr__(name)
-        except AttributeError:
+            return super().__getitem__(name)
+        except KeyError:
             # Attempt lazy registration via known module side-effects
             module_path = _LAZY_GEN_REGISTRATIONS.get(name)
             if module_path is not None:
@@ -79,7 +79,7 @@ class _GenProxy(AttrDict):
                 import_module(module_path)
                 if name in self:
                     return self[name]
-            raise
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
 
 gen = _GenProxy(
@@ -124,6 +124,10 @@ def __getattr__(name):
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 gen.LarvaGroup = class_generator(LarvaGroup)
+
+# Import GTRvsS from larvagroup and add to gen proxy
+from .larvagroup import GTRvsS
+gen.GTRvsS = GTRvsS  # GTRvsS is a function, not a class
 
 
 class SimConfiguration(RuntimeOps, SimMetricOps, SimOps):
@@ -676,7 +680,7 @@ class LabFormat(NestedConf):
 
     @property
     def import_func(self):
-        from ..process.importing import lab_specific_import_functions as d
+        from ..process import lab_specific_import_functions as d
 
         return d[self.labID]
 
@@ -736,7 +740,7 @@ class LabFormat(NestedConf):
             "step": step,
             "end": end,
         }
-        from ..process.dataset import LarvaDataset
+        from ..process import LarvaDataset
 
         d = LarvaDataset(**conf)
         vprint(

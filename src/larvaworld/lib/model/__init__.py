@@ -14,7 +14,7 @@ from .object import *  # noqa: F401,F403 (public surface kept for backwards comp
 __all__ = [
     # envs.valuegrid
     "AnalyticalValueLayer",
-    "GaussianValueLayer",
+    "GaussianValueLayer", 
     "DiffusionValueLayer",
     "OdorScape",
     "FoodGrid",
@@ -27,6 +27,26 @@ __all__ = [
     "Food",
     # modules
     "moduleDB",
+    # agents (newly added)
+    "Larva",
+    "BaseController", 
+    "LarvaSim",
+    # envs (newly added)
+    "Arena",
+    "Maze",
+    "Box",
+    "Wall",
+    # modules (newly added)
+    "Brain",
+    "DefaultBrain",
+    "Locomotor",
+    "SpaceDict",
+    "Effector",
+    "Timer",
+    "LightSource",
+    "NengoBrain",
+    # deb (newly added)
+    "DEB",
 ]
 
 _NAME_TO_MODULE = {
@@ -45,6 +65,22 @@ _NAME_TO_MODULE = {
     "Food": "larvaworld.lib.model.agents._source",
     # modules
     "moduleDB": "larvaworld.lib.model.modules.module_modes",
+    "Larva": "larvaworld.lib.model.agents.larva_robot",
+    "BaseController": "larvaworld.lib.model.agents._larva_sim",
+    "LarvaSim": "larvaworld.lib.model.agents._larva_sim",
+    "Arena": "larvaworld.lib.model.envs.arena",
+    "Maze": "larvaworld.lib.model.envs.maze",
+    "Box": "larvaworld.lib.model.envs.obstacle",
+    "Wall": "larvaworld.lib.model.envs.obstacle",
+    "Brain": "larvaworld.lib.model.modules.brain",
+    "DefaultBrain": "larvaworld.lib.model.modules.brain",
+    "Locomotor": "larvaworld.lib.model.modules.locomotor",
+    "SpaceDict": "larvaworld.lib.model.modules.module_modes",
+    "Effector": "larvaworld.lib.model.modules.effector",
+    "Timer": "larvaworld.lib.model.modules.timer",
+    "LightSource": "larvaworld.lib.model.modules.rot_surface",
+    "NengoBrain": "larvaworld.lib.model.modules.nengobrain",
+    "DEB": "larvaworld.lib.model.deb.deb",
 }
 
 
