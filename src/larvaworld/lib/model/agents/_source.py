@@ -16,7 +16,7 @@ import numpy as np
 import param
 
 from ...param import ClassAttr, PositiveNumber, Substrate, xy_uniform_circle
-from ...screen import ScreenManager
+# ScreenManager import deferred due to circular dependency - will be imported when needed
 from . import PointAgent
 
 __all__ = [
@@ -145,7 +145,7 @@ class Food(Source):
                 pass
         return np.min([amount, prev_amount])
 
-    def draw(self, v: ScreenManager, filled: bool = None) -> None:
+    def draw(self, v, filled: bool = None) -> None:
         """
         Draws the agent on the screen.
 

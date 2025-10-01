@@ -52,7 +52,7 @@ class Larva(MobileAgent):
         self.cum_dur = 0
         # self.cum_t = 0
 
-    def draw(self, v: ScreenManager, **kwargs) -> None:
+    def draw(self, v, **kwargs) -> None:
         """
         Draws the larva on the screen using the provided ScreenManager instance.
 
@@ -149,7 +149,7 @@ class LarvaContoured(Larva, Contour):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def draw(self, v: ScreenManager, **kwargs) -> None:
+    def draw(self, v, **kwargs) -> None:
         """
         Draws the larva agent on the screen.
 
@@ -164,7 +164,7 @@ class LarvaContoured(Larva, Contour):
             Contour.draw(self, v, **kwargs)
         super().draw(v, **kwargs)
 
-    def draw_selected(self, v: ScreenManager, **kwargs) -> None:
+    def draw_selected(self, v, **kwargs) -> None:
         """
         Draws the selected larva on the screen.
 
@@ -189,7 +189,7 @@ class LarvaSegmented(Larva, SegmentedBodySensored):
         super().__init__(**kwargs)
         self.set_default_color(self.default_color)
 
-    def draw(self, v: ScreenManager, **kwargs) -> None:
+    def draw(self, v, **kwargs) -> None:
         """
         Draws the larva agent on the screen using the provided ScreenManager.
 
@@ -229,7 +229,7 @@ class LarvaSegmented(Larva, SegmentedBodySensored):
         super().invert_default_color()
         self.segs.set_default_color(self.default_color)
 
-    def draw_selected(self, v: ScreenManager, **kwargs) -> None:
+    def draw_selected(self, v, **kwargs) -> None:
         """
         Draws the selected larva on the screen.
 

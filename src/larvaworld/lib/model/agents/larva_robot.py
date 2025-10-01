@@ -15,7 +15,7 @@ else:
 from ... import util
 from ...model.modules import Actuator, MotorController, ProximitySensor
 from ...param import PositiveNumber
-from ...screen import ScreenManager
+# ScreenManager import deferred due to circular dependency - will be imported when needed
 from . import LarvaSim
 
 __all__ = [
@@ -125,7 +125,7 @@ class ObstacleLarvaRobot(LarvaRobot):
         else:
             pass
 
-    def draw(self, v: ScreenManager, **kwargs) -> None:
+    def draw(self, v, **kwargs) -> None:
         """
         Draws the larva robot and its sensors on the screen.
 

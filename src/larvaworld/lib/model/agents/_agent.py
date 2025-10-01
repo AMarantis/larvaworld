@@ -22,7 +22,7 @@ from ...param import (
     Viewable,
 )
 from ...param import Odor
-from ...screen import IDBox, ScreenManager
+# ScreenManager and IDBox imports deferred due to circular dependency - will be imported when needed
 from ..object import GroupedObject
 
 __all__ = [
@@ -71,9 +71,11 @@ class PointAgent(RadiallyExtended, NonSpatialAgent, Viewable):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.set_default_color(self.color)
+        # Lazy import to avoid circular dependency
+        from ...screen.rendering import IDBox
         self.id_box = IDBox(agent=self)
 
-    def draw(self, v: ScreenManager, filled: bool = True) -> None:
+    def draw(self, v, filled: bool = True) -> None:
         """
         Draws the agent on the screen.
 
@@ -94,7 +96,7 @@ class PointAgent(RadiallyExtended, NonSpatialAgent, Viewable):
                 for i in [1.5, 2.0, 3.0]:
                     v.draw_circle(radius=self.radius * i, width=0.001 / i, **kws)
 
-    def draw_selected(self, v: ScreenManager, **kwargs) -> None:
+    def draw_selected(self, v, **kwargs) -> None:
         """
         Draws a visual representation of the selected agent on the screen.
 
