@@ -114,6 +114,90 @@ def loadRefs(ids, **kwargs):
     return conf.Ref.loadRefs(ids=ids, **kwargs)
 
 
+class _ProcSpinner:
+    """CLI spinner running in a dedicated subprocess to remain responsive.
+
+    The spinner writes to stdout independently of the main process so that
+    it keeps animating even when the main process is CPU-bound. It stops
+    when the sentinel path is removed.
+    """
+
+    def __init__(self, message: str = ""):
+        self._message = message
+        self._sentinel_dir = None
+        self._sentinel_path = None
+        self._proc = None
+
+    def start(self) -> None:
+        import os
+        import sys
+        import tempfile
+        import subprocess
+        import shutil
+
+        # Create a temp directory with a sentinel file that the child polls
+        self._sentinel_dir = tempfile.mkdtemp(prefix="lw_spin_")
+        self._sentinel_path = os.path.join(self._sentinel_dir, "run")
+        with open(self._sentinel_path, "w", encoding="utf-8") as f:
+            f.write("1")
+
+        code = (
+            "import sys, os, time\n"
+            "p=sys.argv[1]\n"
+            "msg=sys.argv[2] if len(sys.argv)>2 else ''\n"
+            "syms=['|','/','-', chr(92)]\n"
+            "CR=chr(13); ESC=chr(27)\n"
+            "i=0\n"
+            "try:\n"
+            "    while os.path.exists(p):\n"
+            "        sys.stdout.write(CR+msg+syms[i%len(syms)])\n"
+            "        sys.stdout.flush()\n"
+            "        i+=1\n"
+            "        time.sleep(0.1)\n"
+            "    sys.stdout.write(CR+ESC+'[K')\n"
+            "    sys.stdout.flush()\n"
+            "except KeyboardInterrupt:\n"
+            "    pass\n"
+        )
+
+        # Launch spinner process
+        self._proc = subprocess.Popen(
+            [sys.executable, "-c", code, self._sentinel_path, self._message],
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
+
+    def stop(self) -> None:
+        import os
+        import time
+        import shutil
+
+        if self._sentinel_path and os.path.exists(self._sentinel_path):
+            try:
+                os.remove(self._sentinel_path)
+            except Exception:
+                pass
+        # Give the child some time to exit gracefully
+        if self._proc is not None:
+            try:
+                for _ in range(30):
+                    if self._proc.poll() is not None:
+                        break
+                    time.sleep(0.05)
+            except Exception:
+                pass
+            try:
+                if self._proc.poll() is None:
+                    self._proc.terminate()
+            except Exception:
+                pass
+        if self._sentinel_dir and os.path.isdir(self._sentinel_dir):
+            try:
+                shutil.rmtree(self._sentinel_dir, ignore_errors=True)
+            except Exception:
+                pass
+
+
 def define_default_refID_by_running_test():
     """
     Defines the default reference dataset ID by running a test if no reference datasets are available.
@@ -167,27 +251,41 @@ def define_default_refID(id="exploration.30controls"):
     if id in R.confIDs:
         return id
     elif id == "exploration.30controls" and len(R.confIDs) == 0:
-        vprint(
-            "No reference datasets available.Automatically importing one from the experimental data folder.",
-            2,
-        )
-        if "Schleyer" not in conf.LabFormat.confIDs:
-            config.resetConfs(conftypes=["LabFormat"])
-        g = conf.LabFormat.get("Schleyer")
-        N = 30
-        kws = {
-            "parent_dir": "exploration",
-            "merged": True,
-            "color": "blue",
-            "max_Nagents": N,
-            "min_duration_in_sec": 60,
-            "id": f"{N}controls",
-            "refID": f"exploration.{N}controls",
-        }
-        d = g.import_dataset(**kws)
-        d.process(is_last=False)
-        d.annotate(is_last=True)
-        assert len(R.confIDs) == 1
+        # Cold start: show a spinner while importing the reference dataset
+        spinner = _ProcSpinner("Loading registry (this may take several minutes)... ")
+        spinner.start()
+        try:
+            if "Schleyer" not in conf.LabFormat.confIDs:
+                config.resetConfs(conftypes=["LabFormat"])
+            g = conf.LabFormat.get("Schleyer")
+            N = 30
+            kws = {
+                "parent_dir": "exploration",
+                "merged": True,
+                "color": "blue",
+                "max_Nagents": N,
+                "min_duration_in_sec": 60,
+                "id": f"{N}controls",
+                "refID": f"exploration.{N}controls",
+            }
+            d = g.import_dataset(**kws)
+            d.process(is_last=False)
+            d.annotate(is_last=True)
+            assert len(R.confIDs) == 1
+        finally:
+            spinner.stop()
+        # Print success message in green after completion
+        try:
+            GREEN = "\033[92m"
+            RESET = "\033[0m"
+            print(
+                f"{GREEN}No reference datasets available. Automatically imported one from the experimental data folder.{RESET}"
+            )
+        except Exception:
+            # Best-effort fallback without color
+            print(
+                "No reference datasets available. Automatically imported one from the experimental data folder."
+            )
         return id
     else:
         raise (ValueError(f"Reference dataset with ID {id} not found"))
