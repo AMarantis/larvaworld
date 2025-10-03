@@ -26,6 +26,7 @@ __all__ = [
     "table",
     # Classes from base
     "AutoBasePlot",
+    "AutoPlot",
     "GridPlot",
     # Functions from util
     "plot_quantiles",
@@ -56,9 +57,10 @@ __all__ = [
     "plot_heatmap_PI",
 ]
 
-_SUBMODULES = {name: f"{__name__}.{name}" for name in __all__ if name not in ["AutoBasePlot", "GridPlot"] and not name.startswith(("plot_", "circ", "confidence_", "dataset_", "label_", "annotate_", "dual_", "save_", "process_", "prob_", "single_", "configure_", "define_", "get_", "color_", "diff_", "mpl_")) and name not in ["diff_df", "mpl_table", "plot_debs", "plot_2d", "plot_3pars", "plot_heatmap_PI"]}
+_SUBMODULES = {name: f"{__name__}.{name}" for name in __all__ if name not in ["AutoBasePlot", "AutoPlot", "GridPlot"] and not name.startswith(("plot_", "circ", "confidence_", "dataset_", "label_", "annotate_", "dual_", "save_", "process_", "prob_", "single_", "configure_", "define_", "get_", "color_", "diff_", "mpl_")) and name not in ["diff_df", "mpl_table", "plot_debs", "plot_2d", "plot_3pars", "plot_heatmap_PI"]}
 _CLASS_TO_MODULE = {
     "AutoBasePlot": f"{__name__}.base",
+    "AutoPlot": f"{__name__}.base",
     "GridPlot": f"{__name__}.base",
 }
 _FUNCTION_TO_MODULE = {

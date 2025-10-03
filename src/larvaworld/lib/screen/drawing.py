@@ -730,10 +730,15 @@ class ScreenManager(ScreenAreaPygame):
                             pass
 
                     elif e.button == 3:
-                        from ...gui.gui_aux.windows import (
-                            object_menu,
-                            set_agent_kwargs,
-                        )
+                        try:
+                            from ...gui.gui_aux.windows import (
+                                object_menu,
+                                set_agent_kwargs,
+                            )
+                        except ImportError:
+                            # GUI is deprecated and not available
+                            vprint("GUI features are deprecated and not available", 1)
+                            continue
 
                         loc = tuple(
                             np.array(
@@ -817,7 +822,12 @@ class ScreenManager(ScreenAreaPygame):
             except:
                 pass
         elif k == "delete item":
-            from ...gui.gui_aux.windows import delete_objects_window
+            try:
+                from ...gui.gui_aux.windows import delete_objects_window
+            except ImportError:
+                # GUI is deprecated and not available
+                vprint("GUI features are deprecated and not available. Use alternative methods to delete items.", 1)
+                return
 
             if delete_objects_window(self.selected_agents):
                 for f in self.selected_agents:
@@ -830,7 +840,12 @@ class ScreenManager(ScreenAreaPygame):
             if len(self.selected_agents) > 0:
                 sel = self.selected_agents[0]
                 if isinstance(sel, Larva):
-                    from ...gui.gui_aux import DynamicGraph
+                    try:
+                        from ...gui.gui_aux import DynamicGraph
+                    except ImportError:
+                        # GUI is deprecated and not available
+                        vprint("GUI features are deprecated and not available. Dynamic graphs unavailable.", 1)
+                        return
 
                     self.dynamic_graphs.append(DynamicGraph(agent=sel))
         elif k == "odor gains":
@@ -839,7 +854,12 @@ class ScreenManager(ScreenAreaPygame):
                 from ..model.agents._larva_sim import LarvaSim
 
                 if isinstance(sel, LarvaSim) and sel.brain.olfactor is not None:
-                    from ...gui.gui_aux.windows import set_kwargs
+                    try:
+                        from ...gui.gui_aux.windows import set_kwargs
+                    except ImportError:
+                        # GUI is deprecated and not available
+                        vprint("GUI features are deprecated and not available. Cannot set odor gains.", 1)
+                        return
 
                     sel.brain.olfactor.gain = set_kwargs(
                         sel.brain.olfactor.gain, title="Odor gains"

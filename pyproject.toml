@@ -152,6 +152,9 @@ pythonpath = [ "src" ]
 
 [tool.coverage.run]
 branch = true
+omit = [
+  "src/larvaworld/gui/*",
+]
 
 [tool.coverage.report]
 exclude_lines = [

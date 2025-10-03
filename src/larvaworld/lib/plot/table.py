@@ -90,7 +90,7 @@ def modelConfTable(
             d0 = m.brain[k]
             if d0 is not None:
                 if k == "intermitter":
-                    d = MD.module_conf(mID=k, mode=d0.mode, as_entry=False, **d0)
+                    d = MD.module_conf(mID=k, as_entry=False, **d0)
                     run_mode = d["run_mode"]
                     for p in d.keylist:
                         if p == "run_dist" and run_mode == "stridechain":

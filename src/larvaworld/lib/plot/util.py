@@ -6,12 +6,13 @@ import itertools
 import os
 import warnings
 
+import matplotlib
+matplotlib.use('Agg')  # Set non-interactive backend for headless environments
+
 import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib import patches, transforms
-
-# matplotlib.use('Agg')
 
 from scipy.stats import mannwhitneyu
 
