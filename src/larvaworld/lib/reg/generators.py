@@ -680,9 +680,9 @@ class LabFormat(NestedConf):
 
     @property
     def import_func(self):
-        from .. import process
+        from ..process import lab_specific_import_functions as d
 
-        return process.lab_specific_import_functions[self.labID]
+        return d[self.labID]
 
     def import_data_to_dfs(
         self, parent_dir, raw_folder=None, merged=False, save_mode="semifull", **kwargs
@@ -740,9 +740,9 @@ class LabFormat(NestedConf):
             "step": step,
             "end": end,
         }
-        from .. import process
+        from ..process import LarvaDataset
 
-        d = process.LarvaDataset(**conf)
+        d = LarvaDataset(**conf)
         vprint(
             f"***-- Dataset {d.id} created with {len(d.config.agent_ids)} larvae! -----",
             1,
