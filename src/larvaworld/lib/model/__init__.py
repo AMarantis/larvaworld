@@ -6,12 +6,17 @@ modeling the nervous system, body and metabolism.
 
 __displayname__ = "Modeling"
 
-# Keep legacy access to subpackages but avoid star-imports at import time.
-from . import deb, modules, agents, envs, object  # noqa: F401
-from .object import *  # noqa: F401,F403 (public surface kept for backwards compatibility)
-
 # Provide a lazy facade for common classes historically re-exported from here.
 __all__ = [
+    # Subpackages (lazy loaded)
+    "deb",
+    "modules",
+    "agents",
+    "envs",
+    "object",
+    # object.py classes
+    "Object",
+    "GroupedObject",
     # envs.valuegrid
     "AnalyticalValueLayer",
     "GaussianValueLayer", 
@@ -50,6 +55,9 @@ __all__ = [
 ]
 
 _NAME_TO_MODULE = {
+    # object.py classes
+    "Object": "larvaworld.lib.model.object",
+    "GroupedObject": "larvaworld.lib.model.object",
     # envs.valuegrid
     "AnalyticalValueLayer": "larvaworld.lib.model.envs.valuegrid",
     "GaussianValueLayer": "larvaworld.lib.model.envs.valuegrid",
@@ -83,13 +91,30 @@ _NAME_TO_MODULE = {
     "DEB": "larvaworld.lib.model.deb.deb",
 }
 
+_SUBPACKAGES = {
+    "deb": "larvaworld.lib.model.deb",
+    "modules": "larvaworld.lib.model.modules",
+    "agents": "larvaworld.lib.model.agents",
+    "envs": "larvaworld.lib.model.envs",
+    "object": "larvaworld.lib.model.object",
+}
+
 
 def __getattr__(name):
+    from importlib import import_module
+    
+    # Check if it's a subpackage
+    if name in _SUBPACKAGES:
+        module_path = _SUBPACKAGES[name]
+        mod = import_module(module_path)
+        globals()[name] = mod
+        return mod
+    
+    # Check if it's a class/symbol
     module_path = _NAME_TO_MODULE.get(name)
     if module_path is None:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    from importlib import import_module
-
+    
     mod = import_module(module_path)
     obj = getattr(mod, name)
     globals()[name] = obj
