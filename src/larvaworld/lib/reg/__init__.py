@@ -135,6 +135,10 @@ class _ProcSpinner:
         import subprocess
         import shutil
 
+        # Check if spinner is disabled via environment variable
+        if os.getenv('LARVAWORLD_SHOW_PROGRESS', '1') == '0':
+            return  # Silent mode - no spinner
+
         # Create a temp directory with a sentinel file that the child polls
         self._sentinel_dir = tempfile.mkdtemp(prefix="lw_spin_")
         self._sentinel_path = os.path.join(self._sentinel_dir, "run")
