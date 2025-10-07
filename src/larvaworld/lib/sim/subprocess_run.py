@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Any
 import argparse
 import subprocess
 
@@ -8,7 +9,7 @@ from .. import util
 from ... import ROOT_DIR, SIM_DIR
 from ..process import LarvaDataset
 
-__all__ = [
+__all__: list[str] = [
     "Exec",
 ]
 
@@ -16,14 +17,14 @@ __all__ = [
 class Exec:
     def __init__(
         self,
-        mode,
-        conf,
-        experiment,
-        run_externally=True,
-        progressbar=None,
-        w_progressbar=None,
-        **kwargs,
-    ):
+        mode: str,
+        conf: dict,
+        experiment: str,
+        run_externally: bool = True,
+        progressbar: Any | None = None,
+        w_progressbar: Any | None = None,
+        **kwargs: Any,
+    ) -> None:
         self.run_externally = run_externally
         self.mode = mode
         self.conf = conf
@@ -32,12 +33,12 @@ class Exec:
         self.type = experiment
         self.done = False
 
-    def terminate(self):
+    def terminate(self) -> None:
         if self.process is not None:
             self.process.terminate()
             self.process.kill()
 
-    def run(self, **kwargs):
+    def run(self, **kwargs: Any) -> None:
         f0, f1 = (
             f"{ROOT_DIR}/lib/sim/exec_conf.txt",
             f"{ROOT_DIR}/lib/sim/exec_run.py",
@@ -50,7 +51,7 @@ class Exec:
             self.results = self.retrieve(res)
             self.done = True
 
-    def check(self):
+    def check(self) -> bool:
         if not self.done:
             if self.run_externally:
                 if self.process.poll() is not None:
@@ -61,7 +62,7 @@ class Exec:
         else:
             return True
 
-    def retrieve(self, res=None):
+    def retrieve(self, res: Any | None = None):
         if self.mode == "batch":
             if res is None and self.run_externally:
                 f = f'{SIM_DIR}/batch_runs/{self.type}/{self.conf["id"]}/results.h5'

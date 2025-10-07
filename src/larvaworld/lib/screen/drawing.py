@@ -1,6 +1,8 @@
 """
 Screen management for pygame-based simulation visualization
 """
+from __future__ import annotations
+from typing import Any
 
 import math
 import os
@@ -30,7 +32,7 @@ from ..param import (
 from ..screen import rendering as _rendering
 from ..screen import side_panel as _side_panel
 
-__all__ = [
+__all__: list[str] = [
     "MediaDrawOps",
     "AgentDrawOps",
     "ColorDrawOps",
@@ -69,7 +71,7 @@ class MediaDrawOps(NestedConf):
     show_display = Boolean(False, doc="Whether to launch the pygame-visualization.")
 
     @property
-    def active(self):
+    def active(self) -> bool:
         return (
             self.save_video
             or self.image_mode
@@ -78,24 +80,24 @@ class MediaDrawOps(NestedConf):
         )
 
     @property
-    def video_filepath(self):
+    def video_filepath(self) -> str | None:
         if self.media_dir is not None and self.video_file is not None:
             return f"{self.media_dir}/{self.video_file}.mp4"
         else:
             return None
 
     @property
-    def image_filepath(self):
+    def image_filepath(self) -> str | None:
         if self.media_dir is not None and self.image_file is not None:
             return f"{self.media_dir}/{self.image_file}.png"
         else:
             return None
 
     @property
-    def overlap_mode(self):
+    def overlap_mode(self) -> bool:
         return self.image_mode == "overlap"
 
-    def new_video_writer(self, fps, video_filepath=None):
+    def new_video_writer(self, fps: int, video_filepath: str | None = None) -> Any | None:
         if self.save_video:
             if video_filepath is None:
                 video_filepath = self.video_filepath
@@ -106,7 +108,7 @@ class MediaDrawOps(NestedConf):
             vid_writer = None
         return vid_writer
 
-    def new_image_writer(self, image_filepath=None):
+    def new_image_writer(self, image_filepath: str | None = None) -> Any | None:
         if self.image_mode:
             if image_filepath is None:
                 image_filepath = self.image_filepath
@@ -159,17 +161,17 @@ class ScreenOps(ColorDrawOps, AgentDrawOps, MediaDrawOps):
 
 
 class ScreenArea(Area2DPixel):
-    def __init__(self, model, **kwargs):
+    def __init__(self, model: Any, **kwargs: Any) -> None:
         self.model = model
         self.space_dims = self.model.p.env_params.arena.dims
         super().__init__(dims=util.get_window_dims(self.space_dims), **kwargs)
 
-    def space2screen_pos(self, pos):
+    def space2screen_pos(self, pos: Any) -> Any:
         return self.adjust_pos_to_area(
             pos=pos, area=self.model.space, scaling_factor=self.model.scaling_factor
         )
 
-    def get_rect_at_screen_pos(self, pos=(0, 0)):
+    def get_rect_at_screen_pos(self, pos: tuple[int, int] = (0, 0)) -> Any:
         return self.get_rect_at_pos(self.space2screen_pos(pos))
 
 
@@ -180,31 +182,31 @@ class ScreenAreaZoomable(ScreenArea):
     _scale = param.Parameter(np.array([[1.0, 0.0], [0.0, -1.0]]), doc="Scale of xy")
     _translation = param.Parameter(np.zeros(2), doc="Translation of xy")
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.set_bounds()
 
     @property
-    def display_size(self):
+    def display_size(self) -> tuple[int, int]:
         return (np.array(self.dims) / self.zoom).astype(int)
 
     @param.depends("zoom", "center", watch=True)
-    def set_bounds(self):
+    def set_bounds(self) -> None:
         s, z = self.model.scaling_factor, self.zoom
         rw, rh = self.w / self.space_dims[0], self.h / self.space_dims[1]
         self._scale = np.array([[rw, 0.0], [0.0, -rh]]) / z / s
         self._translation = np.array(self.dims) / 2 + self.center / z / s * [-rw, rh]
         self.center_lim = (z - 1) * s * np.array(self.space_dims) / 2
 
-    def _transform(self, position):
+    def _transform(self, position: Any) -> Any:
         return np.round(self._scale.dot(position) + self._translation).astype(int)
 
-    def move_center(self, dx=0, dy=0, pos=None):
+    def move_center(self, dx: float = 0, dy: float = 0, pos: Any | None = None) -> None:
         if pos is None:
             pos = self.center - self.center_lim * [dx, dy]
         self.center = np.clip(pos, self.center_lim, -self.center_lim)
 
-    def zoom_screen(self, sign, pos=None):
+    def zoom_screen(self, sign: int, pos: Any | None = None) -> None:
         d_zoom = -0.01 * sign
         if pos is None:
             pos = self.mouse_position
@@ -217,7 +219,7 @@ class ScreenAreaZoomable(ScreenArea):
             self.center = np.array([0.0, 0.0])
 
     @param.depends("zoom", watch=True)
-    def update_scale(self):
+    def update_scale(self) -> None:
         def closest(lst, k):
             return lst[min(range(len(lst)), key=lambda i: abs(lst[i] - k))]
 
@@ -264,7 +266,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
     caption = param.String("", doc="The caption of the screen window")
     scene = param.String(None, doc="The scene ID to be loaded from file")
 
-    def __init__(self, background_motion=None, **kwargs):
+    def __init__(self, background_motion: Any | None = None, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.bg = background_motion
 
@@ -297,17 +299,17 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
             self.bgimagerect = None
 
     @property
-    def mouse_position(self):
+    def mouse_position(self) -> Any:
         import pygame
         p = np.array(pygame.mouse.get_pos()) - self._translation
         return np.linalg.inv(self._scale).dot(p)
 
     @property
-    def new_display_surface(self):
+    def new_display_surface(self) -> Any:
         import pygame
         return pygame.Surface(self.display_size, pygame.SRCALPHA)
 
-    def _draw_arena(self, tank_color, screen_color):
+    def _draw_arena(self, tank_color: Any, screen_color: Any) -> None:
         import pygame
         surf1 = self.new_display_surface
         surf2 = self.new_display_surface
@@ -317,7 +319,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
         surf2.blit(surf1, (0, 0), special_flags=pygame.BLEND_RGBA_SUB)
         self.v.blit(surf2, (0, 0))
 
-    def init_screen(self):
+    def init_screen(self) -> Any:
         import pygame
         flags = pygame.HWSURFACE | pygame.DOUBLEBUF
         if self.show_display:
@@ -329,29 +331,29 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
         return v
 
     def draw_circle(
-        self, position=(0, 0), radius=0.1, color=(0, 0, 0), filled=True, width=0.01
-    ):
+        self, position: tuple[float, float] = (0, 0), radius: float = 0.1, color: Any = (0, 0, 0), filled: bool = True, width: float = 0.01
+    ) -> None:
         import pygame
         p = self._transform(position)
         r = int(self._scale[0, 0] * radius)
         w = 0 if filled else int(self._scale[0, 0] * width)
         pygame.draw.circle(self.v, color, p, r, w)
 
-    def draw_polygon(self, vertices, color=(0, 0, 0), filled=True, width=0.01):
+    def draw_polygon(self, vertices: list[tuple[float, float]] | Any, color: Any = (0, 0, 0), filled: bool = True, width: float = 0.01) -> None:
         if vertices is not None and len(vertices) > 1:
             import pygame
             vs = [self._transform(v) for v in vertices]
             w = 0 if filled else int(self._scale[0, 0] * width)
             pygame.draw.polygon(self.v, color, vs, w)
 
-    def draw_convex(self, points, **kwargs):
+    def draw_convex(self, points: Any, **kwargs: Any) -> None:
         from scipy.spatial import ConvexHull
 
         ps = np.array(points)
         vs = ps[ConvexHull(ps).vertices].tolist()
         self.draw_polygon(vs, **kwargs)
 
-    def draw_grid(self, all_vertices, colors, filled=True, width=0.01):
+    def draw_grid(self, all_vertices: list[list[tuple[float, float]]] | Any, colors: list[Any], filled: bool = True, width: float = 0.01) -> None:
         all_vertices = [
             [self._transform(v) for v in vertices] for vertices in all_vertices
         ]
@@ -359,7 +361,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
         for vs, c in zip(all_vertices, colors):
             pygame.draw.polygon(self.v, c, vs, w)
 
-    def draw_polyline(self, vertices, color=(0, 0, 0), closed=False, width=0.01):
+    def draw_polyline(self, vertices: list[tuple[float, float]], color: Any = (0, 0, 0), closed: bool = False, width: float = 0.01) -> None:
         import pygame
         vs = [self._transform(v) for v in vertices]
         w = int(self._scale[0, 0] * width)
@@ -369,7 +371,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
         else:
             pygame.draw.lines(self.v, color, closed=closed, points=vs, width=w)
 
-    def draw_line(self, start, end, color=(0, 0, 0), width=0.01):
+    def draw_line(self, start: tuple[float, float], end: tuple[float, float], color: Any = (0, 0, 0), width: float = 0.01) -> None:
         import pygame
         start = self._transform(start)
         end = self._transform(end)
@@ -377,8 +379,8 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
         pygame.draw.line(self.v, color, start, end, w)
 
     def draw_transparent_circle(
-        self, position=(0, 0), radius=0.1, color=(0, 0, 0, 125), filled=True, width=0.01
-    ):
+        self, position: tuple[float, float] = (0, 0), radius: float = 0.1, color: Any = (0, 0, 0, 125), filled: bool = True, width: float = 0.01
+    ) -> None:
         import pygame
         r = int(self._scale[0, 0] * radius)
         s = pygame.Surface((2 * r, 2 * r), pygame.HWSURFACE | pygame.SRCALPHA)
@@ -386,17 +388,17 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
         pygame.draw.circle(s, color, (r, r), radius, w)
         self.v.blit(s, self._transform(position) - r)
 
-    def draw_text_box(self, font, rect):
+    def draw_text_box(self, font: Any, rect: Any) -> None:
         import pygame
         self.v.blit(font, rect)
 
-    def draw_envelope(self, points, **kwargs):
+    def draw_envelope(self, points: list[tuple[float, float]], **kwargs: Any) -> None:
         vs = list(geometry.MultiPoint(points).envelope.exterior.coords)
         self.draw_polygon(vs, **kwargs)
 
     def draw_arrow_line(
-        self, start, end, color=(0, 0, 0), width=0.01, dl=0.02, phi=0, s=10
-    ):
+        self, start: tuple[float, float], end: tuple[float, float], color: Any = (0, 0, 0), width: float = 0.01, dl: float = 0.02, phi: float = 0, s: int = 10
+    ) -> None:
         import math
         a0 = math.atan2(end[1] - start[1], end[0] - start[0])
         l0 = np.sqrt((end[0] - start[0]) ** 2 + (end[1] - start[1]) ** 2)
@@ -419,7 +421,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
             pygame.draw.polygon(self.v, color, (p0, p1, p2))
             l += dl
 
-    def set_background(self):
+    def set_background(self) -> None:
         import pygame
         path = f"{ROOT_DIR}/lib/screen/background.png"
         print("Loading background image from", path)
@@ -430,7 +432,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
         self.th_max = int(self.v.get_height() / self.th) + 2
         self.tw_max = int(self.v.get_width() / self.tw) + 2
 
-    def draw_background(self, bg=[0, 0, 0]):
+    def draw_background(self, bg: list[float] = [0, 0, 0]) -> None:
         import pygame
         if self.bgimage is not None and self.bgimagerect is not None:
             x, y, a = bg
@@ -453,7 +455,7 @@ class ScreenManager(ScreenAreaPygame):
     Base class managing the pygame screen.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.selected_type = ""
         self.selected_agents = []
@@ -473,17 +475,17 @@ class ScreenManager(ScreenAreaPygame):
         self.img_writer = None
         self.initialized = False
 
-    def increase_fps(self):
+    def increase_fps(self) -> None:
         if self._fps < 60:
             self._fps += 1
         vprint(f"viewer.fps: {self._fps}", 1)
 
-    def decrease_fps(self):
+    def decrease_fps(self) -> None:
         if self._fps > 1:
             self._fps -= 1
         vprint(f"viewer.fps: {self._fps}", 1)
 
-    def draw_agents(self):
+    def draw_agents(self) -> None:
         """
         Draw the agents on the screen
         """
@@ -492,7 +494,7 @@ class ScreenManager(ScreenAreaPygame):
         for g in self.model.agents:
             g._draw(v=self)
 
-    def check(self, **kwargs):
+    def check(self, **kwargs: Any) -> None:
         """
         Check whether to initialize or close the display
         """
@@ -502,7 +504,7 @@ class ScreenManager(ScreenAreaPygame):
         elif self.close_requested():
             self.close()
 
-    def close(self):
+    def close(self) -> None:
         """
         Close the pygame display
         """
@@ -517,13 +519,13 @@ class ScreenManager(ScreenAreaPygame):
         return
 
     @staticmethod
-    def close_requested():
+    def close_requested() -> bool:
         import pygame
         if pygame.display.get_init():
             return pygame.event.peek(pygame.QUIT)
         return False
 
-    def render(self, **kwargs):
+    def render(self, **kwargs: Any) -> None:
         """
         Draw the display and evaluate user-input
         """
@@ -541,7 +543,7 @@ class ScreenManager(ScreenAreaPygame):
                 self.draw_aux()
                 self._render()
 
-    def _render(self):
+    def _render(self) -> Any:
         if self.show_display:
             import pygame
             pygame.display.flip()
@@ -557,7 +559,7 @@ class ScreenManager(ScreenAreaPygame):
             self.img_writer = None
         return image
 
-    def initialize(self, **kwargs):
+    def initialize(self, **kwargs: Any) -> None:
         """
         Initialize the pygame display
         """
@@ -574,7 +576,7 @@ class ScreenManager(ScreenAreaPygame):
         self.initialized = True
         vprint("Screen opened", 1)
 
-    def evaluate_graphs(self):
+    def evaluate_graphs(self) -> None:
         """
         Evaluation of dynamic graphs on the screen.
         """
@@ -585,23 +587,23 @@ class ScreenManager(ScreenAreaPygame):
                 del g
 
     @property
-    def screen_color(self):
+    def screen_color(self) -> tuple[int, int, int]:
         return (200, 200, 200) if not self.black_background else (50, 50, 50)
 
     @property
-    def tank_color(self):
+    def tank_color(self) -> Any:
         return util.Color.WHITE if not self.black_background else util.Color.BLACK
 
     @property
-    def sidepanel_color(self):
+    def sidepanel_color(self) -> Any:
         return util.Color.BLACK if not self.black_background else util.Color.WHITE
 
     @property
-    def snapshot_tick(self):
+    def snapshot_tick(self) -> bool:
         return (self.model.Nticks - 1) % self.snapshot_interval == 0
 
     @property
-    def snapshot_valid(self):
+    def snapshot_valid(self) -> bool:
         return (
             self.vis_mode == "image"
             and self.image_mode == "snapshots"
@@ -609,13 +611,13 @@ class ScreenManager(ScreenAreaPygame):
         )
 
     @property
-    def render_valid(self):
+    def render_valid(self) -> bool:
         m = self.vis_mode
         return (m == "image" and self.overlap_mode) or (
             m == "video" and (self.image_mode != "snapshots" or self.snapshot_tick)
         )
 
-    def step(self):
+    def step(self) -> None:
         self.check()
         if self.active:
             self.screen_clock.tick_clock()
@@ -624,7 +626,7 @@ class ScreenManager(ScreenAreaPygame):
             if self.snapshot_valid:
                 self.capture_snapshot()
 
-    def draw_arena_tank(self):
+    def draw_arena_tank(self) -> None:
         """
         Draw the tank of the arena with optional background
         """
@@ -633,7 +635,7 @@ class ScreenManager(ScreenAreaPygame):
             self.bg[:, self.model.t - 1] if self.bg is not None else [0, 0, 0]
         )
 
-    def toggle(self, name, value=None, show=False, minus=False, plus=False, disp=None):
+    def toggle(self, name: str, value: Any | None = None, show: bool = False, minus: bool = False, plus: bool = False, disp: Any | None = None) -> None:
         """
         Presentation of user-input-induced changes on screen
         """
@@ -691,7 +693,7 @@ class ScreenManager(ScreenAreaPygame):
         #
         #     m.eliminate_overlap()
 
-    def evaluate_input(self):
+    def evaluate_input(self) -> None:
         """
         Evaluation of user input through keyboard and mouse.
         """
@@ -767,7 +769,7 @@ class ScreenManager(ScreenAreaPygame):
                 pass
         # print(self.selected_agents)
 
-    def eval_keypress(self, k):
+    def eval_keypress(self, k: str) -> None:
         """
         Evaluation of keyboard input.
         """
@@ -870,7 +872,7 @@ class ScreenManager(ScreenAreaPygame):
         else:
             self.toggle(k)
 
-    def eval_selection(self, p, ctrl):
+    def eval_selection(self, p: Any, ctrl: Any) -> bool:
         """
         Selection of items on the screen by mouse-clicks.
         """
@@ -889,7 +891,7 @@ class ScreenManager(ScreenAreaPygame):
                 self.selected_agents.remove(f)
         return res
 
-    def build_aux(self):
+    def build_aux(self) -> None:
         """
         Generate additional items on screen
         """
@@ -964,7 +966,7 @@ class ScreenManager(ScreenAreaPygame):
 
         self.side_panel = _side_panel.SidePanel(self) if self.panel_width > 0 else None
 
-    def capture_snapshot(self):
+    def capture_snapshot(self) -> None:
         """
         Capture an image snapshot of the current display
         """
@@ -972,7 +974,7 @@ class ScreenManager(ScreenAreaPygame):
         self.toggle("snapshot #")
         self._render()
 
-    def draw_arena(self):
+    def draw_arena(self) -> None:
         """
         Draw the arena and sensory landscapes
         """
@@ -994,7 +996,7 @@ class ScreenManager(ScreenAreaPygame):
         for b in m.borders:
             b._draw(v=self)
 
-    def item_pos(self, item):
+    def item_pos(self, item: str) -> tuple[int, int]:
         item_pos_scale = util.AttrDict(
             {
                 "clock": (0.85, 0.94),
@@ -1005,7 +1007,7 @@ class ScreenManager(ScreenAreaPygame):
         assert item in item_pos_scale
         return self.get_relative_pos(item_pos_scale[item])
 
-    def item_textfonts(self):
+    def item_textfonts(self) -> None:
         rel_pos = {
             "clock": [
                 (0.85, 0.94),
@@ -1032,7 +1034,7 @@ class ScreenManager(ScreenAreaPygame):
 
         rel["text_center"] = rel[["text2pos", "pos"]].apply(temp2)
 
-    def draw_aux(self):
+    def draw_aux(self) -> None:
         """
         Draw additional items on screen
         """
@@ -1048,7 +1050,7 @@ class ScreenManager(ScreenAreaPygame):
         if self.side_panel is not None:
             self.side_panel.draw(self)
 
-    def load_scene_from_file(self, file_path, m):
+    def load_scene_from_file(self, file_path: str, m: Any) -> list[Any]:
         from ..model import Box, Wall
 
         obs = []
@@ -1105,7 +1107,7 @@ class ScreenManager(ScreenAreaPygame):
 
         return obs
 
-    def finalize(self):
+    def finalize(self) -> None:
         """
         Apply final actions before closing the screen manager
         """
@@ -1124,8 +1126,8 @@ class GA_ScreenManager(ScreenManager):
     """
 
     def __init__(
-        self, model, black_background=True, panel_width=600, scene="no_boxes", **kwargs
-    ):
+        self, model: Any, black_background: bool = True, panel_width: int = 600, scene: str = "no_boxes", **kwargs: Any
+    ) -> None:
         super().__init__(
             model=model,
             black_background=black_background,

@@ -1,10 +1,13 @@
 """
 Rendering and visualization on a pygame display
 """
+from __future__ import annotations
+
+from typing import Any
 
 from importlib import import_module
 
-__all__ = [
+__all__: list[str] = [
     "drawing",
     "rendering",
     "side_panel",
@@ -39,7 +42,7 @@ _SYMBOL_TO_MODULE = {
 }
 
 
-def __getattr__(name):
+def __getattr__(name: str) -> Any:
     # First treat submodule names
     module_path = _NAME_TO_MODULE.get(name)
     if module_path is not None:
@@ -56,7 +59,7 @@ def __getattr__(name):
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
-def __dir__():
+def __dir__() -> list[str]:
     return sorted(list(globals().keys()) + __all__)
 
 

@@ -1,6 +1,7 @@
 """
 Screen side-panel for pygame-based simulation visualization
 """
+from __future__ import annotations
 
 import math
 import os
@@ -11,7 +12,7 @@ os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 
 from .. import util
 
-__all__ = [
+__all__: list[str] = [
     "SidePanel",
 ]
 

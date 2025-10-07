@@ -1,16 +1,19 @@
+from __future__ import annotations
+
 import random
 
 import numpy as np
 from shapely import geometry
+from typing import Any, Optional
 
 from .. import util
 
-__all__ = [
+__all__: list[str] = [
     "get_exp_condition",
 ]
 
 
-def get_exp_condition(exp):
+def get_exp_condition(exp: str):
     d = {
         "PItrain_mini": PrefTrainCondition,
         "PItrain": PrefTrainCondition,
@@ -22,19 +25,19 @@ def get_exp_condition(exp):
 
 
 class ExpCondition:
-    def __init__(self, env):
+    def __init__(self, env: Any):
         self.env = env
 
-    def check(self):
+    def check(self) -> bool:
         return False
 
-    def set_state(self, text):
+    def set_state(self, text: str) -> None:
         try:
             self.env.screen_manager.screen_state.set_text(text)
         except:
             pass
 
-    def flash_text(self, text):
+    def flash_text(self, text: str) -> None:
         try:
             self.env.input_box.flash_text(text)
         except:

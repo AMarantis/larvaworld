@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 import random
 
 import numpy as np
+from typing import Any, Optional
 
 
 from .. import reg, util
 from ..param import Larva_Distro
 
-__all__ = [
+__all__: list[str] = [
     "sim_model",
     "sim_models",
 ]
@@ -14,7 +17,7 @@ __all__ = [
 __displayname__ = "Individual agent simulations"
 
 
-def sim_models(modelIDs, colors=None, groupIDs=None, lgs=None, data_dir=None, **kwargs):
+def sim_models(modelIDs: list[str], colors: Optional[list[str]] = None, groupIDs: Optional[list[str]] = None, lgs: Optional[list[Any]] = None, data_dir: Optional[str] = None, **kwargs: Any):
     N = len(modelIDs)
     if colors is None:
         colors = util.N_colors(N)
@@ -41,25 +44,25 @@ def sim_models(modelIDs, colors=None, groupIDs=None, lgs=None, data_dir=None, **
 
 
 def sim_model(
-    mID,
-    Nids=1,
-    refID=None,
-    refDataset=None,
-    imitation=False,
-    tor_durs=[],
-    dsp_starts=[0],
-    dsp_stops=[40],
-    enrichment=True,
-    parameter_dict={},
-    lg=None,
-    env_params={},
-    dir=None,
-    duration=3,
-    dt=1 / 16,
-    color="blue",
-    dataset_id=None,
-    **kwargs,
-):
+    mID: str,
+    Nids: int = 1,
+    refID: Optional[str] = None,
+    refDataset: Optional[Any] = None,
+    imitation: bool = False,
+    tor_durs: list[int] = [],
+    dsp_starts: list[int] = [0],
+    dsp_stops: list[int] = [40],
+    enrichment: bool = True,
+    parameter_dict: dict[str, Any] = {},
+    lg: Optional[Any] = None,
+    env_params: dict[str, Any] = {},
+    dir: Optional[str] = None,
+    duration: float = 3,
+    dt: float = 1 / 16,
+    color: str = "blue",
+    dataset_id: Optional[str] = None,
+    **kwargs: Any,
+) -> Any:
     Nticks = int(duration * 60 / dt)
     if refDataset is None and refID is not None:
         refID = refDataset.refID
@@ -102,7 +105,7 @@ def sim_model(
     return d
 
 
-def sim_single_agent(m, Nticks=1000, dt=0.1, df_columns=None, p0=None, fo0=None):
+def sim_single_agent(m: Any, Nticks: int = 1000, dt: float = 0.1, df_columns: Optional[list[str]] = None, p0: Optional[tuple[float, float]] = None, fo0: Optional[float] = None):
     from ..model import Locomotor, BaseController
 
     if fo0 is None:
@@ -162,7 +165,7 @@ def sim_single_agent(m, Nticks=1000, dt=0.1, df_columns=None, p0=None, fo0=None)
     return AA
 
 
-def sim_multi_agents(Nticks, Nids, ms, group_id, dt=0.1, ids=None, p0s=None, fo0s=None):
+def sim_multi_agents(Nticks: int, Nids: int, ms: list[Any], group_id: str, dt: float = 0.1, ids: Optional[list[str]] = None, p0s: Optional[list[tuple[float, float]]] = None, fo0s: Optional[list[float]] = None):
     df_columns = reg.getPar(
         ["b", "fo", "ro", "fov", "I_T", "x", "y", "d", "v", "A_T", "A_CT"]
     )

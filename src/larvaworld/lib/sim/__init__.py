@@ -1,10 +1,13 @@
 """
 Launchers of the diverse available simulation modes
 """
+from __future__ import annotations
+
+from typing import Any
 
 __displayname__ = "Simulation"
 
-__all__ = [
+__all__: list[str] = [
     "ABModel", "BaseRun", "ReplayRun",
     "ExpRun", "Exec",
     "BatchRun", "OptimizationOps",
@@ -25,7 +28,7 @@ _NAME_TO_MODULE = {
     "sim_model": "larvaworld.lib.sim.agent_simulations",
 }
 
-def __getattr__(name):
+def __getattr__(name: str) -> Any:
     module_path = _NAME_TO_MODULE.get(name)
     if module_path is None:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
@@ -36,5 +39,5 @@ def __getattr__(name):
     globals()[name] = obj
     return obj
 
-def __dir__():
+def __dir__() -> list[str]:
     return sorted(list(globals().keys()) + __all__)

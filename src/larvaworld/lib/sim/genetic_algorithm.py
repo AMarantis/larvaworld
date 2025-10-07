@@ -1,8 +1,9 @@
+from __future__ import annotations
+from typing import Any, List
 import math
 import multiprocessing
 import random
 import threading
-from typing import List
 import numpy as np
 import pandas as pd
 import param
@@ -18,7 +19,7 @@ from ..process import Evaluation
 from ..util import AttrDict
 from .base_run import BaseRun
 
-__all__ = [
+__all__: list[str] = [
     "GAevaluation",
     "GAselector",
     "GAlauncher",
@@ -26,7 +27,7 @@ __all__ = [
 ]
 
 
-def dst2source_evaluation(robot, source_xy):
+def dst2source_evaluation(robot: Any, source_xy: dict) -> float:
     traj = np.array(robot.trajectory)
     dst = np.sqrt(np.diff(traj[:, 0]) ** 2 + np.diff(traj[:, 1]) ** 2)
     cum_dst = np.sum(dst)
@@ -37,11 +38,11 @@ def dst2source_evaluation(robot, source_xy):
     return fitness
 
 
-def cum_dst(robot, **kwargs):
+def cum_dst(robot: Any, **kwargs: Any) -> float:
     return robot.cum_dst / robot.length
 
 
-def bend_error_exclusion(robot):
+def bend_error_exclusion(robot: Any) -> bool:
     if robot.body_bend_errors >= 20:
         return True
     else:
@@ -85,7 +86,7 @@ class GAevaluation(Evaluation):
         doc="The target metrics to optimize against",
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
 
         self.exclude_func = (
@@ -141,7 +142,7 @@ class GAselector(SpaceDict):
         doc="ID for the optimized model",
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         """
         Initialize the GeneticAlgorithm class.
 
@@ -180,7 +181,7 @@ class GAselector(SpaceDict):
                 + ")"
             )
 
-    def new_genome(self, gConf, mConf0):
+    def new_genome(self, gConf: dict, mConf0: AttrDict) -> AttrDict:
         """
         Create a new genome with the given genetic and mutation configurations.
 
@@ -198,7 +199,7 @@ class GAselector(SpaceDict):
             {"fitness": None, "fitness_dict": {}, "gConf": gConf, "mConf": mConf}
         )
 
-    def create_new_generation(self, sorted_gs):
+    def create_new_generation(self, sorted_gs: list) -> list:
         """
         Create a new generation of genomes using elitism and crossover.
 
@@ -237,7 +238,7 @@ class GAselector(SpaceDict):
             gs.append(g0)
         return gs
 
-    def create_generation(self, sorted_gs=None):
+    def create_generation(self, sorted_gs: list | None = None) -> dict:
         """
         Creates a new generation of genomes.
 
@@ -261,7 +262,7 @@ class GAselector(SpaceDict):
 
 
 class GAlauncher(BaseRun):
-    def __init__(self, dataset=None, evaluator=None, **kwargs):
+    def __init__(self, dataset: Any | None = None, evaluator: Any | None = None, **kwargs: Any):
         """
         Simulation mode 'Ga' launches a genetic algorith optimization simulation of a specified agent model.
         """
@@ -271,7 +272,7 @@ class GAlauncher(BaseRun):
         self.evaluator = evaluator
         self.selector = GAselector(**self.p.ga_select_kws)
 
-    def setup(self):
+    def setup(self) -> None:
         """
         Initializes the genetic algorithm setup.
 
@@ -334,7 +335,7 @@ class GAlauncher(BaseRun):
             self.sim_step()
         return self.best_genome
 
-    def build_generation(self, sorted_genomes=None):
+    def build_generation(self, sorted_genomes: dict | None = None) -> None:
         """
         Builds a new generation of genomes for the genetic algorithm.
 
@@ -434,7 +435,7 @@ class GAlauncher(BaseRun):
             # reg.vprint(f'Generation {Ngen} evaluated', 1)
             return sorted_gs
 
-    def store(self, sorted_gs, Ngen):
+    def store(self, sorted_gs: list, Ngen: int) -> None:
         """
         Stores the best genome from the current generation and updates the best fitness value.
         Optionally, stores data for all genomes in the current generation.
@@ -466,7 +467,7 @@ class GAlauncher(BaseRun):
             ]
 
     @property
-    def generation_completed(self):
+    def generation_completed(self) -> bool:
         """
         Check if the current generation is completed.
 
@@ -481,7 +482,7 @@ class GAlauncher(BaseRun):
         return self.t >= self.Nsteps or len(self.agents) <= self.selector.Nagents_min
 
     @property
-    def max_generation_completed(self):
+    def max_generation_completed(self) -> bool:
         """
         Check if the maximum number of generations has been completed.
 
@@ -494,7 +495,7 @@ class GAlauncher(BaseRun):
             and self.generation_num >= self.selector.Ngenerations
         )
 
-    def sim_step(self):
+    def sim_step(self) -> None:
         """
         Advances the simulation by one step.
 
@@ -515,7 +516,7 @@ class GAlauncher(BaseRun):
             else:
                 self.finalize()
 
-    def step(self):
+    def step(self) -> None:
         """
         Executes a single step of the genetic algorithm simulation.
 
@@ -536,7 +537,7 @@ class GAlauncher(BaseRun):
                 if self.evaluator.exclude_func(robot):
                     robot.genome.fitness = -np.inf
 
-    def end(self):
+    def end(self) -> None:
         """
         Finalizes the current generation by performing the following steps:
         1. Records the end time of the generation and calculates its duration.
@@ -571,7 +572,7 @@ class GAlauncher(BaseRun):
         gen_eval_dur = self.end_generation_eval_time - self.prestart_generation_time
         vprint(f"Generation {self.generation_num} evaluated in {gen_eval_dur} sec", 1)
 
-    def update(self):
+    def update(self) -> None:
         """
         Updates the state of the genetic algorithm simulation.
 
@@ -584,7 +585,7 @@ class GAlauncher(BaseRun):
         self.agents.nest_record(self.collectors["step"])
         # self.gen_progressbar.update(self.t)
 
-    def finalize(self):
+    def finalize(self) -> None:
         """
         Finalizes the genetic algorithm simulation.
 
@@ -695,22 +696,22 @@ class GA_thread(threading.Thread):
         threading.Thread.__init__(self)
         self.robots = robots
 
-    def step(self):
+    def step(self) -> None:
         for robot in self.robots:
             robot.step()
 
 
 def optimize_mID(
-    mID0,
-    ks,
-    evaluator,
-    mID1=None,
-    experiment="exploration",
-    Nagents=10,
-    Nelits=2,
-    Ngenerations=3,
-    duration=0.5,
-    **kwargs,
+    mID0: str,
+    ks: list[str],
+    evaluator: Any,
+    mID1: str | None = None,
+    experiment: str = "exploration",
+    Nagents: int = 10,
+    Nelits: int = 2,
+    Ngenerations: int = 3,
+    duration: float = 0.5,
+    **kwargs: Any,
 ):
     """
     Optimize a model configuration (stored under a unique ID) using a genetic algorithm.

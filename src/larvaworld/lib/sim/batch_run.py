@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Any
 
 import itertools
 
@@ -12,7 +13,7 @@ from .. import reg, util
 from ..param import ClassAttr, NestedConf, PositiveInteger, PositiveNumber
 from ..plot import plot_2d, plot_3pars, plot_heatmap_PI
 
-__all__ = [
+__all__: list[str] = [
     "OptimizationOps",
     "BatchRun",
     "space_search_sample",
@@ -33,7 +34,7 @@ class OptimizationOps(NestedConf):
         objects=["mean", "std"], doc="The operator to apply across agents"
     )
 
-    def check(self, fits):
+    def check(self, fits: Any) -> None:
         if fits.shape[0] >= self.max_Nsims:
             vprint("Maximum number of simulations reached. Halting search", 2)
         elif self.threshold_reached:
@@ -42,7 +43,7 @@ class OptimizationOps(NestedConf):
             vprint("Not reached threshold. Expanding space search", 2)
             pass
 
-    def threshold_reached(self, fits):
+    def threshold_reached(self, fits: Any) -> bool:
         if self.minimize:
             return np.nanmin(fits) <= self.threshold
         else:
@@ -54,15 +55,15 @@ class BatchRun(reg.generators.SimConfiguration, ap.Experiment):
 
     def __init__(
         self,
-        experiment,
-        space_search,
-        id=None,
-        space_kws={},
-        exp=None,
-        exp_kws={},
-        store_data=False,
-        **kwargs,
-    ):
+        experiment: str,
+        space_search: dict[str, Any],
+        id: str | None = None,
+        space_kws: dict[str, Any] = {},
+        exp: Any = None,
+        exp_kws: dict[str, Any] = {},
+        store_data: bool = False,
+        **kwargs: Any,
+    ) -> None:
         """
         Simulation mode 'Batch' launches a batch-run of a specified experiment type that performs a parameter-space search.
         Extends the agentpy.Experiment class.
@@ -105,7 +106,7 @@ class BatchRun(reg.generators.SimConfiguration, ap.Experiment):
         self.results = None
         self.figs = {}
 
-    def _single_sim(self, run_id):
+    def _single_sim(self, run_id: Any):
         """Perform a single simulation."""
         i = 0 if run_id[0] is None else run_id[0]
         m = self.model(
@@ -120,7 +121,7 @@ class BatchRun(reg.generators.SimConfiguration, ap.Experiment):
             del m.output["variables"]  # Remove dynamic variables from record
         return m.output
 
-    def default_processing(self, d=None):
+    def default_processing(self, d: Any | None = None):
         P = self.optimization
         p = P.fit_par
         if p in d.end_ps:
@@ -139,7 +140,7 @@ class BatchRun(reg.generators.SimConfiguration, ap.Experiment):
             raise ValueError("An operator must be set to True")
         return fit
 
-    def end(self):
+    def end(self) -> None:
         self.par_df = self.output._combine_pars()
         self.par_names = self.par_df.columns.values.tolist()
 
@@ -151,7 +152,7 @@ class BatchRun(reg.generators.SimConfiguration, ap.Experiment):
         except:
             pass
 
-    def simulate(self, **kwargs):
+    def simulate(self, **kwargs: Any):
         self.run(**kwargs)
         if "PI" in self.experiment:
             self.PI_heatmap()
@@ -159,7 +160,7 @@ class BatchRun(reg.generators.SimConfiguration, ap.Experiment):
         util.storeH5(self.par_df, key="results", path=self.df_path, mode="w")
         return self.par_df, self.figs
 
-    def plot_results(self):
+    def plot_results(self) -> None:
         p_ns = self.par_names
         target_ns = [p for p in self.par_df.columns if p not in p_ns]
         kws = {"df": self.par_df, "save_to": self.plot_dir, "show": True}
@@ -174,7 +175,7 @@ class BatchRun(reg.generators.SimConfiguration, ap.Experiment):
                         plot_3pars(vars=list(pair), target=t, pref=f"{i}_{t}", **kws)
                     )
 
-    def PI_heatmap(self, **kwargs):
+    def PI_heatmap(self, **kwargs: Any) -> None:
         PIs = [self.datasets[i][0].config.PI["PI"] for i in self.par_df.index]
         Lgains = self.par_df.values[:, 0].astype(int)
         Rgains = self.par_df.values[:, 1].astype(int)
@@ -189,7 +190,7 @@ class BatchRun(reg.generators.SimConfiguration, ap.Experiment):
         self.figs["PI_heatmap"] = plot_heatmap_PI(save_to=self.plot_dir, z=df, **kwargs)
 
 
-def space_search_sample(space_dict, n=1, **kwargs):
+def space_search_sample(space_dict: dict[str, Any], n: int = 1, **kwargs: Any):
     D = {}
     for p, args in space_dict.items():
         if not isinstance(args, dict) or ("values" not in args and "range" not in args):

@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Any
 
 import copy
 
@@ -8,13 +9,13 @@ from .. import reg, util
 from .base_run import BaseRun
 from ..util import nam
 
-__all__ = [
+__all__: list[str] = [
     "ReplayRun",
 ]
 
 
 class ReplayRun(BaseRun):
-    def __init__(self, parameters, dataset=None, screen_kws={}, **kwargs):
+    def __init__(self, parameters: Any, dataset: Any | None = None, screen_kws: dict = {}, **kwargs: Any):
         """
         Simulation mode 'Replay' reconstructs a real or simulated experiment from stored data.
 
@@ -69,12 +70,12 @@ class ReplayRun(BaseRun):
         )
         return text
 
-    def setup(self):
+    def setup(self) -> None:
         self.draw_Nsegs = self.p.draw_Nsegs
         self.build_env(self.p.env_params)
         self.build_agents(d=self.refDataset)
 
-    def build_agents(self, d):
+    def build_agents(self, d: Any) -> None:
         s, e, c = d.data
 
         if "length" in e.columns:
@@ -127,11 +128,11 @@ class ReplayRun(BaseRun):
             confs.append(conf)
         self.place_agents(confs)
 
-    def step(self):
+    def step(self) -> None:
         """Defines the models' events per simulation step."""
         self.agents.step()
 
-    def end(self):
+    def end(self) -> None:
         self.screen_manager.finalize()
 
     """
