@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import Any, Optional
+
 import os
 import warnings
 
@@ -32,7 +35,7 @@ else:
 from .. import reg, util
 from ..util import nam
 
-__all__ = [
+__all__: list[str] = [
     "SAMPLING_PARS",
     "sample_ps",
     "get_LarvaworldParam",
@@ -382,7 +385,7 @@ SAMPLING_PARS = util.bidict(
 )
 
 
-def sample_ps(ps, e=None):
+def sample_ps(ps: list[str], e: Optional[Any] = None) -> list[str]:
     """
     Get the parameters from the given list `ps` that exist on the inverse `SAMPLING_PARS` dictionary.
 
@@ -401,7 +404,7 @@ def sample_ps(ps, e=None):
     return ps
 
 
-def get_vfunc(dtype, lim, vs):
+def get_vfunc(dtype: Any, lim: Any, vs: Any):
     """
     Returns the appropriate Param class based on the provided data type, value limit, and value options.
 
@@ -443,7 +446,7 @@ def get_vfunc(dtype, lim, vs):
         return param.Parameter
 
 
-def vpar(vfunc, v0, doc, lab, lim, dv, vs):
+def vpar(vfunc: Any, v0: Any, doc: str, lab: str, lim: Any, dv: Any, vs: Any):
     """
     Create a parameter object with specified attributes.
 
@@ -476,28 +479,28 @@ def vpar(vfunc, v0, doc, lab, lim, dv, vs):
 
 
 def prepare_LarvaworldParam(
-    p,
-    k=None,
-    dtype=float,
-    d=None,
-    disp=None,
-    sym=None,
-    codename=None,
-    lab=None,
-    doc=None,
-    flatname=None,
-    required_ks=[],
-    u=reg.units.dimensionless,
-    v0=None,
-    v=None,
-    lim=None,
-    dv=None,
-    vs=None,
-    vfunc=None,
-    vparfunc=None,
-    func=None,
-    **kwargs,
-):
+    p: str,
+    k: Optional[str] = None,
+    dtype: Any = float,
+    d: Optional[str] = None,
+    disp: Optional[str] = None,
+    sym: Optional[str] = None,
+    codename: Optional[str] = None,
+    lab: Optional[str] = None,
+    doc: Optional[str] = None,
+    flatname: Optional[str] = None,
+    required_ks: list[str] = [],
+    u: Any = reg.units.dimensionless,
+    v0: Any = None,
+    v: Any = None,
+    lim: Any = None,
+    dv: Any = None,
+    vs: Any = None,
+    vfunc: Any = None,
+    vparfunc: Any = None,
+    func: Any = None,
+    **kwargs: Any,
+) -> util.AttrDict:
     """
     Method that formats the dictionary of attributes for a parameter in order to create a LarvaworldParam instance.
 
@@ -593,7 +596,7 @@ def prepare_LarvaworldParam(
     )
 
 
-def build_LarvaworldParam(p, **kwargs):
+def build_LarvaworldParam(p: str, **kwargs: Any) -> LarvaworldParam:
     """
     Constructs a Larvaworld parameter object.
 

@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import Any, Optional
+
 import shutil
 
 from .... import SIM_DIR
@@ -7,7 +10,7 @@ from ...param import Larva_Distro
 # LarvaGroup import - deep import required due to circular dependency
 from ...reg.larvagroup import LarvaGroup
 
-__all__ = [
+__all__: list[str] = [
     "Essay_dict",
     "Essay",
     "RvsS_Essay", 
@@ -19,15 +22,15 @@ __all__ = [
 class Essay:
     def __init__(
         self,
-        type,
-        essay_id=None,
-        N=5,
+        type: str,
+        essay_id: Optional[str] = None,
+        N: int = 5,
         enrichment=None,
-        collections=["pose", "brain"],
-        screen_kws={},
-        show=False,
-        **kwargs,
-    ):
+        collections: list[str] = ["pose", "brain"],
+        screen_kws: dict[str, Any] = {},
+        show: bool = False,
+        **kwargs: Any,
+    ) -> None:
         if enrichment is None:
             enrichment = reg.gen.EnrichConf().nestedConf
         self.screen_kws = screen_kws
@@ -47,7 +50,7 @@ class Essay:
         self.figs = {}
         self.results = {}
 
-    def conf(self, exp, id, dur, lgs, env, **kwargs):
+    def conf(self, exp: str, id: str, dur: float, lgs: Any, env: Any, **kwargs: Any):
         return reg.gen.Exp(
             duration=dur,
             env_params=env,

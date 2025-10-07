@@ -3,6 +3,9 @@ Parameter-computing functions.
 Contains functions that compute/derive higher-order parameters from the existing ones in the dataset.
 """
 
+from __future__ import annotations
+from typing import Any
+
 import copy
 
 import numpy as np
@@ -10,7 +13,7 @@ import numpy as np
 from .. import util, funcs
 from ..util import nam
 
-__all__ = [
+__all__: list[str] = [
     "track_par_func",
     "chunk_func",
     "dsp_func",
@@ -32,7 +35,7 @@ __all__ = [
 
 
 @funcs.param("track_par")
-def track_par_func(chunk, par):
+def track_par_func(chunk: str, par: str):
     def func(d):
         d.track_par_in_chunk(chunk, par)
 
@@ -40,7 +43,7 @@ def track_par_func(chunk, par):
 
 
 @funcs.param("chunk")
-def chunk_func(kc):
+def chunk_func(kc: str) -> util.AttrDict:
     if kc in ["str", "pau", "exec", "str_c", "run"]:
 
         def func(d):
@@ -60,7 +63,7 @@ def chunk_func(kc):
 
 
 @funcs.param("dsp")
-def dsp_func(range):
+def dsp_func(range: tuple[int, int]):
     r0, r1 = range
 
     def func(d):
@@ -70,7 +73,7 @@ def dsp_func(range):
 
 
 @funcs.param("tor")
-def tor_func(dur):
+def tor_func(dur: int):
     def func(d):
         d.comp_tortuosity(dur)
 
@@ -78,7 +81,7 @@ def tor_func(dur):
 
 
 @funcs.param("mean")
-def mean_func(par):
+def mean_func(par: str):
     def func(d):
         d.e[nam.mean(par)] = d.s[par].dropna().groupby("AgentID").mean()
 
@@ -86,7 +89,7 @@ def mean_func(par):
 
 
 @funcs.param("std")
-def std_func(par):
+def std_func(par: str):
     def func(d):
         d.e[nam.std(par)] = d.s[par].dropna().groupby("AgentID").std()
 
@@ -94,7 +97,7 @@ def std_func(par):
 
 
 @funcs.param("var")
-def var_func(par):
+def var_func(par: str):
     def func(d):
         d.e[nam.var(par)] = (
             d.s[par].dropna().groupby("AgentID").mean()
@@ -105,7 +108,7 @@ def var_func(par):
 
 
 @funcs.param("min")
-def min_func(par):
+def min_func(par: str):
     def func(d):
         d.e[nam.min(par)] = d.s[par].dropna().groupby("AgentID").min()
 
@@ -113,7 +116,7 @@ def min_func(par):
 
 
 @funcs.param("max")
-def max_func(par):
+def max_func(par: str):
     def func(d):
         d.e[nam.max(par)] = d.s[par].dropna().groupby("AgentID").max()
 
@@ -121,7 +124,7 @@ def max_func(par):
 
 
 @funcs.param("final")
-def fin_func(par):
+def fin_func(par: str):
     def func(d):
         d.e[nam.final(par)] = d.s[par].dropna().groupby("AgentID").last()
 
@@ -129,7 +132,7 @@ def fin_func(par):
 
 
 @funcs.param("initial")
-def init_func(par):
+def init_func(par: str):
     def func(d):
         d.e[nam.initial(par)] = d.s[par].dropna().groupby("AgentID").first()
 
@@ -137,7 +140,7 @@ def init_func(par):
 
 
 @funcs.param("cum")
-def cum_func(par):
+def cum_func(par: str):
     def func(d):
         d.e[nam.cum(par)] = d.s[par].dropna().groupby("AgentID").sum()
 
@@ -145,7 +148,7 @@ def cum_func(par):
 
 
 @funcs.param("freq")
-def freq_func(par):
+def freq_func(par: str):
     def func(d):
         d.comp_freq(par=par, fr_range=(0.0, +np.inf))
 
@@ -153,7 +156,7 @@ def freq_func(par):
 
 
 @funcs.param("tr")
-def tr_func(pc):
+def tr_func(pc: str):
     def func(d):
         d.e[nam.dur_ratio(pc)] = d.e[nam.cum(nam.dur(pc))] / d.e[nam.cum(nam.dur(""))]
 
@@ -161,7 +164,7 @@ def tr_func(pc):
 
 
 @funcs.param("unwrap")
-def unwrap_func(par, in_deg):
+def unwrap_func(par: str, in_deg: bool):
     def func(d):
         s = copy.deepcopy(d.s[par])
         d.s[nam.unwrap(par)] = util.apply_per_level(s, util.unwrap_deg).flatten()
@@ -170,7 +173,7 @@ def unwrap_func(par, in_deg):
 
 
 @funcs.param("dst")
-def dst_func(point=""):
+def dst_func(point: str = ""):
     def func(d):
         util.compute_dst(d.s, point)
 
@@ -178,7 +181,7 @@ def dst_func(point=""):
 
 
 @funcs.param("vel")
-def func_v_spatial(p_d, p_v):
+def func_v_spatial(p_d: str, p_v: str):
     def func(d):
         d.s[p_v] = d.s[p_d] / d.c.dt
 

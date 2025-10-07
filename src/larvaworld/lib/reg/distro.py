@@ -1,3 +1,11 @@
+"""
+Distribution database, registry and associated methods.
+This modules provides classes and methods for managing and generating distributions.
+"""
+
+from __future__ import annotations
+from typing import Any, Optional
+import typing
 import os
 import warnings
 
@@ -12,13 +20,6 @@ else:
         DeprecationWarning,
         stacklevel=2,
     )
-"""
-Distribution database, registry and associated methods.
-This modules provides classes and methods for managing and generating distributions.
-"""
-
-import typing
-import warnings
 
 import numpy as np
 import powerlaw
@@ -28,7 +29,7 @@ from scipy.stats import ks_2samp, levy, norm, rv_discrete
 from .. import reg, util
 from ..util import nam
 
-__all__ = [
+__all__: list[str] = [
     "distroDB",
     "get_dist",
     "fit_bout_distros",
@@ -239,7 +240,7 @@ def generate_distro_database():
 distroDB = generate_distro_database()
 
 
-def get_dist(k, k0="intermitter", v=None, return_tabrows=False, return_all=False):
+def get_dist(k: str, k0: str = "intermitter", v: Any = None, return_tabrows: bool = False, return_all: bool = False):
     """
     Retrieve a distribution from the database.
 
@@ -314,18 +315,18 @@ def get_dist(k, k0="intermitter", v=None, return_tabrows=False, return_all=False
 
 
 def fit_bout_distros(
-    x0,
-    xmin=None,
-    xmax=None,
-    discrete=False,
-    xmid=np.nan,
-    overlap=0.0,
-    Nbins=64,
-    print_fits=False,
-    bout="pause",
-    combine=True,
-    fit_by="pdf",
-    eval_func_id="KS2",
+    x0: np.ndarray,
+    xmin: Optional[float] = None,
+    xmax: Optional[float] = None,
+    discrete: bool = False,
+    xmid: float = np.nan,
+    overlap: float = 0.0,
+    Nbins: int = 64,
+    print_fits: bool = False,
+    bout: str = "pause",
+    combine: bool = True,
+    fit_by: str = "pdf",
+    eval_func_id: str = "KS2",
 ):
     """
     Fits various distributions to the given data and evaluates their goodness of fit.
@@ -714,7 +715,7 @@ class BoutGenerator:
     Class for generating behavioral epochs of given temporal-duration distribution
     """
 
-    def __init__(self, name, range, dt, **kwargs):
+    def __init__(self, name: str, range: tuple[float, float], dt: float, **kwargs: Any):
         self.name = name
         self.dt = dt
         self.range = range
@@ -724,11 +725,11 @@ class BoutGenerator:
 
         self.dist = self.build(**self.args)
 
-    def sample(self, size=1):
+    def sample(self, size: int = 1):
         vs = self.dist.rvs(size=size) * self.dt
         return vs[0] if size == 1 else vs
 
-    def build(self, **kwargs):
+    def build(self, **kwargs: Any):
         x0, x1 = int(self.xmin / self.dt), int(self.xmax / self.dt)
         xx = np.arange(x0, x1 + 1)
         pmf = distroDB[self.name]["pdf"](xx * self.dt, **kwargs)
@@ -738,6 +739,6 @@ class BoutGenerator:
         pmf /= pmf.sum()
         return rv_discrete(values=(xx, pmf))
 
-    def get(self, x, mode):
+    def get(self, x: np.ndarray, mode: str):
         func = distroDB[self.name][mode]
         return func(x=x, **self.args)

@@ -6,6 +6,9 @@ Only the relevant columns of the double-index stepwise pandas dataframe are used
 See below for further explanation
 """
 
+from __future__ import annotations
+from typing import Any, Optional
+
 import warnings
 from datetime import datetime, timedelta
 import movingpandas as mpd
@@ -18,7 +21,7 @@ from ... import vprint
 from ..process.dataset import BaseLarvaDataset
 from .. import reg, util
 
-__all__ = ["GeoLarvaDataset"]
+__all__: list[str] = ["GeoLarvaDataset"]
 
 
 class GeoLarvaDataset(BaseLarvaDataset, mpd.TrajectoryCollection):
@@ -37,7 +40,7 @@ class GeoLarvaDataset(BaseLarvaDataset, mpd.TrajectoryCollection):
 
     """
 
-    def __init__(self, step=None, dt=None, **kwargs):
+    def __init__(self, step: Optional[pd.DataFrame] = None, dt: Optional[float] = None, **kwargs: Any) -> None:
         if step is not None:
             self.init_mpd(step, dt=dt)
         BaseLarvaDataset.__init__(self, **kwargs)
@@ -46,7 +49,7 @@ class GeoLarvaDataset(BaseLarvaDataset, mpd.TrajectoryCollection):
     # def default_filename(self):
     #     return 'geodata'
 
-    def init_gdf(self, step, dt):
+    def init_gdf(self, step: pd.DataFrame, dt: float):
         import geopandas as gpd
         from pint_pandas import PintType
         if len(step.index.names) != 1 or "datetime" not in step.index.names:
@@ -73,7 +76,7 @@ class GeoLarvaDataset(BaseLarvaDataset, mpd.TrajectoryCollection):
         gdf = gdf.set_geometry("xy")
         return gdf
 
-    def init_mpd(self, step, dt):
+    def init_mpd(self, step: pd.DataFrame, dt: float) -> None:
         gdf = self.init_gdf(step, dt)
         mpd.TrajectoryCollection.__init__(self, gdf, traj_id_col="AgentID")
 
@@ -85,7 +88,7 @@ class GeoLarvaDataset(BaseLarvaDataset, mpd.TrajectoryCollection):
             # print(tr.df.xy.iloc[-1])
         # raise
 
-    def set_data(self, step=None, end=None, **kwargs):
+    def set_data(self, step: Optional[pd.DataFrame] = None, end: Optional[pd.DataFrame] = None, **kwargs: Any) -> None:
         """
         Drop the Nan timesteps. This is extremely convenient as the geopandas handles unequal trajectories easily
         Build three shapely geometries :

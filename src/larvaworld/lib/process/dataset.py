@@ -2,6 +2,9 @@
 Basic classes for larvaworld-format datasets
 """
 
+from __future__ import annotations
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
+
 import copy
 import itertools
 import os
@@ -32,7 +35,7 @@ from ..param import (
 )
 from ..util import AttrDict, SuperList, nam
 
-__all__ = [
+__all__: list[str] = [
     "DatasetConfig",
     "ParamLarvaDataset",
     "BaseLarvaDataset",
@@ -45,6 +48,9 @@ class DatasetConfig(RuntimeDataOps, SimMetricOps, SimTimeOps):
     """
     The configuration of a LarvaDataset.
     """
+
+    def __init__(self, **kwargs: Any) -> None:  # type: ignore[override]
+        super().__init__(**kwargs)
 
     Nticks = OptionalPositiveInteger(default=None)
     refID = param.String(None, doc="The unique ID of the reference dataset")
@@ -189,7 +195,7 @@ class ParamLarvaDataset(param.Parameterized):
         default=AttrDict(), item_type=None, doc="Additional dataset metadata"
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         if "config" not in kwargs:
             kws = AttrDict()
             for k in DatasetConfig().param_keys:
@@ -2240,7 +2246,7 @@ class ParamLarvaDataset(param.Parameterized):
 
 class BaseLarvaDataset(ParamLarvaDataset):
     @staticmethod
-    def initGeo(to_Geo=False, **kwargs):
+    def initGeo(to_Geo: bool = False, **kwargs: Any) -> "BaseLarvaDataset":
         if to_Geo:
             try:
                 from importlib import import_module
@@ -2255,16 +2261,16 @@ class BaseLarvaDataset(ParamLarvaDataset):
 
     def __init__(
         self,
-        dir=None,
-        refID=None,
-        load_data=True,
-        config=None,
-        step=None,
-        end=None,
-        agents=None,
-        initialize=False,
-        **kwargs,
-    ):
+        dir: Optional[str] = None,
+        refID: Optional[str] = None,
+        load_data: bool = True,
+        config: Optional[AttrDict] = None,
+        step: Optional[pd.DataFrame] = None,
+        end: Optional[pd.DataFrame] = None,
+        agents: Optional[list[str]] = None,
+        initialize: bool = False,
+        **kwargs: Any,
+    ) -> None:
         """
         Dataset class that stores a single experiment, real or simulated.
         Metadata and configuration parameters are stored in the 'config' dictionary.
@@ -2389,7 +2395,7 @@ class BaseLarvaDataset(ParamLarvaDataset):
 
 
 class LarvaDataset(BaseLarvaDataset):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         """
         This is the default dataset class. Timeseries are stored as a pd.Dataframe 'step_data' with a 2-level index : 'Step' for the timestep index and 'AgentID' for the agent unique ID.
         Data is stored as a single HDF5 file or as nested dictionaries. The core file is 'data.h5' with keys like 'step' for timeseries and 'end' for endpoint metrics.
@@ -2486,8 +2492,13 @@ class LarvaDataset(BaseLarvaDataset):
 
 class LarvaDatasetCollection:
     def __init__(
-        self, labels=None, colors=None, add_samples=False, config=None, **kwargs
-    ):
+        self,
+        labels: Optional[list[str]] = None,
+        colors: Optional[list[Any]] = None,
+        add_samples: bool = False,
+        config: Optional[AttrDict] = None,
+        **kwargs: Any,
+    ) -> None:
         ds = self.get_datasets(**kwargs)
 
         for d in ds:

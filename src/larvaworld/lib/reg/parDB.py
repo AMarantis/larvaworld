@@ -2,13 +2,16 @@
 Larvaworld parameter database
 """
 
+from __future__ import annotations
+from typing import Any, Optional
+
 import numpy as np
 import param
 
 from .. import reg, util, funcs
 from ..util import AttrDict, SuperList, nam
 
-__all__ = [
+__all__: list[str] = [
     "output_keys",
     "output_dict",
     "ParamClass",
@@ -116,7 +119,7 @@ class ParamClass:
     Class to store Larvaworld parameters in a database
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.func_dict = funcs.param_computing
         self.k_ops = AttrDict(
             {
@@ -132,7 +135,7 @@ class ParamClass:
         )
         self.build()
 
-    def update_kdict(self, ks):
+    def update_kdict(self, ks: list[str]) -> None:
         """
         Update the kdict with the parameters in the ks list
         """
@@ -140,7 +143,7 @@ class ParamClass:
             if k in self.ks and k not in self.kdict:
                 self.kdict[k] = reg.get_LarvaworldParam(**self.dict[k])
 
-    def finalize(self):
+    def finalize(self) -> None:
         """
         Finalize the parameter database
         """
@@ -148,18 +151,18 @@ class ParamClass:
             self.kdict[k] = reg.get_LarvaworldParam(**prepar)
 
     @property
-    def dkeys(self):
+    def dkeys(self) -> SuperList:
         return SuperList([p.d for k, p in self.dict.items()]).sorted
 
     @property
-    def pkeys(self):
+    def pkeys(self) -> SuperList:
         return SuperList([p.p for k, p in self.dict.items()]).sorted
 
     @property
-    def ks(self):
+    def ks(self) -> SuperList:
         return SuperList(self.dict.keys()).sorted
 
-    def build(self):
+    def build(self) -> None:
         self.dict = AttrDict()
         self.kdict = AttrDict()
         self.build_initial()
@@ -171,11 +174,11 @@ class ParamClass:
         self.p2k_dict = AttrDict({p.p: p.k for k, p in self.dict.items()})
         self.d2k_dict = AttrDict({p.d: p.k for k, p in self.dict.items()})
 
-    def add(self, **kwargs):
+    def add(self, **kwargs: Any) -> None:
         prepar = reg.prepare_LarvaworldParam(**kwargs)
         self.dict[prepar.k] = prepar
 
-    def build_initial(self):
+    def build_initial(self) -> None:
         kws1 = {
             "vfunc": param.Number,
             "lim": (0.0, None),
@@ -217,16 +220,16 @@ class ParamClass:
 
     def add_rate(
         self,
-        k0=None,
-        k_time="t",
-        p=None,
-        k=None,
-        d=None,
-        sym=None,
-        k_num=None,
-        k_den=None,
-        **kwargs,
-    ):
+        k0: Optional[str] = None,
+        k_time: str = "t",
+        p: Optional[str] = None,
+        k: Optional[str] = None,
+        d: Optional[str] = None,
+        sym: Optional[str] = None,
+        k_num: Optional[str] = None,
+        k_den: Optional[str] = None,
+        **kwargs: Any,
+    ) -> None:
         if k0 is not None:
             b = self.dict[k0]
             if p is None:
@@ -257,7 +260,7 @@ class ParamClass:
         kws.update(kwargs)
         self.add(**kws)
 
-    def add_operators(self, k0):
+    def add_operators(self, k0: str) -> None:
         b = self.dict[k0]
         kws0 = {"u": b.u, "required_ks": [k0]}
 
@@ -283,7 +286,7 @@ class ParamClass:
             }
             self.add(**kws, **kws0)
 
-    def add_chunk(self, pc, kc, func=None, required_ks=[]):
+    def add_chunk(self, pc: str, kc: str, func: Any = None, required_ks: list[str] = []) -> None:
         f_kws = {"func": func, "required_ks": required_ks}
 
         ptr = nam.dur_ratio(pc)
@@ -346,7 +349,7 @@ class ParamClass:
             )
             self.add_operators(k0=kl)
 
-    def add_chunk_track(self, kc, k, pc=None):
+    def add_chunk_track(self, kc: str, k: str, pc: Optional[str] = None) -> None:
         if pc is None:
             pc = self.dict[kc].p
         # bc = self.dict[kc]
@@ -387,19 +390,19 @@ class ParamClass:
 
     def add_velNacc(
         self,
-        k0,
-        p_v=None,
-        k_v=None,
-        d_v=None,
-        sym_v=None,
-        disp_v=None,
-        p_a=None,
-        k_a=None,
-        d_a=None,
-        sym_a=None,
-        disp_a=None,
-        func_v=None,
-    ):
+        k0: str,
+        p_v: Optional[str] = None,
+        k_v: Optional[str] = None,
+        d_v: Optional[str] = None,
+        sym_v: Optional[str] = None,
+        disp_v: Optional[str] = None,
+        p_a: Optional[str] = None,
+        k_a: Optional[str] = None,
+        d_a: Optional[str] = None,
+        sym_a: Optional[str] = None,
+        disp_a: Optional[str] = None,
+        func_v: Any = None,
+    ) -> None:
         b = self.dict[k0]
         b_dt = self.dict["dt"]
         if p_v is None:
@@ -455,7 +458,7 @@ class ParamClass:
             }
         )
 
-    def add_scaled(self, k0, **kwargs):
+    def add_scaled(self, k0: str, **kwargs: Any) -> None:
         b = self.dict[k0]
         b_l = self.dict["l"]
 
@@ -477,7 +480,7 @@ class ParamClass:
         kws.update(kwargs)
         self.add(**kws)
 
-    def add_unwrap(self, k0, **kwargs):
+    def add_unwrap(self, k0: str, **kwargs: Any) -> None:
         b = self.dict[k0]
 
         kws = {
@@ -497,7 +500,7 @@ class ParamClass:
         kws.update(kwargs)
         self.add(**kws)
 
-    def add_dst(self, point="", **kwargs):
+    def add_dst(self, point: str = "", **kwargs: Any) -> None:
         xd, yd = nam.xy(point)
         xk, bx = [(k, p) for k, p in self.dict.items() if p.d == xd][0]
         yk, by = [(k, p) for k, p in self.dict.items() if p.d == yd][0]
@@ -529,7 +532,7 @@ class ParamClass:
 
         self.add(**kws)
 
-    def add_freq(self, k0, **kwargs):
+    def add_freq(self, k0: str, **kwargs: Any) -> None:
         b = self.dict[k0]
         kws = {
             "p": nam.freq(b.p),
@@ -545,7 +548,7 @@ class ParamClass:
         kws.update(kwargs)
         self.add(**kws)
 
-    def add_phi(self, k0, **kwargs):
+    def add_phi(self, k0: str, **kwargs: Any) -> None:
         b = self.dict[k0]
         kws = {
             "p": nam.phi(b.p),
@@ -560,7 +563,7 @@ class ParamClass:
         kws.update(kwargs)
         self.add(**kws)
 
-    def add_dsp(self, range=(0, 40)):
+    def add_dsp(self, range: tuple[int, int] = (0, 40)) -> None:
         a = "dispersion"
         k0 = "dsp"
         s0 = nam.tex.circledast("d")
@@ -582,7 +585,7 @@ class ParamClass:
         self.add_operators(k0=k)
         self.add_operators(k0=f"s{k}")
 
-    def add_tor(self, dur):
+    def add_tor(self, dur: int) -> None:
         p0 = "tortuosity"
         k0 = "tor"
         k = f"{k0}{dur}"
@@ -596,7 +599,7 @@ class ParamClass:
         )
         self.add_operators(k0=k)
 
-    def build_angular(self):
+    def build_angular(self) -> None:
         kws = {
             "dv": np.round(np.pi / 180, 2),
             "u": reg.units.rad,
@@ -663,7 +666,7 @@ class ParamClass:
             self.add_freq(k0=k0)
             self.add_operators(k0=k0)
 
-    def build_spatial(self):
+    def build_spatial(self) -> None:
         kws = {"u": reg.units.m, "vfunc": param.Number}
         self.add(
             **{
@@ -762,7 +765,7 @@ class ParamClass:
             self.add_tor(dur=dur)
         self.add(**{"p": "anemotaxis", "sym": "anemotaxis"})
 
-    def build_chunks(self):
+    def build_chunks(self) -> None:
         d0 = {
             "str": "stride",
             "pau": "pause",
@@ -805,7 +808,7 @@ class ParamClass:
             if kc == "fee":
                 self.add_freq(k0=kc)
 
-    def build_sim_pars(self):
+    def build_sim_pars(self) -> None:
         L = "brain.locomotor"
         IF = f"{L}.interference"
         Im = f"{L}.intermitter"
@@ -1055,7 +1058,7 @@ class ParamClass:
                 p0 = f"{b.p}_{k}"
                 self.add(**{"p": p0, "k": k0, "disp": f"{b.disp} {ii} food"})
 
-    def build_deb_pars(self):
+    def build_deb_pars(self) -> None:
         ks = ["f_am", "sf_am_Vg", "f_am_V", "sf_am_V", "sf_am_A", "sf_am_M"]
         ps = [
             "amount_eaten",
@@ -1090,11 +1093,11 @@ class ParamRegistry(ParamClass):
     Class to manage the parameter database.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.PI = AttrDict()
 
-    def get(self, k, d, compute=True):
+    def get(self, k: str, d: Any, compute: bool = True):
         if k not in self.ks:
             raise ValueError(f'parameter key "{k}" not in database')
         self.update_kdict(ks=[k])
@@ -1122,7 +1125,7 @@ class ParamRegistry(ParamClass):
         else:
             print(f"Parameter {p.disp} not found")
 
-    def compute(self, k, d):
+    def compute(self, k: str, d: Any) -> None:
         p = self.kdict[k]
         res = p.exists(d)
         if not any(list(res.values())):
@@ -1131,7 +1134,7 @@ class ParamRegistry(ParamClass):
                 self.compute(k0, d)
             p.compute(d)
 
-    def getPar(self, k=None, p=None, d=None, to_return="d"):
+    def getPar(self, k: Optional[str] = None, p: Optional[str | list[str]] = None, d: Optional[str | list[str]] = None, to_return: str | list[str] = "d"):
         """
         Retrieve the values of specific keys from a given parameter entry.
         Takes as argument the key by which to look up the parameter entry in the parameter database.
@@ -1175,10 +1178,10 @@ class ParamRegistry(ParamClass):
             elif isinstance(to_return, str):
                 return [getattr(par, to_return) for par in pars]
 
-    def runtime_pars(self):
+    def runtime_pars(self) -> list[str]:
         return [v.d for k, v in self.kdict.items()]
 
-    def auto_load(self, ks, datasets):
+    def auto_load(self, ks: list[str], datasets: list[Any]) -> AttrDict:
         dic = {}
         for k in ks:
             dic[k] = {}
@@ -1207,7 +1210,7 @@ class ParamRegistry(ParamClass):
         df[valid_pars] = df[valid_pars].astype(dtype=pint_dtypes)
         return df
 
-    def output_reporters(self, ks, agents):
+    def output_reporters(self, ks: list[str], agents: list[Any]) -> AttrDict:
         self.update_kdict(ks=ks)
         D = self.kdict
         dic = {}
@@ -1221,7 +1224,7 @@ class ParamRegistry(ParamClass):
                     pass
         return AttrDict(dic)
 
-    def get_reporters(self, agents, cs=None):
+    def get_reporters(self, agents: list[Any], cs: Optional[list[str]] = None) -> AttrDict:
         O = output_dict
         if cs is None:
             cs = ["pose"]
@@ -1237,7 +1240,7 @@ class ParamRegistry(ParamClass):
             }
         )
 
-    def select_output(self, pref):
+    def select_output(self, pref: str) -> AttrDict:
         return AttrDict(
             {
                 p.d: p.codename
@@ -1247,5 +1250,5 @@ class ParamRegistry(ParamClass):
         )
 
     @property
-    def brain_output(self):
+    def brain_output(self) -> AttrDict:
         return self.select_output(pref="brain")

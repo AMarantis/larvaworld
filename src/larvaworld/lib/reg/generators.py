@@ -2,6 +2,9 @@
 Configuration and Generator classes for higher-order objects in the larvaworld package.
 """
 
+from __future__ import annotations
+from typing import Any, Optional
+
 import os
 import shutil
 
@@ -47,7 +50,7 @@ from ..param import (
 )
 from ..util import AttrDict, nam
 
-__all__ = [
+__all__: list[str] = [
     "gen",
     "SimConfiguration",
     "SimConfigurationParams",
@@ -114,7 +117,7 @@ _LAZY_GEN_REGISTRATIONS = {
     "Ga": "larvaworld.lib.sim.genetic_algorithm",
 }
 
-def __getattr__(name):
+def __getattr__(name: str):
     module_path = _LAZY_GEN_REGISTRATIONS.get(name)
     if module_path is not None:
         from importlib import import_module
@@ -137,7 +140,7 @@ class SimConfiguration(RuntimeOps, SimMetricOps, SimOps):
 
     runtype = param.Selector(objects=SIMTYPES, doc="The simulation mode")
 
-    def __init__(self, runtype, **kwargs):
+    def __init__(self, runtype: str, **kwargs: Any):
         self.param.add_parameter("experiment", self.exp_selector_param(runtype))
         super().__init__(runtype=runtype, **kwargs)
 
@@ -151,14 +154,14 @@ class SimConfiguration(RuntimeOps, SimMetricOps, SimOps):
             self.dir = f"{save_to}/{self.id}"
 
     @property
-    def path_to_runtype_data(self):
+    def path_to_runtype_data(self) -> str:
         return f"{SIM_DIR}/{self.runtype.lower()}_runs"
 
-    def generate_id(self, runtype, exp):
+    def generate_id(self, runtype: str, exp: str) -> str:
         idx = reg.config.next_idx(exp, conftype=runtype)
         return f"{exp}_{idx}"
 
-    def exp_selector_param(self, runtype):
+    def exp_selector_param(self, runtype: str):
         defaults = {
             "Exp": "dish",
             "Batch": "PItest_off",
@@ -182,15 +185,15 @@ class SimConfigurationParams(SimConfiguration):
 
     def __init__(
         self,
-        runtype="Exp",
-        experiment=None,
-        parameters=None,
-        N=None,
-        modelIDs=None,
-        groupIDs=None,
-        sample=None,
-        **kwargs,
-    ):
+        runtype: str = "Exp",
+        experiment: Optional[str] = None,
+        parameters: Optional[AttrDict] = None,
+        N: Optional[int] = None,
+        modelIDs: Optional[list[str]] = None,
+        groupIDs: Optional[list[str]] = None,
+        sample: Optional[str] = None,
+        **kwargs: Any,
+    ) -> None:
         if parameters is None:
             if runtype in CONFTYPES:
                 ct = reg.conf[runtype]
@@ -237,16 +240,16 @@ class SimConfigurationParams(SimConfiguration):
 
 
 def source_generator(
-    genmode,
-    Ngs=2,
-    ids=None,
-    cs=None,
-    rs=None,
-    ams=None,
-    o=None,
-    qs=None,
-    type="standard",
-    **kwargs,
+    genmode: str,
+    Ngs: int = 2,
+    ids: Optional[list[str]] = None,
+    cs: Optional[list[str]] = None,
+    rs: Optional[list[float]] = None,
+    ams: Optional[list[float]] = None,
+    o: Optional[str] = None,
+    qs: Optional[list[float]] = None,
+    type: str = "standard",
+    **kwargs: Any,
 ):
     """
     Generate a list of source units or groups.
@@ -324,7 +327,7 @@ class FoodConf(NestedConf):
 
     @classmethod
     def CS_UCS(
-        cls, grid=None, sg={}, N=1, x=0.04, colors=["red", "blue"], o="G", **kwargs
+        cls, grid=None, sg={}, N: int = 1, x: float = 0.04, colors: list[str] = ["red", "blue"], o: str = "G", **kwargs: Any
     ):
         F = gen.Food
         CS_kws = {"odor": Odor.oO(o=o, id="CS"), "c": colors[0], **kwargs}
@@ -352,14 +355,14 @@ class FoodConf(NestedConf):
         cls,
         grid=None,
         sg={},
-        type="standard",
-        q=1.0,
-        c="green",
-        x=0.06,
-        r=0.025,
-        a=0.1,
-        o="G",
-        **kwargs,
+        type: str = "standard",
+        q: float = 1.0,
+        c: str = "green",
+        x: float = 0.06,
+        r: float = 0.025,
+        a: float = 0.1,
+        o: str = "G",
+        **kwargs: Any,
     ):
         F = gen.Food
         kws = {"odor": Odor.oO(o=o), "c": c, "r": r, "a": a, "sub": [q, type], **kwargs}
@@ -374,25 +377,25 @@ class FoodConf(NestedConf):
         cls,
         grid=None,
         sg={},
-        id="Patch",
-        type="standard",
-        q=1.0,
-        c="green",
-        r=0.01,
-        a=0.1,
-        **kwargs,
+        id: str = "Patch",
+        type: str = "standard",
+        q: float = 1.0,
+        c: str = "green",
+        r: float = 0.01,
+        a: float = 0.1,
+        **kwargs: Any,
     ):
         kws = {"c": c, "r": r, "a": a, "sub": [q, type], **kwargs}
         return cls.su(id=id, grid=grid, sg=sg, **kws)
 
     @classmethod
-    def su(cls, id="Source", grid=None, sg={}, **kwargs):
+    def su(cls, id: str = "Source", grid=None, sg={}, **kwargs: Any):
         return cls(
             source_groups=sg, source_units=gen.Food(**kwargs).entry(id), food_grid=grid
         )
 
     @classmethod
-    def sus(cls, grid=None, sg={}, **kwargs):
+    def sus(cls, grid=None, sg={}, **kwargs: Any):
         return cls(
             source_groups=sg,
             source_units=source_generator(genmode="Unit", **kwargs),
@@ -400,7 +403,7 @@ class FoodConf(NestedConf):
         )
 
     @classmethod
-    def sg(cls, id="SourceGroup", grid=None, su={}, **kwargs):
+    def sg(cls, id: str = "SourceGroup", grid=None, su={}, **kwargs: Any):
         return cls(
             source_groups=gen.FoodGroup(**kwargs).entry(id),
             source_units=su,
@@ -408,7 +411,7 @@ class FoodConf(NestedConf):
         )
 
     @classmethod
-    def sgs(cls, grid=None, su={}, **kwargs):
+    def sgs(cls, grid=None, su={}, **kwargs: Any):
         return cls(
             source_groups=source_generator(genmode="Group", **kwargs),
             source_units=su,
@@ -470,7 +473,7 @@ class EnvConf(NestedConf):
         gen.ThermoScape, default=None, doc="The thermal landscape in the arena"
     )
 
-    def __init__(self, odorscape=None, **kwargs):
+    def __init__(self, odorscape=None, **kwargs: Any):
         if odorscape is not None and isinstance(odorscape, AttrDict):
             mode = odorscape.odorscape
             odorscape_classes = list(EnvConf.param.odorscape.class_)
@@ -481,7 +484,7 @@ class EnvConf(NestedConf):
 
         super().__init__(odorscape=odorscape, **kwargs)
 
-    def visualize(self, **kwargs):
+    def visualize(self, **kwargs: Any) -> None:
         """
         Visualize the environment by launching a simulation without agents
         """
@@ -498,7 +501,7 @@ class EnvConf(NestedConf):
         return EnvConf.param.arena.class_
 
     @classmethod
-    def maze(cls, n=15, h=0.1, o="G", **kwargs):
+    def maze(cls, n: int = 15, h: float = 0.1, o: str = "G", **kwargs: Any):
         def get_maze(nx=15, ny=15, ix=0, iy=0, h=0.1, return_points=False):
             from ..model.envs.maze import Maze
 
@@ -532,7 +535,7 @@ class EnvConf(NestedConf):
         )
 
     @classmethod
-    def game(cls, dim=0.1, x=0.4, y=0.0, o="G", **kwargs):
+    def game(cls, dim: float = 0.1, x: float = 0.4, y: float = 0.0, o: str = "G", **kwargs: Any):
         x = np.round(x * dim, 3)
         y = np.round(y * dim, 3)
         F = gen.Food
@@ -554,7 +557,7 @@ class EnvConf(NestedConf):
         return cls.rect(dim, f=cls.food_params_class()(source_units=sus), o=o, **kwargs)
 
     @classmethod
-    def foodNodor_4corners(cls, dim=0.2, o="D", **kwargs):
+    def foodNodor_4corners(cls, dim: float = 0.2, o: str = "D", **kwargs: Any):
         return cls.rect(
             dim,
             f=cls.food_params_class().foodNodor_4corners(d=dim / 4, o=o, **kwargs),
@@ -562,13 +565,13 @@ class EnvConf(NestedConf):
         )
 
     @classmethod
-    def CS_UCS(cls, dim=0.1, o="G", **kwargs):
+    def CS_UCS(cls, dim: float = 0.1, o: str = "G", **kwargs: Any):
         return cls.dish(
             dim, f=cls.food_params_class().CS_UCS(x=0.4 * dim, o=o, **kwargs), o=o
         )
 
     @classmethod
-    def double_patch(cls, dim=0.24, o="G", **kwargs):
+    def double_patch(cls, dim: float = 0.24, o: str = "G", **kwargs: Any):
         return cls.rect(
             dim,
             f=cls.food_params_class().double_patch(x=0.25 * dim, o=o, **kwargs),
@@ -576,20 +579,20 @@ class EnvConf(NestedConf):
         )
 
     @classmethod
-    def odor_gradient(cls, dim=(0.1, 0.06), o="G", c=1, **kwargs):
+    def odor_gradient(cls, dim: tuple[float, float] = (0.1, 0.06), o: str = "G", c: int = 1, **kwargs: Any):
         return cls.rect(
             dim, f=cls.food_params_class().su(odor=Odor.oO(o=o, c=c), **kwargs), o=o
         )
 
     @classmethod
-    def dish(cls, xy=0.1, **kwargs):
+    def dish(cls, xy: float = 0.1, **kwargs: Any):
         assert isinstance(xy, float)
         return cls.scapes(
             arena=cls.arena_class()(geometry="circular", dims=(xy, xy)), **kwargs
         )
 
     @classmethod
-    def rect(cls, xy=0.1, **kwargs):
+    def rect(cls, xy: float | tuple[float, float] = 0.1, **kwargs: Any):
         if isinstance(xy, float):
             dims = (xy, xy)
         elif isinstance(xy, tuple):
@@ -601,7 +604,7 @@ class EnvConf(NestedConf):
         )
 
     @classmethod
-    def scapes(cls, o=None, w=None, th=None, f=None, bl={}, **kwargs):
+    def scapes(cls, o: Optional[str] = None, w: Optional[dict] = None, th: Optional[dict] = None, f=None, bl: dict = {}, **kwargs: Any):
         if f is None:
             f = cls.food_params_class()()
         if o == "D":

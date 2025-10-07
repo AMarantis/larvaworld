@@ -3,6 +3,9 @@ This module provides classes and functions for managing configurations in the la
 It includes classes for configuration types and the unique reference type, as well as functions for resetting configurations.
 """
 
+from __future__ import annotations
+from typing import Any, Optional
+
 import os
 import param
 
@@ -10,7 +13,7 @@ from ... import vprint, CONF_DIR, DATA_DIR, CONFTYPES
 from .. import reg, util, funcs
 from ..param import ClassDict, OptionalSelector
 
-__all__ = [
+__all__: list[str] = [
     "next_idx",
     "ConfType",
     "RefType",
@@ -19,7 +22,7 @@ __all__ = [
 ]
 
 
-def next_idx(id, conftype="Exp"):
+def next_idx(id: str, conftype: str = "Exp") -> int:
     """
     Increment and retrieve the next index for a given configuration type and id.
 
@@ -69,7 +72,7 @@ class ConfType(param.Parameterized):
         default=util.AttrDict(), item_type=None, doc="The configuration dictionary"
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         """
         Initializes the configuration object.
 
@@ -84,7 +87,7 @@ class ConfType(param.Parameterized):
         self.CONFTYPE_SUBKEYS = self.build_ConfTypeSubkeys()
         self.update_dict()
 
-    def build_ConfTypeSubkeys(self):
+    def build_ConfTypeSubkeys(self) -> util.AttrDict:
         """
         Constructs a nested dictionary representing configuration subkeys for different configuration types.
 
@@ -109,7 +112,7 @@ class ConfType(param.Parameterized):
         return util.AttrDict(d0)
 
     @property
-    def path_to_dict(self):
+    def path_to_dict(self) -> str:
         """
         Constructs a file path string based on the configuration directory and type.
 
@@ -120,7 +123,7 @@ class ConfType(param.Parameterized):
         return f"{CONF_DIR}/{self.conftype}.txt"
 
     @param.depends("conftype", watch=True)
-    def update_dict(self):
+    def update_dict(self) -> None:
         """
         Updates the dictionary configuration parameter.
 
@@ -131,7 +134,7 @@ class ConfType(param.Parameterized):
         self.param.params("dict").item_type = self.dict_entry_type
         self.load()
 
-    def getID(self, id):
+    def getID(self, id: int | str | list[int | str]):
         """
         Retrieve the configuration stored under an id from the dictionary.
         If the provided id is a list, the method will recursively retrieve the configuration under each id in the list.
@@ -154,7 +157,7 @@ class ConfType(param.Parameterized):
             vprint(f"{self.conftype} Configuration {id} does not exist", 1)
             raise ValueError()
 
-    def get(self, id):
+    def get(self, id: str | list[str]):
         """
         Retrieve a generator for a configuration entry by id.
         If the provided id is a list, recursively retrieve entries for each id in the list.
@@ -171,7 +174,7 @@ class ConfType(param.Parameterized):
         entry = self.getID(id)
         return self.conf_class(**entry, name=id)
 
-    def load(self):
+    def load(self) -> None:
         """
         Loads the dictionary storing the configurations from the specified path and assigns it to the instance variable `dict`.
         This method reads the dictionary from the file located at `self.path_to_dict`.
@@ -183,7 +186,7 @@ class ConfType(param.Parameterized):
         """
         self.dict = util.load_dict(self.path_to_dict)
 
-    def save(self):
+    def save(self) -> bool:
         """
         Saves the current state of the dictionary to the specified path.
         This method saves the dictionary (`self.dict`) to the file located at `self.path_to_dict`.
@@ -194,7 +197,7 @@ class ConfType(param.Parameterized):
         """
         return util.save_dict(self.dict, self.path_to_dict)
 
-    def set_dict(self, d):
+    def set_dict(self, d: dict[str, Any]) -> None:
         """
         Sets the dictionary for the configuration type and saves it.
 
@@ -209,7 +212,7 @@ class ConfType(param.Parameterized):
         self.dict = d
         self.save()
 
-    def reset(self, init=False):
+    def reset(self, init: bool = False) -> None:
         """
         Resets the configuration dictionary from the built-in dictionary of predefined configurations.
 
@@ -247,7 +250,7 @@ class ConfType(param.Parameterized):
                 1,
             )
 
-    def selectIDs(self, dic={}):
+    def selectIDs(self, dic: dict[str, Any] = {}) -> util.SuperList:
         """
         Selects and returns a list of ids from the configuration dictionary that match the criteria specified in the given dictionary.
 
@@ -265,7 +268,7 @@ class ConfType(param.Parameterized):
                 valid.append(id)
         return valid
 
-    def setID(self, id, conf, mode="overwrite"):
+    def setID(self, id: str, conf: Any, mode: str = "overwrite") -> None:
         """
         Sets the configuration for a given id.
 
@@ -306,7 +309,7 @@ class ConfType(param.Parameterized):
             reg.larvagroup.LarvaGroup.param.objects()["model"].objects = self.confIDs
         vprint(f"{self.conftype} Configuration saved under the id : {id}", 1)
 
-    def delete(self, id=None):
+    def delete(self, id: Optional[str] = None) -> None:
         """
         Delete a configuration entry by its id.
 
@@ -326,7 +329,7 @@ class ConfType(param.Parameterized):
                 self.save()
                 vprint(f"Deleted {self.conftype} configuration under the id : {id}", 1)
 
-    def expand(self, id=None, conf=None):
+    def expand(self, id: Optional[str] = None, conf: Optional[dict[str, Any]] = None):
         """
         Expands the configuration dictionary by resolving subkeys and their ids.
 
@@ -358,7 +361,7 @@ class ConfType(param.Parameterized):
         return conf
 
     @param.depends("dict", watch=True)
-    def confID_selector(self, default=None, single=True):
+    def confID_selector(self, default: Optional[str] = None, single: bool = True):
         """
         A configuration selector object.
 
@@ -397,7 +400,7 @@ class ConfType(param.Parameterized):
         return funcs.stored_confs[self.conftype]
 
     @property
-    def stored_dict(self):
+    def stored_dict(self) -> dict:
         """
         Returns the result of calling the reset_func method.
         This method is an alias for self.reset_func().
@@ -409,7 +412,7 @@ class ConfType(param.Parameterized):
         return self.reset_func()
 
     @property
-    def confIDs(self):
+    def confIDs(self) -> list[str]:
         """
         Retrieve a sorted list of configuration ids from the configuration dictionary.
 
@@ -461,7 +464,7 @@ class RefType(ConfType):
 
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         """
         Initialize the RefType instance.
 
@@ -472,7 +475,7 @@ class RefType(ConfType):
         """
         super().__init__(conftype="Ref", **kwargs)
 
-    def getRefDir(self, id):
+    def getRefDir(self, id: str) -> str:
         """
         Get the directory for a given reference id.
 
@@ -488,7 +491,7 @@ class RefType(ConfType):
         assert id is not None
         return self.getID(id)
 
-    def getRef(self, id=None, dir=None):
+    def getRef(self, id: Optional[str] = None, dir: Optional[str] = None) -> dict:
         """
         Get the reference dataset's configuration.
 
@@ -513,7 +516,7 @@ class RefType(ConfType):
         vprint(f"Loaded existing conf {c.id}", 1)
         return c
 
-    def setRef(self, c, id=None, dir=None):
+    def setRef(self, c: dict, id: Optional[str] = None, dir: Optional[str] = None) -> None:
         """
         Save the reference dataset's configuration.
 
@@ -533,7 +536,7 @@ class RefType(ConfType):
         assert "id" in c
         vprint(f"Saved conf under ID {c.id}", 1)
 
-    def path_to_Ref(self, id=None, dir=None):
+    def path_to_Ref(self, id: Optional[str] = None, dir: Optional[str] = None) -> str:
         """
         Get the path to the file storing a reference dataset's configuration.
 
@@ -553,7 +556,7 @@ class RefType(ConfType):
             refDir = f"{DATA_DIR}/{dir}"
         return f"{refDir}/data/conf.txt"
 
-    def loadRef(self, id=None, dir=None, load=False, **kwargs):
+    def loadRef(self, id: Optional[str] = None, dir: Optional[str] = None, load: bool = False, **kwargs: Any):
         """
         Load a reference dataset.
 
@@ -579,7 +582,7 @@ class RefType(ConfType):
         vprint(f"Loaded stored reference dataset : {id}", 1)
         return d
 
-    def loadRefs(self, ids=None, dirs=None, **kwargs):
+    def loadRefs(self, ids: Optional[list[str]] = None, dirs: Optional[list[str]] = None, **kwargs: Any):
         """
         Load multiple reference datasets.
 
@@ -604,7 +607,7 @@ class RefType(ConfType):
             [self.loadRef(id=id, dir=dir, **kwargs) for id, dir in zip(ids, dirs)]
         )
 
-    def retrieve_dataset(self, dataset=None, load=True, **kwargs):
+    def retrieve_dataset(self, dataset=None, load: bool = True, **kwargs: Any):
         """
         Retrieve a dataset, loading it if necessary.
 
@@ -623,7 +626,7 @@ class RefType(ConfType):
             dataset = self.loadRef(load=load, **kwargs)
         return dataset
 
-    def cleanRefIDs(self):
+    def cleanRefIDs(self) -> None:
         """
         Purge reference ids by removing invalid ones.
         """
@@ -645,7 +648,7 @@ class RefType(ConfType):
         """
         return str
 
-    def getRefGroups(self):
+    def getRefGroups(self) -> util.AttrDict:
         """
         Get reference groups.
 
@@ -679,7 +682,7 @@ class RefType(ConfType):
         return util.unique_list(list(gd.keys()))
 
     @property
-    def Refdict(self):
+    def Refdict(self) -> util.AttrDict:
         """
         Get a dictionary of all reference datasets' configurations.
 
@@ -689,7 +692,7 @@ class RefType(ConfType):
         """
         return util.AttrDict({id: self.getRef(id) for id in self.confIDs})
 
-    def getRefGroup(self, group_id):
+    def getRefGroup(self, group_id: str) -> util.AttrDict:
         """
         Get a reference group by its ID.
 
@@ -705,7 +708,7 @@ class RefType(ConfType):
         d = self.getRefGroups()[group_id]
         return util.AttrDict({id: self.getRef(dir=dir) for id, dir in d.items()})
 
-    def loadRefGroup(self, group_id, to_return="collection", **kwargs):
+    def loadRefGroup(self, group_id: str, to_return: str = "collection", **kwargs: Any):
         """
         Load a reference group by its ID.
 
@@ -739,12 +742,12 @@ class RefType(ConfType):
             )
 
 
-conf = util.AttrDict({k: ConfType(conftype=k) for k in CONFTYPES if k != "Ref"})
+conf: util.AttrDict = util.AttrDict({k: ConfType(conftype=k) for k in CONFTYPES if k != "Ref"})
 
 conf.Ref = RefType()
 
 
-def resetConfs(conftypes=None, **kwargs):
+def resetConfs(conftypes: Optional[list[str]] = None, **kwargs: Any) -> None:
     """
     Resets the configurations for the specified configuration types.
 

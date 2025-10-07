@@ -3,10 +3,12 @@ This module contains all methods and classes relevant in data management,analysi
  as well as the methods supporting the import of experimental tracker datasets
 """
 
+from __future__ import annotations
+
 __displayname__ = "Data management"
 
 # Public API: expose core dataset classes, evaluation helpers, and lab importers.
-__all__ = [
+__all__: list[str] = [
     # Datasets
     "DatasetConfig", "ParamLarvaDataset", "BaseLarvaDataset", "LarvaDataset", "LarvaDatasetCollection",
     # Evaluation
@@ -45,7 +47,7 @@ _NAME_TO_MODULE = {
     "read_timeseries_from_raw_files_per_parameter": "larvaworld.lib.process.import_aux",
 }
 
-def __getattr__(name):
+def __getattr__(name: str):
     module_path = _NAME_TO_MODULE.get(name)
     if module_path is None:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
@@ -56,5 +58,5 @@ def __getattr__(name):
     globals()[name] = obj
     return obj
 
-def __dir__():
-    return sorted(list(globals().keys()) + __all__)
+def __dir__() -> list[str]:
+    return sorted(list(globals().keys()) + list(__all__))

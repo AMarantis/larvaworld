@@ -2,7 +2,8 @@
 Methods for dataset evaluation/comparison
 """
 
-from typing import List
+from __future__ import annotations
+from typing import Any, Dict, List, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -15,7 +16,7 @@ from ..param import EndpointDataFrame, NestedConf, StepDataFrame
 from ..util import AttrDict, SuperList
 from .dataset import LarvaDataset
 
-__all__ = [
+__all__: list[str] = [
     "eval_end_fast",
     "eval_distro_fast",
     "eval_fast",
@@ -30,7 +31,7 @@ __all__ = [
 ]
 
 
-def eval_end_fast(ee: EndpointDataFrame, e_data, e_sym, mode="pooled") -> dict:
+def eval_end_fast(ee: EndpointDataFrame, e_data: Any, e_sym: Dict[str, str], mode: str = "pooled") -> dict:
     """Fast evaluation of endpoint data"""
     E = {}
     for p, sym in e_sym.items():
@@ -45,7 +46,7 @@ def eval_end_fast(ee: EndpointDataFrame, e_data, e_sym, mode="pooled") -> dict:
 
 
 def eval_distro_fast(
-    ss: StepDataFrame, s_data, s_sym, mode="pooled", min_size=10
+    ss: StepDataFrame, s_data: Any, s_sym: Dict[str, str], mode: str = "pooled", min_size: int = 10
 ) -> dict:
     """Fast evaluation of step data"""
     if mode == "1:1":
@@ -153,7 +154,7 @@ def RSS_dic(dd: LarvaDataset, d: LarvaDataset) -> float:
     return stat
 
 
-def eval_RSS(rss, rss_target, rss_sym, mode="1:pooled") -> dict:
+def eval_RSS(rss: Dict[str, Any], rss_target: Dict[str, Any], rss_sym: Dict[str, str], mode: str = "1:pooled") -> dict:
     """Evaluate RSS for a dictionary"""
     assert mode == "1:pooled"
     RSS_dic = {}
@@ -165,7 +166,7 @@ def eval_RSS(rss, rss_target, rss_sym, mode="1:pooled") -> dict:
     return RSS_dic
 
 
-def col_df(shorts, groups):
+def col_df(shorts: Sequence[str], groups: Sequence[str]) -> Any:
     """Create a dataframe for coloring evaluation metrics"""
     import matplotlib as plt
 
@@ -241,7 +242,7 @@ def cycle_curve_dict_multi(
     )
 
 
-def get_target_data(d: LarvaDataset, eval_metrics):
+def get_target_data(d: LarvaDataset, eval_metrics: Any) -> AttrDict:
     """Get target data for evaluation"""
     s, e, c = d.data
     all_ks = SuperList(eval_metrics.values()).flatten.unique
@@ -254,7 +255,7 @@ def get_target_data(d: LarvaDataset, eval_metrics):
     )
 
 
-def arrange_evaluation(data, eval_metrics):
+def arrange_evaluation(data: AttrDict, eval_metrics: Any) -> Dict[str, Any]:
     """Arrange evaluation data"""
     Eks = reg.getPar(p=list(data.end.keys()), to_return="k")
     Dks = reg.getPar(p=list(data.step.keys()), to_return="k")
@@ -335,7 +336,7 @@ class Evaluation(NestedConf):
         default=["sv", "fov", "rov", "foa", "b"], doc="Stride-cycle metrics to evaluate"
     )
 
-    def __init__(self, dataset=None, **kwargs):
+    def __init__(self, dataset: Optional[Any] = None, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.target = reg.conf.Ref.retrieve_dataset(
             dataset=dataset,
@@ -514,7 +515,7 @@ class DataEvaluation(Evaluation):
         doc="Evaluation modes to use",
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
         self.error_dicts = AttrDict()

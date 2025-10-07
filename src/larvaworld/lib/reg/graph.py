@@ -3,11 +3,14 @@ Graph/plotting registry for the larvaworld package.
 This module provides a class for managing and creating plots and graphs.
 """
 
+from __future__ import annotations
+from typing import Any
+
 import os
 
 from .. import util, funcs, plot
 
-__all__ = [
+__all__: list[str] = [
     "GraphRegistry",
 ]
 
@@ -24,7 +27,7 @@ class GraphRegistry:
 
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.dict = funcs.graphs
         self.required_data_dict = funcs.graph_required_data
         self.graphgroups = self.build_graphgroups()
@@ -36,7 +39,7 @@ class GraphRegistry:
         """
         return util.SuperList(self.dict.keys()).sorted
 
-    def exists(self, ID):
+    def exists(self, ID: str) -> bool:
         """
         Checks if a graph function with the given ID exists.
         """
@@ -45,7 +48,7 @@ class GraphRegistry:
         else:
             return False
 
-    def group_exists(self, gID):
+    def group_exists(self, gID: str) -> bool:
         """
         Checks if a graphgroup with the given ID exists.
         """
@@ -54,7 +57,7 @@ class GraphRegistry:
         else:
             return False
 
-    def eval_graphgroups(self, graphgroups, save_to=None, **kws):
+    def eval_graphgroups(self, graphgroups: list[str] | dict, save_to: str | None = None, **kws: Any):
         """
         Evaluates a list of graphgroups.
 
@@ -80,7 +83,7 @@ class GraphRegistry:
             }
         )
 
-    def grouplist_to_dict(self, groups):
+    def grouplist_to_dict(self, groups: list | dict):
         """
         Converts a list of graphgroups to a dictionary.
 
@@ -104,7 +107,7 @@ class GraphRegistry:
         elif isinstance(groups, dict):
             return groups
 
-    def eval_entries(self, entries, **kwargs):
+    def eval_entries(self, entries: list[dict], **kwargs: Any):
         """
         Evaluates a list of graph entries.
 
@@ -119,7 +122,7 @@ class GraphRegistry:
             {e["key"]: self.run(ID=e["plotID"], **e["args"], **kwargs) for e in entries}
         )
 
-    def run(self, ID, **kwargs):
+    def run(self, ID: str, **kwargs: Any):
         """
         Runs a graph function with the given ID.
 
@@ -133,7 +136,7 @@ class GraphRegistry:
         assert self.exists(ID)
         return self.dict[ID](**kwargs)
 
-    def run_group(self, gID, **kwargs):
+    def run_group(self, gID: str, **kwargs: Any):
         """
         Runs a graphgroup with the given ID.
 
@@ -147,7 +150,7 @@ class GraphRegistry:
         assert self.group_exists(gID)
         return self.eval_entries(self.graphgroups[gID], **kwargs)
 
-    def entry(self, ID, name=None, **kwargs):
+    def entry(self, ID: str, name: str | None = None, **kwargs: Any):
         """
         Creates a graph entry with the given ID and optional name.
 
@@ -168,7 +171,7 @@ class GraphRegistry:
             key = ID
         return {"key": key, "plotID": ID, "args": args}
 
-    def model_tables(self, mIDs, dIDs=None, save_to=None, **kwargs):
+    def model_tables(self, mIDs: list[str], dIDs: list[str] | None = None, save_to: str | None = None, **kwargs: Any):
         """
         Creates tables for the given model IDs.
 
@@ -197,7 +200,7 @@ class GraphRegistry:
             )
         return util.AttrDict(ds)
 
-    def model_summaries(self, mIDs, save_to=None, **kwargs):
+    def model_summaries(self, mIDs: list[str], save_to: str | None = None, **kwargs: Any):
         """
         Creates summary plots for the given model IDs.
 
@@ -223,7 +226,7 @@ class GraphRegistry:
             )
         return ds
 
-    def store_model_graphs(self, mIDs, dir):
+    def store_model_graphs(self, mIDs: list[str], dir: str):
         """
         Stores model graphs for the given model IDs.
 
@@ -250,7 +253,7 @@ class GraphRegistry:
         )
         return graphs
 
-    def source_graphgroup(self, source_ID, pos=None, **kwargs):
+    def source_graphgroup(self, source_ID: str, pos: tuple[float, float] | None = None, **kwargs: Any):
         """
         Creates a graphgroup consisting of plots related to a given food/odor source.
 
@@ -284,7 +287,7 @@ class GraphRegistry:
         #                              min_dur=dur, chunk=chunk, source_ID=ID, **kwargs))
         return util.AttrDict({gID: d0})
 
-    def get_analysis_graphgroups(self, exp, sources, **kwargs):
+    def get_analysis_graphgroups(self, exp: str, sources: dict[str, Any], **kwargs: Any):
         """
         Determines the plots to be created during the analysis of a given experiment/simulation.
 

@@ -3,9 +3,12 @@ This module sets up the larvaworld registry where most functions, classes, and c
 It is initialized automatically when importing the package and serves as an accessible database for all functionalities.
 """
 
+from __future__ import annotations
+from typing import TYPE_CHECKING, Any
+
 __displayname__ = "Registry"
 
-__all__ = [
+__all__: list[str] = [
     "default_refID",
     "default_ref",
     "default_modelID",
@@ -44,15 +47,16 @@ from ... import vprint, TEST_DIR
 vprint("Initializing larvaworld registry", 2)
 # vprint(f"Initializing larvaworld v.{__version__} registry", 2)
 
+# Runtime import; type hinted via TYPE_CHECKING to avoid heavy import at type-check time
 from pint import UnitRegistry
 
-units = UnitRegistry()
+units: UnitRegistry = UnitRegistry()
 units.default_format = "~P"
 units.setup_matplotlib(True)
 
 from . import keymap
 
-controls = keymap.ControlRegistry()
+controls: keymap.ControlRegistry = keymap.ControlRegistry()
 
 # Removed star-imports of internal helpers to avoid eager heavy dependencies
 # Symbols from `data_aux` and `distro` are now resolved lazily via __getattr__ below
@@ -70,7 +74,7 @@ sample_ps = _data_aux.sample_ps
 
 from . import parFunc, parDB
 
-par = parDB.ParamRegistry()
+par: parDB.ParamRegistry = parDB.ParamRegistry()
 
 vprint("Parameter registry complete", 1)
 
@@ -90,7 +94,7 @@ from . import stored_confs
 vprint("Configuration registry complete", 1)
 
 
-def getPar(k=None, p=None, d=None, to_return="d"):
+def getPar(k: Any | None = None, p: Any | None = None, d: Any | None = None, to_return: str = "d") -> Any:
     """
     Shortcut function for easy use directly via the registry.
     See 'par.getPar' for more information.
@@ -98,7 +102,7 @@ def getPar(k=None, p=None, d=None, to_return="d"):
     return par.getPar(k=k, d=d, p=p, to_return=to_return)
 
 
-def loadRef(id, **kwargs):
+def loadRef(id: str, **kwargs: Any) -> Any:
     """
     Shortcut function for easy use directly via the registry.
     See 'conf.Ref.loadRef' for more information.
@@ -106,7 +110,7 @@ def loadRef(id, **kwargs):
     return conf.Ref.loadRef(id=id, **kwargs)
 
 
-def loadRefs(ids, **kwargs):
+def loadRefs(ids: list[str], **kwargs: Any) -> Any:
     """
     Shortcut function for easy use directly via the registry.
     See 'conf.Ref.loadRefs' for more information.
@@ -352,14 +356,14 @@ def __getattr__(name):
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
-def default_ref():
+def default_ref() -> Any:
     return loadRef(__getattr__("default_refID"), load=True)
 
 
-default_modelID = "explorer"
+default_modelID: str = "explorer"
 
 
-def default_model():
+def default_model() -> Any:
     return conf.Model.getID(default_modelID)
 
 

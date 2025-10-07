@@ -2,6 +2,9 @@
 Methods for model calibration
 """
 
+from __future__ import annotations
+from typing import Any, Dict, Optional, Tuple
+
 import itertools
 
 import numpy as np
@@ -15,7 +18,7 @@ from .. import reg, util
 from ..util import nam
 from .dataset import DatasetConfig
 
-__all__ = [
+__all__: list[str] = [
     "vel_definition",
     "comp_stride_variation",
     "fit_metric_definition",
@@ -23,7 +26,7 @@ __all__ = [
 ]
 
 
-def comp_linear(d, mode="minimal"):
+def comp_linear(d: Any, mode: str = "minimal") -> None:
     s, e, c = d.data
     assert isinstance(c, DatasetConfig)
     points = c.midline_points
@@ -88,7 +91,7 @@ def comp_linear(d, mode="minimal"):
     vprint("All linear parameters computed")
 
 
-def vel_definition(d):
+def vel_definition(d: Any) -> Dict[str, Any]:
     s, e, c = d.data
     assert isinstance(c, DatasetConfig)
     res_v = comp_stride_variation(d)
@@ -104,7 +107,7 @@ def vel_definition(d):
     return dic
 
 
-def comp_stride_variation(d):
+def comp_stride_variation(d: Any) -> Dict[str, Any]:
     s, e, c = d.data
     N = c.Npoints
     points = c.midline_points
@@ -229,7 +232,7 @@ def comp_stride_variation(d):
     return dic
 
 
-def fit_metric_definition(str_var, df_corr, c):
+def fit_metric_definition(str_var: Any, df_corr: Any, c: DatasetConfig) -> None:
     Nangles = 0 if c.Npoints < 3 else c.Npoints - 2
     sNt_cv = str_var[reg.getPar(["str_sd_var", "str_t_var"])].sum(axis=1)
     best_idx = sNt_cv.argmin()
@@ -254,7 +257,7 @@ def fit_metric_definition(str_var, df_corr, c):
     md.angular.bend = "from_vectors"
 
 
-def comp_segmentation(s, e, c):
+def comp_segmentation(s: Any, e: Any, c: DatasetConfig) -> Dict[str, Any]:
     N = np.clip(c.Npoints - 2, a_min=0, a_max=None)
     angles = [f"angle{i}" for i in range(N)]
     avels = util.nam.vel(angles)
