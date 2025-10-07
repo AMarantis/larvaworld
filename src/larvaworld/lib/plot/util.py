@@ -2,6 +2,13 @@
 Methods used in plotting
 """
 
+from __future__ import annotations
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
+
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
+    from matplotlib.figure import Figure
+
 import itertools
 import os
 import warnings
@@ -20,7 +27,7 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 
 from ... import vprint
 
-__all__ = [
+__all__: list[str] = [
     "plot_quantiles",
     "plot_mean_and_range",
     "circular_hist",
@@ -42,7 +49,11 @@ __all__ = [
 ]
 
 
-def plot_quantiles(df, x=None, **kwargs):
+def plot_quantiles(
+    df: "np.ndarray | pd.DataFrame | pd.Series",
+    x: Optional["np.ndarray"] = None,
+    **kwargs: Any,
+) -> None:
     """
     Plot quantiles or confidence intervals along with the mean.
 
@@ -82,17 +93,17 @@ def plot_quantiles(df, x=None, **kwargs):
 
 
 def plot_mean_and_range(
-    x,
-    mean,
-    lb,
-    ub,
-    axis,
-    color,
-    color_mean=None,
-    label=None,
-    linestyle="solid",
-    linewidth=2,
-):
+    x: "np.ndarray",
+    mean: "np.ndarray | pd.Series",
+    lb: "np.ndarray | pd.Series",
+    ub: "np.ndarray | pd.Series",
+    axis: "Axes",
+    color: str,
+    color_mean: Optional[str] = None,
+    label: Optional[str] = None,
+    linestyle: str = "solid",
+    linewidth: int = 2,
+) -> None:
     """
     Plot the mean and a shaded range (quantiles or confidence intervals).
 
@@ -147,7 +158,15 @@ def plot_mean_and_range(
     )
 
 
-def circular_hist(ax, x, bins=16, density=True, offset=0, gaps=True, **kwargs):
+def circular_hist(
+    ax: "Axes",
+    x: "np.ndarray",
+    bins: int = 16,
+    density: bool = True,
+    offset: float = 0,
+    gaps: bool = True,
+    **kwargs: Any,
+) -> Tuple["np.ndarray", "np.ndarray", Any]:
     """
     Produce a circular histogram of angles on ax.
 
@@ -234,7 +253,9 @@ def circular_hist(ax, x, bins=16, density=True, offset=0, gaps=True, **kwargs):
     return n, bins, patches
 
 
-def circNarrow(ax, data, alpha, label, color, Nbins=16):
+def circNarrow(
+    ax: "Axes", data: "np.ndarray", alpha: float, label: str, color: str, Nbins: int = 16
+) -> None:
     """
     Create a circular histogram with an arrow indicator.
 
@@ -279,7 +300,14 @@ def circNarrow(ax, data, alpha, label, color, Nbins=16):
     ax.add_patch(arrow)
 
 
-def confidence_ellipse(x, y, ax, n_std=3.0, facecolor="none", **kwargs):
+def confidence_ellipse(
+    x: "np.ndarray",
+    y: "np.ndarray",
+    ax: "Axes",
+    n_std: float = 3.0,
+    facecolor: str = "none",
+    **kwargs: Any,
+) -> Any:
     """
     Create a plot of the covariance confidence ellipse of *x* and *y*.
 
@@ -341,8 +369,14 @@ def confidence_ellipse(x, y, ax, n_std=3.0, facecolor="none", **kwargs):
 
 
 def dataset_legend(
-    labels, colors, ax=None, anchor=None, handlelength=0.5, handleheight=0.5, **kwargs
-):
+    labels: Sequence[str],
+    colors: Sequence[str],
+    ax: Optional["Axes"] = None,
+    anchor: Optional[Tuple[float, float]] = None,
+    handlelength: float = 0.5,
+    handleheight: float = 0.5,
+    **kwargs: Any,
+) -> Any:
     """
     Create a legend for all datasets with their specified labels and colors.
 
@@ -382,7 +416,7 @@ def dataset_legend(
     return leg
 
 
-def label_diff(i, j, text, X, Y, ax):
+def label_diff(i: int, j: int, text: str, X: Sequence[float], Y: Sequence[float], ax: "Axes") -> None:
     """
     Label the difference between two data points with an annotation and an arrow.
 
@@ -415,7 +449,7 @@ def label_diff(i, j, text, X, Y, ax):
     ax.annotate("", xy=(X[i], y), xytext=(X[j], y), arrowprops=props)
 
 
-def pvalue_star(pv):
+def pvalue_star(pv: float) -> str:
     """
     Convert a p-value to a star annotation for significance.
 
@@ -435,7 +469,16 @@ def pvalue_star(pv):
     return "ns"
 
 
-def annotate_plot(box, data, x, y, hue=None, show_ns=True, target_only=None, **kwargs):
+def annotate_plot(
+    box: Any,
+    data: "pd.DataFrame",
+    x: str,
+    y: str,
+    hue: Optional[str] = None,
+    show_ns: bool = True,
+    target_only: Any = None,
+    **kwargs: Any,
+) -> None:
     """
     Annotate a plot with Mann-Whitney U test p-values.
 
@@ -518,8 +561,13 @@ def annotate_plot(box, data, x, y, hue=None, show_ns=True, target_only=None, **k
 
 
 def dual_half_circle(
-    center, radius=0.04, angle=90, ax=None, colors=("W", "k"), **kwargs
-):
+    center: Tuple[float, float],
+    radius: float = 0.04,
+    angle: float = 90,
+    ax: Optional["Axes"] = None,
+    colors: Tuple[str, str] = ("W", "k"),
+    **kwargs: Any,
+) -> List[Any]:
     """
     Add two half circles to the axes 'ax' (or the current axes) with the specified face colors 'colors' rotated at 'angle' (in degrees).
 
@@ -555,7 +603,7 @@ def dual_half_circle(
     return [w1, w2]
 
 
-def save_plot(fig, filepath, filename):
+def save_plot(fig: "Figure", filepath: str, filename: str) -> None:
     """
     Save a Matplotlib figure to a specified file path.
 
@@ -582,7 +630,13 @@ def save_plot(fig, filepath, filename):
     vprint(f"Plot {filename} saved as {filepath}", 1)
 
 
-def process_plot(fig, save_to, filename, return_fig=False, show=False):
+def process_plot(
+    fig: "Figure",
+    save_to: Optional[str],
+    filename: str,
+    return_fig: bool = False,
+    show: bool = False,
+) -> Any:
     """
     Process and optionally save or show a Matplotlib figure.
 
@@ -625,17 +679,17 @@ def process_plot(fig, save_to, filename, return_fig=False, show=False):
 
 
 def prob_hist(
-    vs,
-    colors,
-    labels,
-    bins,
-    ax,
-    hist_type="sns.hist",
-    kde=False,
-    sns_kws={},
-    plot_fit=True,
-    **kwargs,
-):
+    vs: Sequence["np.ndarray"],
+    colors: Sequence[str],
+    labels: Sequence[str],
+    bins: "int | Sequence[float]",
+    ax: "Axes",
+    hist_type: str = "sns.hist",
+    kde: bool = False,
+    sns_kws: Dict[str, Any] = {},
+    plot_fit: bool = True,
+    **kwargs: Any,
+) -> None:
     """
     Create a probability histogram or distribution plot for multiple datasets.
 
@@ -697,19 +751,19 @@ def prob_hist(
 
 
 def single_boxplot(
-    x,
-    y,
-    ax,
-    data,
-    hue=None,
-    palette=None,
-    color=None,
-    annotation=True,
-    show_ns=False,
-    target_only=None,
-    stripplot=True,
-    **kwargs,
-):
+    x: str,
+    y: str,
+    ax: "Axes",
+    data: "pd.DataFrame",
+    hue: Optional[str] = None,
+    palette: Any = None,
+    color: Optional[str] = None,
+    annotation: bool = True,
+    show_ns: bool = False,
+    target_only: Optional[str] = None,
+    stripplot: bool = True,
+    **kwargs: Any,
+) -> None:
     """
     Create a single boxplot with optional annotations and stripplot.
 
@@ -782,18 +836,18 @@ def single_boxplot(
 
 
 def configure_subplot_grid(
-    N=None,
-    wh=None,
-    w=8,
-    h=8,
-    sharex=False,
-    sharey=False,
-    Ncols=None,
-    Nrows=None,
-    Nrows_coef=1,
-    figsize=None,
-    **kwargs,
-):
+    N: Optional[int] = None,
+    wh: Optional[float] = None,
+    w: float = 8,
+    h: float = 8,
+    sharex: bool = False,
+    sharey: bool = False,
+    Ncols: Optional[int] = None,
+    Nrows: Optional[int] = None,
+    Nrows_coef: int = 1,
+    figsize: Optional[Tuple[int, int]] = None,
+    **kwargs: Any,
+) -> Dict[str, Any]:
     """
     Calculate the number of rows and columns for arranging N elements in a grid and configure subplot grid parameters.
 
@@ -857,7 +911,7 @@ def configure_subplot_grid(
     return kws
 
 
-def define_end_ks(ks=None, mode="basic"):
+def define_end_ks(ks: Optional[Sequence[str]] = None, mode: str = "basic") -> Sequence[str]:
     l_par = "l"
     if ks is None:
         dic = {
@@ -963,8 +1017,14 @@ def define_end_ks(ks=None, mode="basic"):
     return ks
 
 
-def get_vs(datasets, par, key="step", absolute=False, rad2deg=False):
-    vs = []
+def get_vs(
+    datasets: Sequence[Any],
+    par: str,
+    key: str = "step",
+    absolute: bool = False,
+    rad2deg: bool = False,
+) -> List["np.ndarray"]:
+    vs: List["np.ndarray"] = []
     for d in datasets:
         v = d.get_par(par, key=key)
         if v is not None:
@@ -980,14 +1040,14 @@ def get_vs(datasets, par, key="step", absolute=False, rad2deg=False):
 
 
 def color_epochs(
-    epochs,
-    ax,
-    trange,
-    edgecolor=f"{0.4 * (0 + 1)}",
-    facecolor="lightblue",
-    epoch_boundaries=True,
-    epoch_area=True,
-):
+    epochs: Sequence[Tuple[int, int]],
+    ax: "Axes",
+    trange: Sequence[float],
+    edgecolor: str = f"{0.4 * (0 + 1)}",
+    facecolor: str = "lightblue",
+    epoch_boundaries: bool = True,
+    epoch_area: bool = True,
+) -> None:
     if epoch_boundaries:
         for s0, s1 in epochs:
             for s01 in [s0, s1]:

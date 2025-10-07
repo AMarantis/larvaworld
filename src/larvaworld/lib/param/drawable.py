@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import Any
+
 import param
 
 from .. import util
@@ -5,7 +8,7 @@ from .custom import RandomizedColor
 from .nested_parameter_group import NestedConf
 from .spatial import LineClosed, LineExtended
 
-__all__ = [
+__all__: list[str] = [
     "Viewable",
     "ViewableToggleable",
     "ViewableLine",

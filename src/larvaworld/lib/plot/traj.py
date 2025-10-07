@@ -2,6 +2,9 @@
 Agent 2D trajectory-related plotting
 """
 
+from __future__ import annotations
+from typing import Any, Dict, Optional, Sequence, Tuple
+
 import copy
 
 import numpy as np
@@ -9,7 +12,7 @@ import numpy as np
 from .. import plot, reg, util, funcs
 from ..util import nam
 
-__all__ = [
+__all__: list[str] = [
     "traj_1group",
     "traj_grouped",
     "track_annotated",
@@ -24,14 +27,14 @@ __all__ = [
 
 
 def traj_1group(
-    d,
-    unit="mm",
-    mode="default",
-    title=None,
-    single_color=False,
-    time_range=None,
-    **kwargs,
-):
+    d: Any,
+    unit: str = "mm",
+    mode: str = "default",
+    title: Optional[str] = None,
+    single_color: bool = False,
+    time_range: Optional[Tuple[int, int]] = None,
+    **kwargs: Any,
+) -> Any:
     df = d.load_traj(mode=mode)
     xy = d.timeseries_slice(time_range=time_range, df=df)[d.c.traj_xy]
     c = d.config
@@ -72,14 +75,14 @@ def traj_1group(
 
 @funcs.graph("trajectories", required={"traj": []})
 def traj_grouped(
-    unit="mm",
-    name=None,
-    subfolder="trajectories",
-    range=None,
-    mode="default",
-    single_color=False,
-    **kwargs,
-):
+    unit: str = "mm",
+    name: Optional[str] = None,
+    subfolder: str = "trajectories",
+    range: Optional[Tuple[int, int]] = None,
+    mode: str = "default",
+    single_color: bool = False,
+    **kwargs: Any,
+) -> Any:
     if name is None:
         name = f"comparative_trajectories_{mode}"
 
@@ -107,7 +110,16 @@ def traj_grouped(
     return P.get()
 
 
-def ax_conf_kws(kws, trange, Ndatasets, Nrows, i=0, ylab=None, ylim=None, xlim=None):
+def ax_conf_kws(
+    kws: Any,
+    trange: Any,
+    Ndatasets: int,
+    Nrows: int,
+    i: int = 0,
+    ylab: Optional[str] = None,
+    ylim: Optional[Sequence[float]] = None,
+    xlim: Optional[Sequence[float]] = None,
+) -> Dict[str, Any]:
     conf_kws = {
         "ylab": kws.ylab if ylab is None else ylab,
         "ylim": kws.ylim if ylim is None else ylim,
@@ -131,23 +143,23 @@ def ax_conf_kws(kws, trange, Ndatasets, Nrows, i=0, ylab=None, ylim=None, xlim=N
 
 
 def track_annotated(
-    epoch="stride",
-    a=None,
-    dt=0.1,
-    a2plot=None,
-    ylab=None,
-    ylim=None,
-    xlim=None,
-    slice=None,
-    agent_idx=0,
-    agent_id=None,
-    subfolder="tracks",
-    moving_average_interval=None,
-    epoch_boundaries=True,
-    show_extrema=True,
-    min_amp=None,
-    **kwargs,
-):
+    epoch: str = "stride",
+    a: Any = None,
+    dt: float = 0.1,
+    a2plot: Any = None,
+    ylab: Optional[str] = None,
+    ylim: Optional[Sequence[float]] = None,
+    xlim: Optional[Sequence[float]] = None,
+    slice: Optional[Tuple[int, int]] = None,
+    agent_idx: int = 0,
+    agent_id: Optional[str] = None,
+    subfolder: str = "tracks",
+    moving_average_interval: Optional[float] = None,
+    epoch_boundaries: bool = True,
+    show_extrema: bool = True,
+    min_amp: Optional[float] = None,
+    **kwargs: Any,
+) -> Any:
     temp = f"track_{slice[0]}-{slice[1]}" if slice is not None else "track"
     name = f"{temp}_{agent_id}" if agent_id is not None else f"{temp}_{agent_idx}"
     P = plot.AutoPlot(
@@ -275,23 +287,23 @@ def track_annotated(
     return P.get()
 
 
-def annotated_strideplot(**kwargs):
+def annotated_strideplot(**kwargs: Any) -> Any:
     return track_annotated(epoch="stride", **kwargs)
 
 
-def annotated_turnplot(**kwargs):
+def annotated_turnplot(**kwargs: Any) -> Any:
     return track_annotated(epoch="turn", **kwargs)
 
 
 def track_annotated_data(
-    name=None,
-    subfolder="tracks",
-    epoch="stride",
-    a2plot_k=None,
-    agent_idx=[3, 4, 5, 6],
-    dur=1,
-    **kwargs,
-):
+    name: Optional[str] = None,
+    subfolder: str = "tracks",
+    epoch: str = "stride",
+    a2plot_k: Optional[str] = None,
+    agent_idx: Sequence[int] = [3, 4, 5, 6],
+    dur: float = 1,
+    **kwargs: Any,
+) -> Any:
     if name is None:
         name = f"annotated_{epoch}plot"
     Nidx = len(agent_idx)
@@ -379,19 +391,19 @@ def track_annotated_data(
 
 
 @funcs.graph("stride track")
-def annotated_strideplot_data(**kwargs):
+def annotated_strideplot_data(**kwargs: Any) -> Any:
     return track_annotated_data(epoch="stride", **kwargs)
 
 
 @funcs.graph("turn track")
-def annotated_turnplot_data(**kwargs):
+def annotated_turnplot_data(**kwargs: Any) -> Any:
     return track_annotated_data(epoch="turn", **kwargs)
 
 
 @funcs.graph("marked strides")
 def plot_marked_strides(
-    agent_idx=0, agent_id=None, slice=[20, 40], subfolder="individuals", **kwargs
-):
+    agent_idx: int = 0, agent_id: Optional[str] = None, slice: Sequence[int] = [20, 40], subfolder: str = "individuals", **kwargs: Any
+) -> Any:
     temp = (
         f"marked_strides_{slice[0]}-{slice[1]}"
         if slice is not None
@@ -474,13 +486,13 @@ def plot_marked_strides(
 
 @funcs.graph("sample tracks")
 def plot_sample_tracks(
-    mode=["strides", "turns"],
-    agent_idx=4,
-    agent_id=None,
-    slice=[0, 160],
-    subfolder="individuals",
-    **kwargs,
-):
+    mode: Sequence[str] = ["strides", "turns"],
+    agent_idx: int = 4,
+    agent_id: Optional[str] = None,
+    slice: Sequence[int] = [0, 160],
+    subfolder: str = "individuals",
+    **kwargs: Any,
+) -> Any:
     Nrows = len(mode)
     if Nrows == 2:
         suf = "stridesVSturns"

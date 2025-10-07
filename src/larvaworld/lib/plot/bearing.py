@@ -2,12 +2,15 @@
 Bearing-related plotting
 """
 
+from __future__ import annotations
+from typing import Any, Optional, Sequence
+
 import numpy as np
 
 from .. import plot, funcs
 from ..util import nam
 
-__all__ = [
+__all__: list[str] = [
     "plot_turn_Dbearing",
     "plot_turn_Dorient2center",
     "plot_chunk_Dorient2source",
@@ -16,15 +19,15 @@ __all__ = [
 
 @funcs.graph("bearing/turn")
 def plot_turn_Dbearing(
-    name=None,
-    min_angle=30.0,
-    max_angle=180.0,
-    ref_angle=None,
-    source_ID="Source",
-    Nplots=4,
-    subfolder="turn",
-    **kwargs,
-):
+    name: Optional[str] = None,
+    min_angle: float = 30.0,
+    max_angle: float = 180.0,
+    ref_angle: Optional[float] = None,
+    source_ID: str = "Source",
+    Nplots: int = 4,
+    subfolder: str = "turn",
+    **kwargs: Any,
+) -> Any:
     if ref_angle is None:
         if name is None:
             name = "turn_Dorient_to_center"
@@ -111,22 +114,22 @@ def plot_turn_Dbearing(
 
 
 @funcs.graph("bearing to center/turn")
-def plot_turn_Dorient2center(**kwargs):
+def plot_turn_Dorient2center(**kwargs: Any) -> Any:
     return plot_turn_Dbearing(ref_angle=None, **kwargs)
 
 
 @funcs.graph("bearing to source/epoch")
 def plot_chunk_Dorient2source(
-    source_ID,
-    datasets,
-    name=None,
-    subfolder="bouts",
-    chunk="stride",
-    Nbins=16,
-    min_dur=0.0,
-    plot_merged=False,
-    **kwargs,
-):
+    source_ID: str,
+    datasets: Sequence[Any],
+    name: Optional[str] = None,
+    subfolder: str = "bouts",
+    chunk: str = "stride",
+    Nbins: int = 16,
+    min_dur: float = 0.0,
+    plot_merged: bool = False,
+    **kwargs: Any,
+) -> Any:
     N = len(datasets)
     if plot_merged:
         N += 1

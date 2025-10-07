@@ -2,6 +2,9 @@
 DEB-related plotting
 """
 
+from __future__ import annotations
+from typing import Any, Optional, Sequence, Tuple
+
 import warnings
 
 import numpy as np
@@ -10,7 +13,7 @@ from scipy import signal
 from ... import SIM_DIR
 from .. import plot, reg, util, funcs
 
-__all__ = [
+__all__: list[str] = [
     "plot_gut",
     "plot_food_amount",
     "plot_debs",
@@ -19,7 +22,7 @@ __all__ = [
 
 
 @funcs.graph("gut")
-def plot_gut(**kwargs):
+def plot_gut(**kwargs: Any) -> Any:
     P = plot.AutoPlot(name="gut", **kwargs)
     P.plot_quantiles(
         par="gut_occupancy", coeff=100, ylab="% gut occupied", ylim=[0, 100]
@@ -30,7 +33,7 @@ def plot_gut(**kwargs):
 
 
 @funcs.graph("food intake (timeplot)")
-def plot_food_amount(filt_amount=False, scaled=False, **kwargs):
+def plot_food_amount(filt_amount: bool = False, scaled: bool = False, **kwargs: Any) -> Any:
     name = "food_intake"
     ylab = r"Cumulative food intake $(mg)$"
     par = "ingested_food_volume"
@@ -79,22 +82,22 @@ def plot_food_amount(filt_amount=False, scaled=False, **kwargs):
 
 @funcs.graph("deb")
 def plot_debs(
-    deb_dicts=None,
-    name=None,
-    save_to=None,
-    mode="full",
-    roversVSsitters=False,
-    include_egg=True,
-    time_unit="hours",
-    sim_only=False,
-    force_ymin=None,
-    color_epoch_quality=True,
-    datasets=None,
-    labels=None,
-    label_epochs=True,
-    label_lifestages=True,
-    **kwargs,
-):
+    deb_dicts: Optional[Sequence[Any]] = None,
+    name: Optional[str] = None,
+    save_to: Optional[str] = None,
+    mode: str = "full",
+    roversVSsitters: bool = False,
+    include_egg: bool = True,
+    time_unit: str = "hours",
+    sim_only: bool = False,
+    force_ymin: Optional[float] = None,
+    color_epoch_quality: bool = True,
+    datasets: Optional[Sequence[Any]] = None,
+    labels: Optional[Sequence[str]] = None,
+    label_epochs: bool = True,
+    label_lifestages: bool = True,
+    **kwargs: Any,
+) -> Any:
     warnings.filterwarnings("ignore")
     if name is None:
         name = "debs"
@@ -497,12 +500,12 @@ def plot_debs(
 
 @funcs.graph("EEBvsQuality")
 def plot_EEB_vs_food_quality(
-    refIDs=None,
-    dt=None,
-    name=None,
-    species_list=["rover", "sitter", "default"],
-    **kwargs,
-):
+    refIDs: Optional[Sequence[str]] = None,
+    dt: Optional[float] = None,
+    name: Optional[str] = None,
+    species_list: Sequence[str] = ("rover", "sitter", "default"),
+    **kwargs: Any,
+) -> Any:
     if refIDs is None:
         raise ("No sample configurations provided")
     from ..model import DEB

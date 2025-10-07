@@ -1,9 +1,12 @@
+from __future__ import annotations
+from typing import Any, Dict, List, Optional, Sequence, Tuple
+
 import param
 
 from .. import util
 from .custom import ClassAttr, ClassDict
 
-__all__ = [
+__all__: list[str] = [
     "NestedConf",
     "class_generator",
     "expand_kws_shortcuts",
@@ -17,7 +20,7 @@ class NestedConf(param.Parameterized):
     A class for managing nested configuration parameters.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         """
         Initializes a NestedConf instance.
 
@@ -40,7 +43,7 @@ class NestedConf(param.Parameterized):
         super().__init__(**kwargs)
 
     @property
-    def nestedConf(self):
+    def nestedConf(self) -> util.AttrDict:
         """
         Generates a nested configuration dictionary.
 
@@ -58,7 +61,7 @@ class NestedConf(param.Parameterized):
                     d[k] = util.AttrDict({kk: vv.nestedConf for kk, vv in d[k].items()})
         return d
 
-    def entry(self, id=None):
+    def entry(self, id: Optional[str] = None) -> Dict[str, Any]:
         """
         Creates an entry in the configuration.
 
@@ -83,7 +86,7 @@ class NestedConf(param.Parameterized):
         return {id: d}
 
     @property
-    def param_keys(self):
+    def param_keys(self) -> util.SuperList:
         """
         Retrieves a list of parameter keys.
 
@@ -92,7 +95,7 @@ class NestedConf(param.Parameterized):
         ks = list(self.param.objects().keys())
         return util.SuperList([k for k in ks if k not in ["name"]])
 
-    def params_missing(self, d):
+    def params_missing(self, d: Dict[str, Any]) -> util.SuperList:
         """
         Checks for missing parameters in the configuration.
 
@@ -103,9 +106,9 @@ class NestedConf(param.Parameterized):
         return util.SuperList([k for k in ks if k not in d])
 
 
-def class_generator(A0, mode="Unit"):
+def class_generator(A0: Any, mode: str = "Unit"):
     class A(NestedConf):
-        def __init__(self, **kwargs):
+        def __init__(self, **kwargs: Any):
             if hasattr(A, "distribution"):
                 D = A.distribution.__class__
                 ks = list(D.param.objects().keys())
@@ -140,7 +143,7 @@ def class_generator(A0, mode="Unit"):
 
             super().__init__(**kwargs)
 
-        def shortcut(self, kdict, kws):
+        def shortcut(self, kdict: Dict[str, str], kws: Dict[str, Any]) -> Dict[str, Any]:
             for k, key in kdict.items():
                 if k in kws:
                     assert key not in kws
@@ -149,7 +152,7 @@ def class_generator(A0, mode="Unit"):
             return kws
 
         @classmethod
-        def from_entries(cls, entries):
+        def from_entries(cls, entries: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
             all_confs = []
             for gid, dic in entries.items():
                 Ainst = cls(**dic)
@@ -178,11 +181,11 @@ def class_generator(A0, mode="Unit"):
             return all_confs
 
         @classmethod
-        def agent_class(cls):
+        def agent_class(cls) -> str:
             return A0.__name__
 
         @classmethod
-        def mode(cls):
+        def mode(cls) -> str:
             return mode
 
     A.__name__ = f"{A0.__name__}{mode}"
@@ -211,7 +214,7 @@ def class_generator(A0, mode="Unit"):
     return A
 
 
-def expand_kws_shortcuts(kwargs):
+def expand_kws_shortcuts(kwargs: Dict[str, Any]) -> Dict[str, Any]:
     if "life" in kwargs.keys():
         assert "life_history" not in kwargs.keys()
         assert len(kwargs["life"]) == 2
@@ -230,7 +233,7 @@ def expand_kws_shortcuts(kwargs):
     return kwargs
 
 
-def class_defaults(A, excluded=[], included={}, **kwargs):
+def class_defaults(A: Any, excluded: Sequence[Any] = [], included: Dict[str, Any] = {}, **kwargs: Any) -> util.AttrDict:
     d = class_generator(A)().nestedConf
     if len(excluded) > 0:
         for exc_A in excluded:
@@ -247,7 +250,7 @@ def class_defaults(A, excluded=[], included={}, **kwargs):
     return d
 
 
-def class_objs(A, excluded=[]):
+def class_objs(A: Any, excluded: Sequence[Any] = []) -> util.AttrDict:
     objs = A.param.objects(instance=False)
     ks = util.SuperList(objs.keys())
     if len(excluded) > 0:

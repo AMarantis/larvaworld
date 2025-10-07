@@ -7,6 +7,9 @@ load these to avoid heavy import chains and potential cycles while preserving
 the public API surface.
 """
 
+from __future__ import annotations
+from typing import Any
+
 __displayname__ = "Parameters"
 
 _LOADED = False
@@ -18,7 +21,7 @@ def _load_all() -> None:
         return
     from importlib import import_module
 
-    def _export_all_from(mod):
+    def _export_all_from(mod: Any) -> None:
         names = getattr(mod, "__all__", None)
         if names is None:
             names = [n for n in dir(mod) if not n.startswith("_")]
@@ -40,9 +43,14 @@ def _load_all() -> None:
     _LOADED = True
 
 
-def __getattr__(name):
+def __getattr__(name: str) -> Any:
     if not _LOADED:
         _load_all()
     if name in globals():
         return globals()[name]
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+def __dir__() -> list[str]:
+    if not _LOADED:
+        _load_all()
+    return sorted(list(globals().keys()))

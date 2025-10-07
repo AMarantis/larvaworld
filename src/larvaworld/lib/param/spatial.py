@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import Any, Optional, Sequence, Tuple
+
 import numpy as np
 import param
 from shapely import Polygon, geometry
@@ -13,7 +16,7 @@ from .custom import (
 )
 from .nested_parameter_group import NestedConf
 
-__all__ = [
+__all__: list[str] = [
     "Pos2D",
     "Pos2DPixel",
     "RadiallyExtended",

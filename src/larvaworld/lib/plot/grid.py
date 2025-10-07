@@ -2,6 +2,9 @@
 Composite grid-structured figure
 """
 
+from __future__ import annotations
+from typing import Any, Dict, List, Optional, Sequence, Tuple
+
 import os
 
 import numpy as np
@@ -10,7 +13,7 @@ from matplotlib.gridspec import GridSpec
 from .. import plot, reg, util, funcs
 
 
-__all__ = [
+__all__: list[str] = [
     "calibration_plot",
     "model_summary",
     "velocity_definition",
@@ -25,7 +28,7 @@ __all__ = [
 ]
 
 
-def calibration_plot(save_to=None, files=None):
+def calibration_plot(save_to: Optional[str] = None, files: Optional[Sequence[str]] = None) -> Any:
     from PIL import Image
     from matplotlib import pyplot as plt
 
@@ -85,8 +88,8 @@ def calibration_plot(save_to=None, files=None):
     },
 )
 def model_summary(
-    mID, refID=None, refDataset=None, Nids=1, model_table=False, **kwargs
-):
+    mID: str, refID: Optional[str] = None, refDataset: Any = None, Nids: int = 1, model_table: bool = False, **kwargs: Any
+) -> Any:
     from ..sim import sim_model
 
     if refDataset is None:
@@ -181,8 +184,8 @@ def model_summary(
 
 @funcs.graph("velocity definition")
 def velocity_definition(
-    dataset, save_to=None, save_as="vel_definition.pdf", component_vels=True, **kwargs
-):
+    dataset: Any, save_to: Optional[str] = None, save_as: str = "vel_definition.pdf", component_vels: bool = True, **kwargs: Any
+) -> None:
     from matplotlib import pyplot as plt
     if save_to is None:
         save_to = dataset.plot_dir
@@ -222,7 +225,7 @@ def velocity_definition(
     "exploration summary",
     required={"graphIDs": ["trajectories", "dispersal", "crawl pars"]},
 )
-def exploration_summary(datasets, target=None, range=(0, 40), **kwargs):
+def exploration_summary(datasets: Sequence[Any], target: Any = None, range: Tuple[int, int] = (0, 40), **kwargs: Any) -> Any:
     w, h = 54, 26
     P = plot.GridPlot(
         name=f"exploration_summary_{range}",
@@ -266,7 +269,7 @@ def exploration_summary(datasets, target=None, range=(0, 40), **kwargs):
     "dispersal summary",
     required={"graphIDs": ["trajectories", "dispersal", "endpoint box"]},
 )
-def dsp_summary(datasets, target=None, range=(0, 40), **kwargs):
+def dsp_summary(datasets: Sequence[Any], target: Any = None, range: Tuple[int, int] = (0, 40), **kwargs: Any) -> Any:
     w, h = 54, 26
     P = plot.GridPlot(
         name=f"dsp_summary_{range}",
@@ -322,7 +325,7 @@ def dsp_summary(datasets, target=None, range=(0, 40), **kwargs):
     "kinematic analysis",
     required={"graphIDs": ["freq powerspectrum", "epochs", "stride cycle multi"]},
 )
-def kinematic_analysis(datasets, **kwargs):
+def kinematic_analysis(datasets: Sequence[Any], **kwargs: Any) -> Any:
     w, h = 50, 28
     P = plot.GridPlot(
         name="kinematic_analysis",
@@ -369,7 +372,7 @@ def kinematic_analysis(datasets, **kwargs):
 
 
 @funcs.graph("RvsS summary")
-def RvsS_summary(entrylist, title, mdiff_df, **kwargs):
+def RvsS_summary(entrylist: Sequence[Dict[str, Any]], title: str, mdiff_df: Any, **kwargs: Any) -> Any:
     h_mpl = 4
     w, h = 30, 60 + h_mpl * 2
     P = plot.GridPlot(
@@ -414,7 +417,7 @@ def RvsS_summary(entrylist, title, mdiff_df, **kwargs):
 @funcs.graph(
     "double-patch summary", required={"graphIDs": ["trajectories", "double patch"]}
 )
-def DoublePatch_summary(datasets, title, mdiff_df, ks=None, name=None, **kwargs):
+def DoublePatch_summary(datasets: Dict[str, Sequence[Any]], title: str, mdiff_df: Any, ks: Optional[Sequence[str]] = None, name: Optional[str] = None, **kwargs: Any) -> Any:
     Nmods = 2
     h_mpl = len(mdiff_df.index)
     hh_mpl = h_mpl + 4
@@ -497,7 +500,7 @@ def DoublePatch_summary(datasets, title, mdiff_df, ks=None, name=None, **kwargs)
     "chemotaxis summary",
     required={"graphIDs": ["trajectories"], "ks": ["c_odor1", "dc_odor1"]},
 )
-def chemo_summary(datasets, mdiff_df, title, **kwargs):
+def chemo_summary(datasets: Dict[str, Sequence[Any]], mdiff_df: Any, title: str, **kwargs: Any) -> Any:
     Nmods = len(mdiff_df.columns)
     h_mpl = len(mdiff_df.index)
     hh_mpl = h_mpl + 4
@@ -559,7 +562,7 @@ def chemo_summary(datasets, mdiff_df, title, **kwargs):
     "eval summary",
     required={"graphIDs": ["trajectories", "epochs", "crawl pars", "angular pars"]},
 )
-def result_summary(datasets, target, **kwargs):
+def result_summary(datasets: Sequence[Any], target: Any, **kwargs: Any) -> Any:
     w, h = 50, 34
     P = plot.GridPlot(
         name=f"{target.id}_result_summary",
@@ -618,8 +621,8 @@ def result_summary(datasets, target, **kwargs):
 
 @funcs.graph("sample track")
 def model_sample_track(
-    mID=None, m=None, dur=2 / 3, dt=1 / 16, Nids=1, min_turn_amp=20, d=None, **kwargs
-):
+    mID: Optional[str] = None, m: Any = None, dur: float = 2 / 3, dt: float = 1 / 16, Nids: int = 1, min_turn_amp: float = 20, d: Any = None, **kwargs: Any
+) -> Any:
     from ..sim import sim_model
 
     if d is None:
@@ -682,7 +685,7 @@ def model_sample_track(
 
 
 @funcs.graph("error summary", required={"graphIDs": ["error barplot", "error table"]})
-def eval_summary(error_dict, evaluation, norm_mode="raw", eval_mode="pooled", **kwargs):
+def eval_summary(error_dict: Dict[str, Any], evaluation: Any, norm_mode: str = "raw", eval_mode: str = "pooled", **kwargs: Any) -> Any:
     label_dic = {
         "1:1": {"end": "RSS error", "step": r"median 1:1 distribution KS$_{D}$"},
         "pooled": {

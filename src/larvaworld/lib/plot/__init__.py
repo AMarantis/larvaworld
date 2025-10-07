@@ -5,9 +5,11 @@ Public usage remains the same: symbols are available under
 `larvaworld.lib.plot.<submodule>` and are loaded on first access.
 """
 
+from __future__ import annotations
+
 __displayname__ = "Plotting"
 
-__all__ = [
+__all__: list[str] = [
     "util",
     "base",
     "bar",
@@ -92,7 +94,7 @@ _FUNCTION_TO_MODULE = {
     "plot_heatmap_PI": f"{__name__}.scape",
 }
 
-def __getattr__(name):
+def __getattr__(name: str):
     module_path = _SUBMODULES.get(name)
     if module_path is None:
         # Check if it's a class
@@ -118,5 +120,5 @@ def __getattr__(name):
     globals()[name] = mod
     return mod
 
-def __dir__():
-    return sorted(list(globals().keys()) + __all__)
+def __dir__() -> list[str]:
+    return sorted(list(globals().keys()) + list(__all__))

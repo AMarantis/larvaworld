@@ -2,6 +2,9 @@
 Histograms
 """
 
+from __future__ import annotations
+from typing import Any, Optional, Sequence
+
 import itertools
 
 import numpy as np
@@ -11,7 +14,7 @@ import seaborn as sns
 from .. import plot, reg, funcs
 from ..model import moduleDB as MD
 
-__all__ = [
+__all__: list[str] = [
     "module_endpoint_hists",
     "plot_ang_pars",
     "plot_distros",
@@ -29,8 +32,8 @@ __all__ = [
 
 @funcs.graph("module hists")
 def module_endpoint_hists(
-    e, mkey="crawler", mode="realistic", Nbins=None, show_median=True, **kwargs
-):
+    e: Any, mkey: str = "crawler", mode: str = "realistic", Nbins: Optional[int] = None, show_median: bool = True, **kwargs: Any
+) -> Any:
     if Nbins is None:
         Nbins = int(e.index.values.shape[0] / 10)
 
@@ -80,16 +83,16 @@ def module_endpoint_hists(
     "angular pars", required={"ks": ["b", "bv", "ba", "fov", "foa", "rov", "roa"]}
 )
 def plot_ang_pars(
-    absolute=False,
-    rad2deg=True,
-    include_rear=False,
-    name="ang_pars",
-    half_circles=True,
-    kde=True,
-    Npars=5,
-    Nbins=100,
-    **kwargs,
-):
+    absolute: bool = False,
+    rad2deg: bool = True,
+    include_rear: bool = False,
+    name: str = "ang_pars",
+    half_circles: bool = True,
+    kde: bool = True,
+    Npars: int = 5,
+    Nbins: int = 100,
+    **kwargs: Any,
+) -> Any:
     if Npars == 5:
         ks = ["b", "bv", "ba", "fov", "foa"]
         rs = [100, 200, 2000, 200, 2000]
@@ -122,17 +125,17 @@ def plot_ang_pars(
 # ks=['v', 'a','sv', 'sa', 'b', 'bv', 'ba', 'fov', 'foa']
 @funcs.graph("distros", required={"ks": []})
 def plot_distros(
-    name=None,
-    ks=["v", "a", "sv", "sa", "b", "bv", "ba", "fov", "foa"],
-    mode="hist",
-    half_circles=True,
-    annotation=False,
-    target_only=None,
-    show_ns=False,
-    subfolder="distro",
-    Nbins=100,
-    **kwargs,
-):
+    name: Optional[str] = None,
+    ks: Sequence[str] = ("v", "a", "sv", "sa", "b", "bv", "ba", "fov", "foa"),
+    mode: str = "hist",
+    half_circles: bool = True,
+    annotation: bool = False,
+    target_only: Optional[str] = None,
+    show_ns: bool = False,
+    subfolder: str = "distro",
+    Nbins: int = 100,
+    **kwargs: Any,
+) -> Any:
     Nps = len(ks)
     if name is None:
         name = f"distros_{mode}_{Nps}"
@@ -230,7 +233,7 @@ def plot_distros(
 
 
 @funcs.graph("crawl pars", required={"ks": ["str_N", "run_tr", "cum_sd"]})
-def plot_crawl_pars(kde=True, **kwargs):
+def plot_crawl_pars(kde: bool = True, **kwargs: Any) -> Any:
     return plot_endpoint_params(
         type="hist",
         ks=["str_N", "run_tr", "cum_sd"],
@@ -241,18 +244,18 @@ def plot_crawl_pars(kde=True, **kwargs):
 
 
 @funcs.graph("turn amplitude VS Y pos", required={"ks": ["tur_y0"]})
-def plot_turn_amp_VS_Ypos(**kwargs):
+def plot_turn_amp_VS_Ypos(**kwargs: Any) -> Any:
     return plot_turn_amp(k="tur_y0", **kwargs)
 
 
 @funcs.graph("turn duration", required={"ks": ["tur_t"]})
-def plot_turn_duration(absolute=True, **kwargs):
+def plot_turn_duration(absolute: bool = True, **kwargs: Any) -> Any:
     return plot_turn_amp(k="tur_t", absolute=absolute, **kwargs)
 
 
 def plot_turn_amp(
-    name=None, k="tur_t", ref_angle=None, subfolder="turn", absolute=True, **kwargs
-):
+    name: Optional[str] = None, k: str = "tur_t", ref_angle: Optional[float] = None, subfolder: str = "turn", absolute: bool = True, **kwargs: Any
+) -> Any:
     if name is None:
         nn = "turn_amp" if ref_angle is None else "rel_turn_angle"
         name = f"{nn}_VS_{k}_scatter"
@@ -296,8 +299,8 @@ def plot_turn_amp(
 
 @funcs.graph("angular/epoch", required={"ks": ["bv", "fov", "rov", "ba", "foa", "roa"]})
 def plot_bout_ang_pars(
-    name="bout_ang_pars", absolute=True, include_rear=True, subfolder="turn", **kwargs
-):
+    name: str = "bout_ang_pars", absolute: bool = True, include_rear: bool = True, subfolder: str = "turn", **kwargs: Any
+) -> Any:
     ks = (
         ["bv", "fov", "rov", "ba", "foa", "roa"]
         if include_rear
@@ -342,7 +345,7 @@ def plot_bout_ang_pars(
 
 
 @funcs.graph("endpoint pars (scatter)", required={"ks": []})
-def plot_endpoint_scatter(subfolder="endpoint", ks=None, **kwargs):
+def plot_endpoint_scatter(subfolder: str = "endpoint", ks: Sequence[str] | None = None, **kwargs: Any) -> Any:
     pairs = list(itertools.combinations(ks, 2))
     Npairs = len(pairs)
     if Npairs % 3 == 0:
@@ -389,7 +392,7 @@ def plot_endpoint_scatter(subfolder="endpoint", ks=None, **kwargs):
 
 
 @funcs.graph("turn amplitude", required={"ks": ["tur_fou"]})
-def plot_turns(name="turn_amplitude", absolute=False, subfolder="turn", **kwargs):
+def plot_turns(name: str = "turn_amplitude", absolute: bool = False, subfolder: str = "turn", **kwargs: Any) -> Any:
     P = plot.AutoPlot(
         ks=["tur_fou"],
         ranges=[100],
@@ -405,38 +408,38 @@ def plot_turns(name="turn_amplitude", absolute=False, subfolder="turn", **kwargs
 
 
 @funcs.graph("endpoint hist", required={"ks": []})
-def plot_endpoint_hist(**kwargs):
+def plot_endpoint_hist(**kwargs: Any) -> Any:
     return plot_endpoint_params(type="hist", **kwargs)
 
 
 @funcs.graph("endpoint box", required={"ks": []})
-def plot_endpoint_box(**kwargs):
+def plot_endpoint_box(**kwargs: Any) -> Any:
     return plot_endpoint_params(type="box", **kwargs)
 
 
-def plot_endpoint_params(type, mode="basic", **kwargs):
+def plot_endpoint_params(type: str, mode: str = "basic", **kwargs: Any) -> Any:
     return plot_params(key="end", type=type, mode=mode, **kwargs)
 
 
 @funcs.graph("step hist", required={"ks": []})
-def plot_step_hist(**kwargs):
+def plot_step_hist(**kwargs: Any) -> Any:
     return plot_step_params(type="hist", **kwargs)
 
 
 @funcs.graph("step box", required={"ks": []})
-def plot_step_box(**kwargs):
+def plot_step_box(**kwargs: Any) -> Any:
     return plot_step_params(type="box", **kwargs)
 
 
 def plot_step_params(
-    type, ks=["v", "a", "sv", "sa", "b", "bv", "ba", "fov", "foa"], **kwargs
-):
+    type: str, ks: Sequence[str] = ("v", "a", "sv", "sa", "b", "bv", "ba", "fov", "foa"), **kwargs: Any
+) -> Any:
     return plot_params(key="step", type=type, ks=ks, **kwargs)
 
 
 def plot_params(
-    key, type, name=None, mode=None, ks=None, Ncols=None, plot_kws={}, **kwargs
-):
+    key: str, type: str, name: Optional[str] = None, mode: Optional[str] = None, ks: Optional[Sequence[str]] = None, Ncols: Optional[int] = None, plot_kws: dict = {}, **kwargs: Any
+) -> Any:
     if name is None:
         name = f"{key}_{type}_{mode}"
     if type == "hist":

@@ -1,3 +1,4 @@
+from __future__ import annotations
 import numpy as np
 import param
 from scipy.stats import multivariate_normal
@@ -15,7 +16,7 @@ from .custom import (
 )
 from .nested_parameter_group import NestedConf, expand_kws_shortcuts
 
-__all__ = [
+__all__: list[str] = [
     "Compound",
     "Substrate",
     "substrate_dict",

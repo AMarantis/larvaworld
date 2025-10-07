@@ -2,6 +2,9 @@
 Stide-cycle-related plotting
 """
 
+from __future__ import annotations
+from typing import Any, Optional, Sequence
+
 import os
 
 import numpy as np
@@ -9,7 +12,7 @@ import numpy as np
 from .. import plot, reg, util, funcs
 from ..util import nam
 
-__all__ = [
+__all__: list[str] = [
     "plot_vel_during_strides",
     "stride_cycle",
     "stride_cycle_all_points",
@@ -20,8 +23,8 @@ __all__ = [
 
 
 def plot_vel_during_strides(
-    dataset, use_component=False, save_to=None, return_fig=False, show=False
-):
+    dataset: Any, use_component: bool = False, save_to: Optional[str] = None, return_fig: bool = False, show: bool = False
+) -> Any:
     chunk = "stride"
     D = dataset.epoch_dicts[chunk]
 
@@ -115,16 +118,16 @@ def plot_vel_during_strides(
 
 @funcs.graph("stride cycle", required={"ks": ["sv", "fov", "rov", "foa", "b"]})
 def stride_cycle(
-    name=None,
-    shorts=["sv", "fov", "rov", "foa", "b"],
-    modes=None,
-    subfolder="stride",
-    Nbins=64,
-    individuals=False,
-    pooled=True,
-    title="Stride cycle analysis",
-    **kwargs,
-):
+    name: Optional[str] = None,
+    shorts: Sequence[str] = ("sv", "fov", "rov", "foa", "b"),
+    modes: Optional[Sequence[str]] = None,
+    subfolder: str = "stride",
+    Nbins: int = 64,
+    individuals: bool = False,
+    pooled: bool = True,
+    title: str = "Stride cycle analysis",
+    **kwargs: Any,
+) -> Any:
     if name is None:
         name = (
             "stride_cycle_curves_all_larvae" if individuals else "stride_cycle_curves"
@@ -190,15 +193,15 @@ def stride_cycle(
 
 @funcs.graph("stride cycle multi", required={"ks": ["sv", "fov", "rov", "foa", "b"]})
 def stride_cycle_all_points(
-    name="stride cycle multi",
-    idx=0,
-    Nbins=64,
-    short="fov",
-    subfolder="stride",
-    maxNpoints=5,
-    axx=None,
-    **kwargs,
-):
+    name: str = "stride cycle multi",
+    idx: int = 0,
+    Nbins: int = 64,
+    short: Optional[str] = "fov",
+    subfolder: str = "stride",
+    maxNpoints: int = 5,
+    axx: Optional[Any] = None,
+    **kwargs: Any,
+) -> Any:
     P = plot.AutoPlot(
         name=name,
         subfolder=subfolder,
@@ -345,8 +348,8 @@ def stride_cycle_all_points(
     },
 )
 def plot_stride_Dbend(
-    name="stride_bend_change", show_text=False, subfolder="stride", **kwargs
-):
+    name: str = "stride_bend_change", show_text: bool = False, subfolder: str = "stride", **kwargs: Any
+) -> Any:
     P = plot.AutoPlot(name=name, subfolder=subfolder, **kwargs)
     ax = P.axs[0]
     b0p, b1p, bdp = nam.atStartStopChunk("bend", "stride")
@@ -386,8 +389,8 @@ def plot_stride_Dbend(
 
 @funcs.graph("stride Dor", required={"ks": ["str_fo", "str_ro"]})
 def plot_stride_Dorient(
-    name="stride_orient_change", absolute=True, subfolder="stride", Nbins=200, **kwargs
-):
+    name: str = "stride_orient_change", absolute: bool = True, subfolder: str = "stride", Nbins: int = 200, **kwargs: Any
+) -> Any:
     P = plot.AutoPlot(
         ks=["str_fo", "str_ro"],
         ranges=[80, 80],
@@ -404,8 +407,8 @@ def plot_stride_Dorient(
 
 @funcs.graph("interference", required={"ks": ["sv", "fov", "rov", "bv", "l"]})
 def plot_interference(
-    mode="orientation", agent_idx=None, subfolder="interference", **kwargs
-):
+    mode: str = "orientation", agent_idx: Optional[int] = None, subfolder: str = "interference", **kwargs: Any
+) -> Any:
     name = (
         f"interference_{mode}"
         if agent_idx is None

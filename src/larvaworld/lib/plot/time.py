@@ -2,11 +2,14 @@
 Timeseries plotting
 """
 
+from __future__ import annotations
+from typing import Any, Optional, Sequence, Tuple
+
 import numpy as np
 
 from .. import plot, reg, util, funcs
 
-__all__ = [
+__all__: list[str] = [
     "plot_ethogram",
     "plot_nengo_network",
     "timeplot",
@@ -18,7 +21,7 @@ __all__ = [
 
 
 @funcs.graph("ethogram", required={"dicts": ["chunk_dicts"]})
-def plot_ethogram(subfolder="timeplots", **kwargs):
+def plot_ethogram(subfolder: str = "timeplots", **kwargs: Any) -> Any:
     P = plot.AutoPlot(
         name="ethogram",
         subfolder=subfolder,
@@ -70,8 +73,13 @@ def plot_ethogram(subfolder="timeplots", **kwargs):
 
 @funcs.graph("nengo")
 def plot_nengo_network(
-    datasets, group=None, probes=None, same_plot=False, subfolder="nengo", **kwargs
-):
+    datasets: Sequence[Any],
+    group: Optional[str] = None,
+    probes: Optional[Sequence[str]] = None,
+    same_plot: bool = False,
+    subfolder: str = "nengo",
+    **kwargs: Any,
+) -> Any:
     probe_groups = {
         "anemotaxis": ["Ch", "LNa", "LNb", "Ha", "Hb", "B1", "B2", "Bend", "Hunch"],
         "frequency": ["linFrIn", "angFrIn", "linFr", "angFr"],
@@ -141,22 +149,22 @@ def plot_nengo_network(
 
 @funcs.graph("timeplot", required={"ks": []})
 def timeplot(
-    ks=[],
-    pars=[],
-    name=None,
-    same_plot=True,
-    individuals=False,
-    table=None,
-    unit="sec",
-    absolute=True,
-    show_legend=True,
-    show_first=False,
-    subfolder="timeplots",
-    legend_loc="upper left",
-    leg_fontsize=15,
-    figsize=(7.5, 5),
-    **kwargs,
-):
+    ks: Sequence[str] = [],
+    pars: Sequence[str] = [],
+    name: Optional[str] = None,
+    same_plot: bool = True,
+    individuals: bool = False,
+    table: Optional[Any] = None,
+    unit: str = "sec",
+    absolute: bool = True,
+    show_legend: bool = True,
+    show_first: bool = False,
+    subfolder: str = "timeplots",
+    legend_loc: str = "upper left",
+    leg_fontsize: int = 15,
+    figsize: Tuple[float, float] = (7.5, 5),
+    **kwargs: Any,
+) -> Any:
     unit_coefs = {"sec": 1, "min": 1 / 60, "hour": 1 / 60 / 60}
     if len(pars) == 0:
         if len(ks) == 0:
@@ -238,16 +246,16 @@ def timeplot(
 
 @funcs.graph("timeplots", required={"ks": []})
 def timeplots(
-    ks,
-    subfolder="timeplots",
-    name=None,
-    unit="sec",
-    xlim=None,
-    individuals=False,
-    absolute=False,
-    show_first=False,
-    **kwargs,
-):
+    ks: Sequence[str],
+    subfolder: str = "timeplots",
+    name: Optional[str] = None,
+    unit: str = "sec",
+    xlim: Optional[Sequence[float]] = None,
+    individuals: bool = False,
+    absolute: bool = False,
+    show_first: bool = False,
+    **kwargs: Any,
+) -> Any:
     Nks = len(ks)
     if name is None:
         name = f"timeplots_x{Nks}"
@@ -275,7 +283,7 @@ def timeplots(
 
 
 @funcs.graph("navigation index", required={"traj": ["default"]})
-def plot_navigation_index(subfolder="source", **kwargs):
+def plot_navigation_index(subfolder: str = "source", **kwargs: Any) -> Any:
     P = plot.AutoPlot(
         name="nav_index",
         subfolder=subfolder,
@@ -304,13 +312,13 @@ def plot_navigation_index(subfolder="source", **kwargs):
 
 
 @funcs.graph("pathlength", required={"ks": ["cum_d", "cum_sd"]})
-def plot_pathlength(scaled=False, **kwargs):
+def plot_pathlength(scaled: bool = False, **kwargs: Any) -> Any:
     k = "cum_sd" if scaled else "cum_d"
     return timeplots(ks=[k], **kwargs)
 
 
 @funcs.graph("dispersal")
-def plot_dispersal(range=(0, 40), scaled=False, **kwargs):
+def plot_dispersal(range: Tuple[int, int] = (0, 40), scaled: bool = False, **kwargs: Any) -> Any:
     t0, t1 = range
     k = f"dsp_{int(t0)}_{int(t1)}"
     if scaled:

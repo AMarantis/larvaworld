@@ -1,9 +1,12 @@
+from __future__ import annotations
+from typing import Any, Optional, Sequence
+
 import param
 
 from .custom import ClassAttr, OptionalPositiveNumber, OptionalSelector
 from .nested_parameter_group import NestedConf
 
-__all__ = [
+__all__: list[str] = [
     "PreprocessConf",
     "ProcessConf",
     "EnrichConf",

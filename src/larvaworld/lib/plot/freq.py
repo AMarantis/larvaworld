@@ -2,18 +2,26 @@
 Frequency-related plotting
 """
 
+from __future__ import annotations
+from typing import Any, Optional, Sequence
+
 import numpy as np
 from scipy.fft import fftfreq
 
 from .. import plot, util, funcs
 
-__all__ = [
+__all__: list[str] = [
     "plot_fft_multi",
 ]
 
 
 @funcs.graph("freq powerspectrum", required={"ks": ["v", "fov"]})
-def plot_fft_multi(ks=["v", "fov"], name="frequency_powerspectrum", axx=None, **kwargs):
+def plot_fft_multi(
+    ks: Sequence[str] = ("v", "fov"),
+    name: str = "frequency_powerspectrum",
+    axx: Optional[Any] = None,
+    **kwargs: Any,
+) -> Any:
     P = plot.AutoPlot(ks=ks, name=name, build_kws={"w": 15, "h": 12}, **kwargs)
     if axx is None:
         axx = P.axs[0].inset_axes([0.64, 0.65, 0.3, 0.25])

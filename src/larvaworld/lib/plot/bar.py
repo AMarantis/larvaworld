@@ -2,6 +2,9 @@
 Barplots
 """
 
+from __future__ import annotations
+from typing import Any, Dict, Optional, Sequence
+
 import itertools
 
 import numpy as np
@@ -10,7 +13,7 @@ from scipy.stats import ttest_ind
 
 from .. import plot, util, funcs
 
-__all__ = [
+__all__: list[str] = [
     "error_barplot",
     "intake_barplot",
     "barplot",
@@ -20,13 +23,13 @@ __all__ = [
 
 @funcs.graph("error barplot", required={"args": ["error_dict", "evaluation"]})
 def error_barplot(
-    error_dict,
-    evaluation,
-    labels=None,
-    name="error_barplots",
-    titles=[r"$\bf{endpoint}$ $\bf{metrics}$", r"$\bf{timeseries}$ $\bf{metrics}$"],
-    **kwargs,
-):
+    error_dict: Dict[str, Any],
+    evaluation: Dict[str, Any],
+    labels: Optional[Dict[str, str]] = None,
+    name: str = "error_barplots",
+    titles: Sequence[str] = (r"$\bf{endpoint}$ $\bf{metrics}$", r"$\bf{timeseries}$ $\bf{metrics}$"),
+    **kwargs: Any,
+) -> Any:
     def build_legend(ax, eval_df):
         h, l = ax.get_legend_handles_labels()
         empty = Patch(color="none")
@@ -62,12 +65,18 @@ def error_barplot(
 
 
 @funcs.graph("food intake (barplot)", required={"ks": ["f_am"]})
-def intake_barplot(**kwargs):
+def intake_barplot(**kwargs: Any) -> Any:
     return barplot(ks=["f_am"], **kwargs)
 
 
 @funcs.graph("barplot", required={"ks": []})
-def barplot(ks, coupled_labels=None, xlabel=None, leg_cols=None, **kwargs):
+def barplot(
+    ks: Sequence[str],
+    coupled_labels: Optional[Sequence[str]] = None,
+    xlabel: Optional[str] = None,
+    leg_cols: Optional[Sequence[str]] = None,
+    **kwargs: Any,
+) -> Any:
     Nks = len(ks)
 
     P = plot.AutoPlot(
@@ -159,7 +168,13 @@ def barplot(ks, coupled_labels=None, xlabel=None, leg_cols=None, **kwargs):
 
 
 @funcs.graph("auto_barplot", required={"ks": []})
-def auto_barplot(ks, coupled_labels=None, xlabel=None, leg_cols=None, **kwargs):
+def auto_barplot(
+    ks: Sequence[str],
+    coupled_labels: Optional[Sequence[str]] = None,
+    xlabel: Optional[str] = None,
+    leg_cols: Optional[Sequence[str]] = None,
+    **kwargs: Any,
+) -> Any:
     Nks = len(ks)
 
     P = plot.AutoPlot(

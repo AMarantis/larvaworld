@@ -2,6 +2,9 @@
 Tables
 """
 
+from __future__ import annotations
+from typing import Any, Dict, List, Optional, Sequence, Tuple
+
 import numpy as np
 import pandas as pd
 import param
@@ -9,7 +12,7 @@ import param
 from ... import ROOT_DIR
 from .. import plot, reg, util, funcs
 
-__all__ = [
+__all__: list[str] = [
     "modelConfTable",
     "mpl_table",
     "conf_table",
@@ -20,7 +23,7 @@ __all__ = [
 ]
 
 
-def arrange_index_labels(index):
+def arrange_index_labels(index) -> List[str]:
     ks = index.unique().tolist()
     Nks = index.value_counts(sort=False)
 
@@ -34,15 +37,15 @@ def arrange_index_labels(index):
 
 
 def conf_table(
-    df,
-    row_colors,
-    mID,
-    show=False,
-    save_to=None,
-    save_as=None,
-    build_kws={"Nrows": 1, "Ncols": 1, "w": 15, "h": 20},
-    **kwargs,
-):
+    df: pd.DataFrame,
+    row_colors: Sequence[str],
+    mID: str,
+    show: bool = False,
+    save_to: Optional[str] = None,
+    save_as: Optional[str] = None,
+    build_kws: Dict[str, Any] = {"Nrows": 1, "Ncols": 1, "w": 15, "h": 20},
+    **kwargs: Any,
+) -> Any:
     ax, fig, mpl = mpl_table(
         df,
         header0="MODULE",
@@ -69,12 +72,12 @@ def conf_table(
 
 @funcs.graph("model table")
 def modelConfTable(
-    mID,
-    m=None,
-    columns=["parameter", "symbol", "value", "unit"],
-    colWidths=[0.35, 0.1, 0.25, 0.15],
-    **kwargs,
-):
+    mID: str,
+    m: Any = None,
+    columns: Sequence[str] = ["parameter", "symbol", "value", "unit"],
+    colWidths: Sequence[float] = [0.35, 0.1, 0.25, 0.15],
+    **kwargs: Any,
+) -> Any:
     from ..model import moduleDB as MD
 
     def mIDtable_data(m, columns):
@@ -131,28 +134,28 @@ def modelConfTable(
 
 @funcs.graph("mpl")
 def mpl_table(
-    data,
-    cellLoc="center",
-    colLoc="center",
-    rowLoc="center",
-    font_size=14,
-    title=None,
-    name="mpl_table",
-    header0=None,
-    header0_color=None,
-    header_color="#40466e",
-    row_colors=["#f1f1f2", "w"],
-    edge_color="black",
-    adjust_kws=None,
-    highlighted_celltext_dict=None,
-    highlighted_cells=None,
-    bbox=[0, 0, 1, 1],
-    header_columns=0,
-    colWidths=None,
-    highlight_color="yellow",
-    return_table=False,
-    **kwargs,
-):
+    data: pd.DataFrame,
+    cellLoc: str = "center",
+    colLoc: str = "center",
+    rowLoc: str = "center",
+    font_size: int = 14,
+    title: Optional[str] = None,
+    name: str = "mpl_table",
+    header0: Optional[str] = None,
+    header0_color: Optional[str] = None,
+    header_color: str = "#40466e",
+    row_colors: Sequence[str] = ("#f1f1f2", "w"),
+    edge_color: str = "black",
+    adjust_kws: Optional[Dict[str, Any]] = None,
+    highlighted_celltext_dict: Optional[Dict[str, Sequence[str]]] = None,
+    highlighted_cells: Optional[str] = None,
+    bbox: Sequence[float] = (0, 0, 1, 1),
+    header_columns: int = 0,
+    colWidths: Optional[Sequence[float]] = None,
+    highlight_color: str = "yellow",
+    return_table: bool = False,
+    **kwargs: Any,
+) -> Any:
     def get_idx(highlighted_cells):
         d = data.values
         res = []
@@ -254,7 +257,7 @@ def mpl_table(
 
 
 @funcs.graph("model diff")
-def mdiff_table(mIDs, dIDs, show=False, save_to=None, save_as=None, **kwargs):
+def mdiff_table(mIDs: Sequence[str], dIDs: Sequence[str], show: bool = False, save_to: Optional[str] = None, save_as: Optional[str] = None, **kwargs: Any) -> Any:
     data, row_colors = diff_df(mIDs=mIDs, dIDs=dIDs)
     mpl_kws = {
         "name": "mdiff_table",
@@ -286,7 +289,7 @@ def mdiff_table(mIDs, dIDs, show=False, save_to=None, save_as=None, **kwargs):
 
 
 @funcs.graph("error table")
-def error_table(data, k="", **kwargs):
+def error_table(data: np.ndarray, k: str = "", **kwargs: Any) -> Any:
     data = np.round(data, 3).T
     figsize = ((data.shape[1] + 3) * 4, data.shape[0])
     fig = mpl_table(
@@ -300,7 +303,7 @@ def error_table(data, k="", **kwargs):
     return fig
 
 
-def store_model_graphs(mIDs=None):
+def store_model_graphs(mIDs: Optional[Sequence[str]] = None) -> None:
     from .grid import model_summary
 
     f1 = f"{ROOT_DIR}/media/model_tables"
@@ -321,7 +324,7 @@ def store_model_graphs(mIDs=None):
     util.combine_pdfs(file_dir=f2, save_as="___ALL_MODEL_SUMMARIES___.pdf")
 
 
-def diff_df(mIDs, ms=None, dIDs=None):
+def diff_df(mIDs: Sequence[str], ms: Optional[Sequence[Any]] = None, dIDs: Optional[Sequence[str]] = None) -> Tuple[pd.DataFrame, Sequence[str]]:
     from ..model import moduleDB as MD
 
     dic = {}

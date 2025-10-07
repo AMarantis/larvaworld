@@ -2,19 +2,22 @@
 Calibration-related plotting
 """
 
+from __future__ import annotations
+from typing import Any, Optional, Sequence
+
 import numpy as np
 import seaborn as sns
 
 from .. import plot, reg, funcs
 
-__all__ = [
+__all__: list[str] = [
     "plot_segmentation_definition",
     "plot_stride_variability",
     "plot_correlated_pars",
 ]
 
 
-def plot_segmentation_definition(subfolder="metric_definition", **kwargs):
+def plot_segmentation_definition(subfolder: str = "metric_definition", **kwargs: Any) -> Any:
     P = plot.AutoPlot(
         name="segmentation_definition",
         subfolder=subfolder,
@@ -76,8 +79,8 @@ def plot_segmentation_definition(subfolder="metric_definition", **kwargs):
 
 
 def plot_stride_variability(
-    component_vels=True, subfolder="metric_definition", **kwargs
-):
+    component_vels: bool = True, subfolder: str = "metric_definition", **kwargs: Any
+) -> Any:
     P = plot.AutoPlot(
         name="stride_spatiotemporal_variation",
         subfolder=subfolder,
@@ -117,15 +120,15 @@ def plot_stride_variability(
 
 @funcs.graph("correlated metrics", required={"pars": []})
 def plot_correlated_pars(
-    pars,
-    labels,
-    refID=None,
-    dataset=None,
-    save_to=None,
-    save_as="correlated_pars.pdf",
-    return_fig=False,
-    show=False,
-):
+    pars: Sequence[str],
+    labels: Sequence[str],
+    refID: Optional[str] = None,
+    dataset: Any = None,
+    save_to: Optional[str] = None,
+    save_as: str = "correlated_pars.pdf",
+    return_fig: bool = False,
+    show: bool = False,
+) -> Any:
     if len(pars) != 3:
         raise ValueError("Currently implemented only for 3 parameters")
     if dataset is None:

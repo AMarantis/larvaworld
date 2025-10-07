@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import Any, List, Optional, Sequence, Tuple
+
 import numpy as np
 import param
 
@@ -8,7 +11,7 @@ if TYPE_CHECKING:
 else:
     from .nested_parameter_group import NestedConf
 
-__all__ = [
+__all__: list[str] = [
     "Spatial_Distro",
     "Larva_Distro",
     "xy_along_circle",
@@ -41,12 +44,12 @@ class Spatial_Distro(NestedConf):
     scale = param.NumericTuple(default=(0.0, 0.0), doc="The spread in x,y")
     # scale = param.Range(default=(0.0, 0.0), softbounds=(-0.1, 0.1),step=0.001, doc='The spread in x,y')
 
-    def __call__(self):
+    def __call__(self) -> List[Tuple[float, float]]:
         return generate_xy_distro(
             mode=self.mode, shape=self.shape, N=self.N, loc=self.loc, scale=self.scale
         )
 
-    def draw(self):
+    def draw(self) -> None:
         import matplotlib.pyplot as plt
 
         ps = generate_xy_distro(
@@ -69,11 +72,11 @@ class Larva_Distro(Spatial_Distro):
         doc="The range of larva body orientations to sample from, in degrees",
     )
 
-    def __call__(self):
+    def __call__(self) -> Tuple[List[Tuple[float, float]], List[float]]:
         return generate_xyNor_distro(self)
 
 
-def single_parametric_interpolate(obj_x_loc, obj_y_loc, numPts=50):
+def single_parametric_interpolate(obj_x_loc: Sequence[float], obj_y_loc: Sequence[float], numPts: int = 50) -> List[Tuple[float, float]]:
     n = len(obj_x_loc)
     vi = [
         [obj_x_loc[(i + 1) % n] - obj_x_loc[i], obj_y_loc[(i + 1) % n] - obj_y_loc[i]]
@@ -93,7 +96,7 @@ def single_parametric_interpolate(obj_x_loc, obj_y_loc, numPts=50):
     return new_points
 
 
-def xy_along_circle(N, loc, radius):
+def xy_along_circle(N: int, loc: Tuple[float, float], radius: Tuple[float, float]) -> List[Tuple[float, float]]:
     X, Y = loc
     dX, dY = radius
     angles = np.linspace(0, np.pi * 2, N + 1)[:-1]
@@ -101,7 +104,7 @@ def xy_along_circle(N, loc, radius):
     return p
 
 
-def xy_along_rect(N, loc, scale):
+def xy_along_rect(N: int, loc: Tuple[float, float], scale: Tuple[float, float]) -> List[Tuple[float, float]]:
     X, Y = loc
     dX, dY = scale
     rext_x = [X + x for x in [-dX, dX, dX, -dX]]
@@ -110,7 +113,7 @@ def xy_along_rect(N, loc, scale):
     return p
 
 
-def xy_uniform_circle(N, loc, scale):
+def xy_uniform_circle(N: int, loc: Tuple[float, float], scale: Tuple[float, float]) -> List[Tuple[float, float]]:
     X, Y = loc
     dX, dY = scale
     angles = np.random.uniform(0, 2 * np.pi, N).tolist()
@@ -120,7 +123,7 @@ def xy_uniform_circle(N, loc, scale):
     return p
 
 
-def xy_grid(grid_dims, area, loc=(0.0, 0.0)):
+def xy_grid(grid_dims: Tuple[int, int], area: Tuple[float, float], loc: Tuple[float, float] = (0.0, 0.0)) -> List[Tuple[float, float]]:
     X, Y = loc
     W, H = area
     Nx, Ny = grid_dims
@@ -135,7 +138,14 @@ def xy_grid(grid_dims, area, loc=(0.0, 0.0)):
     return list(map(tuple, cartprod))
 
 
-def generate_xy_distro(mode, shape, N, loc=(0.0, 0.0), scale=(0.0, 0.0), area=None):
+def generate_xy_distro(
+    mode: str,
+    shape: str,
+    N: int | Tuple[int, int],
+    loc: Tuple[float, float] = (0.0, 0.0),
+    scale: Tuple[float, float] = (0.0, 0.0),
+    area: Optional[Tuple[float, float]] = None,
+) -> List[Tuple[float, float]]:
     loc, scale = np.array(loc), np.array(scale)
     if mode == "uniform":
         if shape in ["circle", "oval"]:
@@ -167,7 +177,7 @@ def generate_xy_distro(mode, shape, N, loc=(0.0, 0.0), scale=(0.0, 0.0), area=No
         raise ValueError(f"XY distribution {mode} not implemented.")
 
 
-def generate_xyNor_distro(d):
+def generate_xyNor_distro(d: "Larva_Distro") -> Tuple[List[Tuple[float, float]], List[float]]:
     N = d.N
     a1, a2 = np.deg2rad(d.orientation_range)
     ors = (np.random.uniform(low=a1, high=a2, size=N) % (2 * np.pi)).tolist()

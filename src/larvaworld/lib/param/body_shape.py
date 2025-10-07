@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import Any, Optional, Sequence
+
 import numpy as np
 import param
 from shapely import affinity, geometry, ops
@@ -7,7 +10,7 @@ from .custom import ItemListParam, PositiveInteger, PositiveNumber, XYLine
 from .drawable import Viewable
 from .spatial import LineClosed, MobileVector
 
-__all__ = [
+__all__: list[str] = [
     "body_plans",
     "BodyContour",
     "ShapeMobile",

@@ -2,6 +2,9 @@
 Boxplots
 """
 
+from __future__ import annotations
+from typing import Any, Optional, Sequence
+
 import itertools
 
 import numpy as np
@@ -11,7 +14,7 @@ from scipy.stats import ttest_ind
 
 from .. import plot, reg, util, funcs
 
-__all__ = [
+__all__: list[str] = [
     "boxplot",
     "boxplot_PI",
     "PIboxplot",
@@ -23,15 +26,15 @@ __all__ = [
 
 @funcs.graph("boxplot (grouped)", required={"ks": []})
 def boxplot(
-    ks,
-    sort_labels=False,
-    name=None,
-    xlabel=None,
-    pair_ids=None,
-    common_ids=None,
-    coupled_labels=None,
-    **kwargs,
-):
+    ks: Sequence[str],
+    sort_labels: bool = False,
+    name: Optional[str] = None,
+    xlabel: Optional[str] = None,
+    pair_ids: Optional[Sequence[str]] = None,
+    common_ids: Optional[Sequence[str]] = None,
+    coupled_labels: Optional[bool] = None,
+    **kwargs: Any,
+) -> Any:
     Npars = len(ks)
     if name is None:
         name = ks[0]
@@ -115,7 +118,7 @@ def boxplot(
 
 
 @funcs.graph("PI (combo)")
-def boxplot_PI(sort_labels=False, xlabel="Trials", **kwargs):
+def boxplot_PI(sort_labels: bool = False, xlabel: str = "Trials", **kwargs: Any) -> Any:
     P = plot.AutoPlot(name="PI_boxplot", figsize=(10, 5), **kwargs)
 
     group_ids = util.unique_list([d.config["group_id"] for d in P.datasets])
@@ -190,7 +193,7 @@ def boxplot_PI(sort_labels=False, xlabel="Trials", **kwargs):
 
 
 @funcs.graph("PI (simple)")
-def PIboxplot(df, exp, save_to, ylabel, ylim=None, show=False, suf=""):
+def PIboxplot(df: Any, exp: str, save_to: str, ylabel: str, ylim: Optional[Sequence[float]] = None, show: bool = False, suf: str = "") -> None:
     from matplotlib import pyplot as plt
     f = f"{save_to}/{exp}{suf}.pdf"
     box = plt.boxplot(
@@ -214,8 +217,13 @@ def PIboxplot(df, exp, save_to, ylabel, ylim=None, show=False, suf=""):
 
 @funcs.graph("double patch", required={"ks": []})
 def boxplot_double_patch(
-    ks=None, xlabel="substrate", show_ns=False, stripplot=False, title=True, **kwargs
-):
+    ks: Optional[Sequence[str]] = None,
+    xlabel: str = "substrate",
+    show_ns: bool = False,
+    stripplot: bool = False,
+    title: bool = True,
+    **kwargs: Any,
+) -> Any:
     if ks is None:
         ks = ["v_mu", "tur_N_mu", "pau_tr", "tur_H", "cum_d", "on_food_tr"]
     P = plot.AutoPlot(
@@ -343,7 +351,7 @@ def boxplot_double_patch(
 
 
 @funcs.graph("foraging", required={"ks": ["on_food_tr", "sf_am"]})
-def plot_foraging(**kwargs):
+def plot_foraging(**kwargs: Any) -> Any:
     P = plot.AutoPlot(
         name="foraging",
         build_kws={"Ncols": 2, "w": 8, "h": 10, "sharex": True},
@@ -379,16 +387,16 @@ def plot_foraging(**kwargs):
 
 @funcs.graph("lineplot", required={"ks": []})
 def lineplot(
-    markers,
-    ks=["f_am"],
-    name=None,
-    coupled_labels=None,
-    xlabel=None,
-    ylabel=None,
-    leg_cols=None,
-    scale=1.0,
-    **kwargs,
-):
+    markers: Sequence[str],
+    ks: Sequence[str] = ["f_am"],
+    name: Optional[str] = None,
+    coupled_labels: Optional[Sequence[str]] = None,
+    xlabel: Optional[str] = None,
+    ylabel: Optional[str] = None,
+    leg_cols: Optional[Sequence[str]] = None,
+    scale: float = 1.0,
+    **kwargs: Any,
+) -> Any:
     Npars = len(ks)
     if name is None:
         name = ks[0]

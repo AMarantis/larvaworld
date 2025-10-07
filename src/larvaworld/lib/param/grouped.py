@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import Any, Optional, Sequence, Tuple
+
 import os
 
 import numpy as np
@@ -14,7 +17,7 @@ from .custom import (
 )
 from .nested_parameter_group import NestedConf
 
-__all__ = [
+__all__: list[str] = [
     "FramerateOps",
     "XYops",
     "SimTimeOps",
@@ -51,7 +54,7 @@ class FramerateOps(NestedConf):
         True, doc="Whether the tracking framerate is constant."
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
 
         if "dt" in kwargs:
@@ -60,11 +63,11 @@ class FramerateOps(NestedConf):
             self.update_timestep()
 
     @param.depends("dt", watch=True)
-    def update_framerate(self):
+    def update_framerate(self) -> None:
         self.fr = 1 / self.dt
 
     @param.depends("fr", watch=True)
-    def update_timestep(self):
+    def update_timestep(self) -> None:
         self.dt = 1 / self.fr
         # raise
 
@@ -89,71 +92,71 @@ class XYops(NestedConf):
     )
 
     @property
-    def Nangles(self):
+    def Nangles(self) -> int:
         return np.clip(self.Npoints - 2, a_min=0, a_max=None)
 
     @property
-    def Nsegs(self):
+    def Nsegs(self) -> int:
         return np.clip(self.Npoints - 1, a_min=0, a_max=None)
 
     @property
-    def angles(self):
+    def angles(self) -> util.SuperList:
         return util.SuperList([f"angle{i}" for i in range(self.Nangles)])
 
     @property
-    def midline_points(self):
+    def midline_points(self) -> util.SuperList:
         return util.nam.midline(self.Npoints, type="point")
 
     @property
-    def midline_segs(self):
+    def midline_segs(self) -> util.SuperList:
         return util.nam.midline(self.Nsegs, type="seg")
 
     @property
-    def midline_seg_xy(self, flat=True):
+    def midline_seg_xy(self, flat: bool = True) -> util.SuperList:
         return util.nam.xy(self.midline_segs, flat=flat)
 
     @property
-    def seg_orientations(self):
+    def seg_orientations(self) -> util.SuperList:
         return util.nam.orient(self.midline_segs)
 
     @property
-    def midline_xy(self, flat=True):
+    def midline_xy(self, flat: bool = True) -> util.SuperList:
         return util.nam.xy(self.midline_points, flat=flat)
 
     @property
-    def contour_points(self):
+    def contour_points(self) -> util.SuperList:
         return util.nam.contour(self.Ncontour)
 
     @property
-    def contour_xy(self, flat=True):
+    def contour_xy(self, flat: bool = True) -> util.SuperList:
         return util.nam.xy(self.contour_points, flat=flat)
 
     @property
-    def centroid_xy(self):
+    def centroid_xy(self) -> util.SuperList:
         return util.nam.xy("centroid")
 
     @property
-    def traj_xy(self):
+    def traj_xy(self) -> util.SuperList:
         return util.nam.xy("")
 
     @property
-    def all_xy(self, flat=True):
+    def all_xy(self, flat: bool = True) -> util.SuperList:
         return util.nam.xy(
             self.midline_points + self.contour_points + ["centroid", ""], flat=flat
         )
 
-    def get_track_point(self, idx):
+    def get_track_point(self, idx: int) -> str:
         if idx == -1:
             return "centroid"
         else:
             return self.midline_points[idx - 1]
 
-    def get_midline_xy_data(self, s):
+    def get_midline_xy_data(self, s: Any):
         xy = self.midline_xy
         assert xy.exist_in(s)
         return s[xy].values.reshape([-1, self.Npoints, 2])
 
-    def get_contour_xy_data(self, s):
+    def get_contour_xy_data(self, s: Any):
         xy = self.contour_xy
         assert xy.exist_in(s)
         return s[xy].values.reshape([-1, self.Ncontour, 2])
@@ -167,19 +170,19 @@ class SimTimeOps(FramerateOps):
         label="# simulation timesteps", doc="The number of simulation timesteps."
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
         self.update_Nsteps()
 
     @param.depends("duration", "dt", watch=True)
-    def update_Nsteps(self):
+    def update_Nsteps(self) -> None:
         if self.duration is not None:
             self.Nsteps = int(self.duration * 60 / self.dt)
         else:
             self.Nsteps = None
 
     @param.depends("Nsteps", watch=True)
-    def update_duration(self):
+    def update_duration(self) -> None:
         if self.Nsteps is not None:
             self.duration = self.Nsteps * self.dt / 60
         else:
@@ -193,7 +196,7 @@ class SimSpatialOps(NestedConf):
     )
 
     @property
-    def scaling_factor(self):
+    def scaling_factor(self) -> float:
         return 1000.0 if self.Box2D else 1.0
 
 
@@ -225,14 +228,14 @@ class RuntimeDataOps(NestedConf):
     )
 
     @property
-    def data_dir(self):
+    def data_dir(self) -> Optional[str]:
         if self.dir is not None:
             f = f"{self.dir}/data"
             os.makedirs(f, exist_ok=True)
             return f
 
     @property
-    def plot_dir(self):
+    def plot_dir(self) -> Optional[str]:
         if self.dir is not None:
             f = f"{self.dir}/plots"
             os.makedirs(f, exist_ok=True)
@@ -289,13 +292,13 @@ class TrackedPointIdx(XYops):
         self.update_tracked_point()
 
     @param.depends("Npoints", "point_idx", watch=True)
-    def update_tracked_point(self):
+    def update_tracked_point(self) -> None:
         self.param.point_idx.bounds = (hardmin, hardmax) = (-1, self.Npoints)
         self.point_idx = self.param.point_idx.crop_to_bounds(self.point_idx)
         self.point = self.get_track_point(self.point_idx)
 
     @property
-    def point_xy(self):
+    def point_xy(self) -> util.SuperList:
         return util.nam.xy(self.point)
 
 
@@ -323,7 +326,7 @@ class SimMetricOps(TrackedPointIdx):
     )
 
     @param.depends("Npoints", watch=True)
-    def update_vectors(self):
+    def update_vectors(self) -> None:
         N = self.Npoints
         # self.param.params('front_vector').softbounds = (-N,N)
         # self.param.front_vector.bounds = (-N,N)

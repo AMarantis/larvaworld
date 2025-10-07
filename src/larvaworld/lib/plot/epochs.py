@@ -2,11 +2,14 @@
 Behaviorl-epoch-related plotting
 """
 
+from __future__ import annotations
+from typing import Any, Optional, Sequence
+
 import copy
 
 from .. import plot, reg, util, funcs
 
-__all__ = [
+__all__: list[str] = [
     "plot_single_bout",
     "plot_bouts",
     # 'plot_stridesNpauses',
@@ -14,19 +17,19 @@ __all__ = [
 
 
 def plot_single_bout(
-    x0,
-    bout,
-    color,
-    label,
-    ax,
-    fit_dic=None,
-    plot_fits="best",
-    marker=".",
-    legend_outside=False,
-    xlabel="time (sec)",
-    xlim=None,
-    **kwargs,
-):
+    x0: Sequence[float],
+    bout: str,
+    color: str,
+    label: str,
+    ax: Any,
+    fit_dic: Optional[dict] = None,
+    plot_fits: str | Sequence[str] = "best",
+    marker: str = ".",
+    legend_outside: bool = False,
+    xlabel: str = "time (sec)",
+    xlim: Optional[Sequence[float]] = None,
+    **kwargs: Any,
+) -> None:
     distro_ls = [
         "powerlaw",
         "exponential",
@@ -83,7 +86,7 @@ def plot_single_bout(
 
 
 @funcs.graph("sample_epochs", required={"dicts": ["pooled_epochs"]})
-def plot_sample_bouts(mID, d, **kwargs):
+def plot_sample_bouts(mID: str, d: Any, **kwargs: Any) -> Any:
     d2 = copy.deepcopy(d)
     d2.config.dir = None
     d2.fitted_epochs = d.generate_pooled_epochs(mID=mID)
@@ -97,14 +100,14 @@ def plot_sample_bouts(mID, d, **kwargs):
 
 @funcs.graph("epochs", required={"dicts": ["fitted_epochs"]})
 def plot_bouts(
-    name=None,
-    plot_fits="",
-    print_fits=False,
-    turns=False,
-    stridechain_duration=False,
-    legend_outside=False,
-    **kwargs,
-):
+    name: Optional[str] = None,
+    plot_fits: str | Sequence[str] = "",
+    print_fits: bool = False,
+    turns: bool = False,
+    stridechain_duration: bool = False,
+    legend_outside: bool = False,
+    **kwargs: Any,
+) -> Any:
     if name is None:
         if not turns:
             name = f"runsNpauses{plot_fits}"
