@@ -2,13 +2,17 @@
 Modeling of the energetics/metabolism based on the Dynamic Energy Budget theory
 """
 
+from __future__ import annotations
+
+from typing import Any
+
 __displayname__ = "Dynamic Energy Budget"
 
-__all__ = [
+__all__: list[str] = [
     # expose primary public classes/functions explicitly if needed later
 ]
 
-_LOADED = False
+_LOADED: bool = False
 
 def _load_all() -> None:
     global _LOADED
@@ -28,7 +32,7 @@ def _load_all() -> None:
     _LOADED = True
 
 
-def __getattr__(name):
+def __getattr__(name: str) -> Any:
     if not _LOADED:
         _load_all()
     if name in globals():

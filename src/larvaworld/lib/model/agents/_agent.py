@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Any
 import os
 import warnings
 
@@ -25,7 +27,7 @@ from ...param import Odor
 # ScreenManager and IDBox imports deferred due to circular dependency - will be imported when needed
 from ..object import GroupedObject
 
-__all__ = [
+__all__: list[str] = [
     "NonSpatialAgent",
     "PointAgent",
     "OrientedAgent",
@@ -49,14 +51,14 @@ class NonSpatialAgent(GroupedObject):
 
     odor = ClassAttr(Odor, doc="The odor of the agent")
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
     @property
-    def dt(self):
+    def dt(self) -> float:
         return self.model.dt
 
-    def step(self):
+    def step(self) -> None:
         pass
 
 
@@ -68,14 +70,14 @@ class PointAgent(RadiallyExtended, NonSpatialAgent, Viewable):
 
     __displayname__ = "Point agent"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.set_default_color(self.color)
         # Lazy import to avoid circular dependency
         from ...screen.rendering import IDBox
         self.id_box = IDBox(agent=self)
 
-    def draw(self, v, filled: bool = True) -> None:
+    def draw(self, v: Any, filled: bool = True) -> None:
         """
         Draws the agent on the screen.
 
@@ -96,7 +98,7 @@ class PointAgent(RadiallyExtended, NonSpatialAgent, Viewable):
                 for i in [1.5, 2.0, 3.0]:
                     v.draw_circle(radius=self.radius * i, width=0.001 / i, **kws)
 
-    def draw_selected(self, v, **kwargs) -> None:
+    def draw_selected(self, v: Any, **kwargs: Any) -> None:
         """
         Draws a visual representation of the selected agent on the screen.
 
@@ -124,7 +126,7 @@ class OrientedAgent(OrientedPoint, PointAgent):
 
     __displayname__ = "Oriented agent"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
 
@@ -136,7 +138,7 @@ class MobilePointAgent(MobilePoint, PointAgent):
 
     __displayname__ = "Mobile point agent"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
 
@@ -148,20 +150,20 @@ class MobileAgent(MobileVector, PointAgent):
 
     __displayname__ = "Mobile agent"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
     @property
-    def last_orientation_vel(self):
+    def last_orientation_vel(self) -> float:
         """The last angular velocity of the agent."""
         return self.last_delta_orientation / self.dt
 
     @property
-    def last_pos_vel(self):
+    def last_pos_vel(self) -> Any:
         """The last translational velocity of the agent."""
         return self.last_delta_pos / self.dt
 
     @property
-    def last_scaled_pos_vel(self):
+    def last_scaled_pos_vel(self) -> Any:
         """The last translational velocity of the agent, scaled to its vector length."""
         return self.last_delta_pos / self.length / self.dt

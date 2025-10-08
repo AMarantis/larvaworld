@@ -1,9 +1,11 @@
+from __future__ import annotations
+from typing import Any
 import math
 
 from ... import util
 from .. import Object
 
-__all__ = [
+__all__: list[str] = [
     "RotSurface",
     "RotTriangle",
     "LightSource",
@@ -11,7 +13,7 @@ __all__ = [
 
 
 class RotSurface(Object):
-    def __init__(self, x, y, direction, surf, **kwargs):
+    def __init__(self, x: float, y: float, direction: float, surf: Any, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.x = x
         self.y = y
@@ -19,13 +21,13 @@ class RotSurface(Object):
         self.surf = surf
         self.speed = 0
 
-    def step(self):
+    def step(self) -> None:
         dx = self.speed * math.cos(self.direction)
         dy = self.speed * math.sin(self.direction)
         self.x += dx
         self.y += dy
 
-    def draw(self, viewer):
+    def draw(self, viewer: Any) -> None:
         import pygame
         degrees = math.degrees(self.direction)
         rotated_surf = pygame.transform.rotate(self.surf, degrees)
@@ -35,7 +37,7 @@ class RotSurface(Object):
 
 
 class RotTriangle(RotSurface):
-    def __init__(self, x, y, size, color_fg, color_bg, direction):
+    def __init__(self, x: float, y: float, size: int, color_fg: Any, color_bg: Any, direction: float) -> None:
         self.size = size
         self.color_fg = color_fg
         self.color_bg = color_bg
@@ -67,13 +69,13 @@ class RotTriangle(RotSurface):
 class LightSource(RotSurface):
     def __init__(
         self,
-        x,
-        y,
-        emitting_power,
-        color_fg=util.Color.YELLOW,
-        color_bg=util.Color.BLACK,
-        **kwargs,
-    ):
+        x: float,
+        y: float,
+        emitting_power: int,
+        color_fg: Any = util.Color.YELLOW,
+        color_bg: Any = util.Color.BLACK,
+        **kwargs: Any,
+    ) -> None:
         self.emitting_power = emitting_power
         self.color_fg = color_fg
         self.color_bg = color_bg
@@ -93,7 +95,7 @@ class LightSource(RotSurface):
 
         super().__init__(x, y, 0, self.surf, **kwargs)
 
-    def get_saved_scene_repr(self):
+    def get_saved_scene_repr(self) -> str:
         return (
             self.__class__.__name__
             + " "

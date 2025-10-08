@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Any
 import os
 import warnings
 
@@ -18,7 +20,7 @@ from ...param import PositiveNumber
 # ScreenManager import deferred due to circular dependency - will be imported when needed
 from . import LarvaSim
 
-__all__ = [
+__all__: list[str] = [
     "LarvaRobot",
     "ObstacleLarvaRobot",
 ]
@@ -35,7 +37,7 @@ class LarvaRobot(LarvaSim):
         genome (optional): The genome of the larva robot.
     """
 
-    def __init__(self, larva_pars, genome=None, **kwargs):
+    def __init__(self, larva_pars: dict[str, Any], genome: Any | None = None, **kwargs: Any) -> None:
         super().__init__(**larva_pars, **kwargs)
         self.genome = genome
 
@@ -53,7 +55,7 @@ class ObstacleLarvaRobot(LarvaRobot):
     motor_coefficient = PositiveNumber(8770.0, doc="Motor ctrl_coefficient")
     min_actuator_value = PositiveNumber(35.0, doc="Motor ctrl_min_actuator_value")
 
-    def __init__(self, larva_pars, **kwargs):
+    def __init__(self, larva_pars: dict[str, Any], **kwargs: Any) -> None:
         kws = larva_pars.sensorimotor
         larva_pars.pop("sensorimotor", None)
         super().__init__(larva_pars=larva_pars, **kws, **kwargs)
@@ -91,7 +93,7 @@ class ObstacleLarvaRobot(LarvaRobot):
             **M_kws,
         )
 
-    def sense(self):
+    def sense(self) -> None:
         """
         This method allows the larva robot to sense its environment and act accordingly.
         If there is no collision with an object, it transforms the olfactor position and
@@ -125,7 +127,7 @@ class ObstacleLarvaRobot(LarvaRobot):
         else:
             pass
 
-    def draw(self, v, **kwargs) -> None:
+    def draw(self, v: Any, **kwargs: Any) -> None:
         """
         Draws the larva robot and its sensors on the screen.
 

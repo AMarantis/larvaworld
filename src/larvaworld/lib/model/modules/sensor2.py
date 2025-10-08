@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Any
 # import math
 import random
 from math import atan2, cos, sin
@@ -8,7 +10,7 @@ from shapely import geometry
 from ... import util
 from .rot_surface import LightSource
 
-__all__ = [
+__all__: list[str] = [
     "Sensor2",
     "LightSensor",
     "ProximitySensor",
@@ -16,29 +18,29 @@ __all__ = [
 
 
 class Sensor2:
-    def __init__(self, robot, delta_direction, saturation_value, error):
+    def __init__(self, robot: Any, delta_direction: float, saturation_value: float, error: float) -> None:
         self.robot = robot
         self.delta_direction = delta_direction
         self.saturation_value = saturation_value
         self.error = error
         self.value = 0
 
-    def get_value(self):
+    def get_value(self) -> float:
         # defined by subclasses
-        pass
+        return 0.0
 
-    def draw(self):
+    def draw(self) -> None:
         # defined by subclasses
-        pass
+        return None
 
 
 class LightSensor(Sensor2):
     LENGTH_SENSOR_LINE = 100
 
-    def __init__(self, robot, delta_direction, saturation_value, error, scene):
+    def __init__(self, robot: Any, delta_direction: float, saturation_value: float, error: float, scene: Any):
         super().__init__(robot, delta_direction, saturation_value, error)
 
-    def get_value(self):
+    def get_value(self) -> float:
         dir_sensor = self.robot.direction + self.delta_direction
         total_value = 0
 
@@ -72,7 +74,7 @@ class LightSensor(Sensor2):
             total_value_with_error = random.gauss(total_value, percentage_std_dev)
             return total_value_with_error
 
-    def draw(self):
+    def draw(self) -> None:
         dir_sensor = self.robot.direction + self.delta_direction
         x_sensor_eol = self.robot.x + self.LENGTH_SENSOR_LINE * cos(dir_sensor)
         y_sensor_eol = self.robot.y + self.LENGTH_SENSOR_LINE * -sin(dir_sensor)
@@ -90,13 +92,13 @@ class ProximitySensor(Sensor2):
 
     def __init__(
         self,
-        robot,
-        delta_direction,
-        saturation_value,
-        error,
-        max_distance,
-        collision_distance=12,
-    ):
+        robot: Any,
+        delta_direction: float,
+        saturation_value: float,
+        error: float,
+        max_distance: int,
+        collision_distance: int = 12,
+    ) -> None:
         super().__init__(robot, delta_direction, saturation_value, error)
         self.max_distance = max_distance
         self.collision_distance = collision_distance
@@ -104,7 +106,7 @@ class ProximitySensor(Sensor2):
 
         # raise
 
-    def get_value(self, pos=None, direction=None):
+    def get_value(self, pos: list[float] | None = None, direction: float | None = None) -> float:
         if pos is None:
             pos = [self.robot.x, self.robot.y]
 
@@ -135,7 +137,7 @@ class ProximitySensor(Sensor2):
             else:
                 return proximity_value
 
-    def draw(self, pos=None, direction=None):
+    def draw(self, pos: list[float] | None = None, direction: float | None = None) -> None:
         if pos is None:
             pos = [self.robot.x, self.robot.y]
         if direction is None:

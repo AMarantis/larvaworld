@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Any
 import os
 import warnings
 
@@ -22,7 +23,7 @@ from ...param import OptionalPositiveNumber, PositiveNumber
 from ...util import nam
 from .oscillator import Timer
 
-__all__ = [
+__all__: list[str] = [
     "Intermitter",
     "OfflineIntermitter",
     "BranchIntermitter",
@@ -106,7 +107,7 @@ class Intermitter(Timer):
     )
     run_dist = param.Dict(default=None, doc="The temporal distribution of run epochs.")
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         if self.feeder_reoccurence_rate is None:
             self.feeder_reoccurence_rate = self.EEB
@@ -168,21 +169,21 @@ class Intermitter(Timer):
         self.stride_durs = []
 
     @property
-    def pause_completed(self):
+    def pause_completed(self) -> bool:
         t = self.exp_Tpause
         return t is not None and self.t > t
 
     @property
-    def run_completed(self):
+    def run_completed(self) -> bool:
         t = self.exp_Trun
         return t is not None and self.t > t
 
     @property
-    def stridechain_completed(self):
+    def stridechain_completed(self) -> bool:
         n = self.exp_Nstrides
         return n is not None and self.cur_Nstrides > n
 
-    def alternate_crawlNpause(self, stride_completed=False):
+    def alternate_crawlNpause(self, stride_completed: bool = False) -> None:
         if stride_completed:
             self.cur_Nstrides += 1
 
@@ -193,11 +194,11 @@ class Intermitter(Timer):
             self.trigger_locomotion()
 
     @property
-    def feed_repeated(self):
+    def feed_repeated(self) -> bool:
         r = self.feeder_reoccurence_rate if not self.use_EEB else self.EEB
         return np.random.uniform(0, 1, 1) < r
 
-    def alternate_exploreNexploit(self, feed_motion=False, on_food=False):
+    def alternate_exploreNexploit(self, feed_motion: bool = False, on_food: bool = False) -> None:
         if feed_motion:
             assert self.cur_Nfeeds is not None
             self.Nfeeds += 1
@@ -220,7 +221,7 @@ class Intermitter(Timer):
             self.cur_state = "feed"
             # self.reset()
 
-    def register(self, bout=None):
+    def register(self, bout: str | None = None) -> None:
         if bout is None:
             if self.cur_state is not None:
                 bout = self.cur_state
@@ -257,7 +258,7 @@ class Intermitter(Timer):
             self.pause_durs.append(dur)
             self.exp_Tpause = None
 
-    def update_state(self, stride_completed=False, feed_motion=False, on_food=False):
+    def update_state(self, stride_completed: bool = False, feed_motion: bool = False, on_food: bool = False) -> str | None:
         if self.cur_state is None:
             self.trigger_locomotion()
         if self.feed_bouts:
@@ -265,7 +266,7 @@ class Intermitter(Timer):
         self.alternate_crawlNpause(stride_completed)
         return self.cur_state
 
-    def step(self, **kwargs):
+    def step(self, **kwargs: Any) -> str | None:
         self.count_time()
         return self.update_state(**kwargs)
 
@@ -275,14 +276,14 @@ class Intermitter(Timer):
     def generate_run(self):
         return self.run_generator.sample()
 
-    def interrupt_locomotion(self):
+    def interrupt_locomotion(self) -> None:
         if not self.cur_state == "exec":
             return
         self.register()
         self.exp_Tpause = self.generate_pause()
         self.cur_state = "pause"
 
-    def trigger_locomotion(self, force=False):
+    def trigger_locomotion(self, force: bool = False) -> None:
         if not force and self.cur_state == "exec":
             return
         self.register()
@@ -297,7 +298,7 @@ class Intermitter(Timer):
     def generate_pause(self):
         return self.pause_generator.sample()
 
-    def build_dict(self):
+    def build_dict(self) -> dict[str, Any]:
         cum_t = nam.cum("t")
         d = {}
         d[cum_t] = self.total_t
@@ -319,7 +320,7 @@ class Intermitter(Timer):
             d[nam.dur_ratio(c)] = d[cum_chunk_t] / d[cum_t]
         return d
 
-    def save_dict(self, path=None, dic=None):
+    def save_dict(self, path: str | None = None, dic: dict[str, Any] | None = None) -> None:
         if dic is None:
             dic = self.build_dict()
         if path is not None:
@@ -333,17 +334,17 @@ class Intermitter(Timer):
         return self.exp_Nstrides, self.cur_Nfeeds, self.exp_Tpause, self.exp_Trun
 
     @property
-    def mean_feed_freq(self):
+    def mean_feed_freq(self) -> float:
         return self.Nfeeds / self.total_t
 
 
 class OfflineIntermitter(Intermitter):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.crawl_ticks = np.round(1 / (self.crawl_freq * self.dt)).astype(int)
         self.feed_ticks = np.round(1 / (self.feed_freq * self.dt)).astype(int)
 
-    def step(self, stride_completed=None, feed_motion=None, on_food=True):
+    def step(self, stride_completed: bool | None = None, feed_motion: bool | None = None, on_food: bool = True) -> str | None:
         self.count_time()
         if feed_motion is None:
             feed_motion = self.cur_state == "feed" and self.ticks % self.feed_ticks == 0
@@ -362,7 +363,7 @@ class BranchIntermitter(Intermitter):
     c = PositiveNumber(default=0.7, doc="The c parameter for the criticality function")
     sigma = PositiveNumber(default=1.0, doc="The ISING branching coef.")
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
     def generate_stridechain(self):
@@ -380,7 +381,7 @@ class BranchIntermitter(Intermitter):
 
 
 class FittedIntermitter(OfflineIntermitter):
-    def __init__(self, refID, **kwargs):
+    def __init__(self, refID: str, **kwargs: Any) -> None:
         c = reg.conf.Ref.getRef(refID)["intermitter"]
         stored_conf = {
             "crawl_freq": c["crawl_freq"],
@@ -397,7 +398,7 @@ class FittedIntermitter(OfflineIntermitter):
         super().__init__(**stored_conf)
 
 
-def get_EEB_poly1d(**kws):
+def get_EEB_poly1d(**kws: Any):
     max_dur = 60 * 60
     EEBs = np.arange(0, 1.05, 0.05)
     ms = []
@@ -410,7 +411,7 @@ def get_EEB_poly1d(**kws):
     return z
 
 
-def get_EEB_time_fractions(refID=None, dt=None, **kwargs):
+def get_EEB_time_fractions(refID: str | None = None, dt: float | None = None, **kwargs: Any):
     if refID is not None:
         kws = reg.conf.Ref.getRef(refID).intermitter
     else:

@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Any
 import os
 import warnings
 
@@ -18,7 +19,7 @@ import param
 from ...param import PositiveNumber
 from .oscillator import Oscillator
 
-__all__ = [
+__all__: list[str] = [
     "Feeder",
 ]
 
@@ -38,15 +39,15 @@ class Feeder(Oscillator):
         doc="The volume of a feeding motion as fraction of body volume.",
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.stop_effector()
 
-    def step(self):
+    def step(self) -> None:
         self.complete_iteration = False
         if self.active:
             self.oscillate()
         # return self.complete_iteration
 
-    def suppresion_relief(self, phi_range):
+    def suppresion_relief(self, phi_range: tuple[float, float]) -> bool:
         return self.phi_in_range(phi_range)

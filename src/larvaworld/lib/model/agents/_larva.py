@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Any
 import os
 import warnings
 
@@ -22,7 +23,7 @@ from ... import util
 from ...param import Contour, SegmentedBodySensored
 from . import MobileAgent, Source
 
-__all__ = [
+__all__: list[str] = [
     "Larva",
     "LarvaContoured",
     "LarvaSegmented",
@@ -43,7 +44,7 @@ class Larva(MobileAgent):
 
     """
 
-    def __init__(self, model=None, unique_id=None, **kwargs):
+    def __init__(self, model: Any | None = None, unique_id: Any | None = None, **kwargs: Any) -> None:
         if unique_id is None and model:
             unique_id = model.next_id(type="Larva")
         super().__init__(unique_id=unique_id, model=model, **kwargs)
@@ -52,7 +53,7 @@ class Larva(MobileAgent):
         self.cum_dur = 0
         # self.cum_t = 0
 
-    def draw(self, v, **kwargs) -> None:
+    def draw(self, v: Any, **kwargs: Any) -> None:
         """
         Draws the larva on the screen using the provided ScreenManager instance.
 
@@ -146,10 +147,10 @@ class LarvaContoured(Larva, Contour):
 
     __displayname__ = "Contoured larva"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
-    def draw(self, v, **kwargs) -> None:
+    def draw(self, v: Any, **kwargs: Any) -> None:
         """
         Draws the larva agent on the screen.
 
@@ -164,7 +165,7 @@ class LarvaContoured(Larva, Contour):
             Contour.draw(self, v, **kwargs)
         super().draw(v, **kwargs)
 
-    def draw_selected(self, v, **kwargs) -> None:
+    def draw_selected(self, v: Any, **kwargs: Any) -> None:
         """
         Draws the selected larva on the screen.
 
@@ -185,11 +186,11 @@ class LarvaSegmented(Larva, SegmentedBodySensored):
 
     __displayname__ = "Segmented larva"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.set_default_color(self.default_color)
 
-    def draw(self, v, **kwargs) -> None:
+    def draw(self, v: Any, **kwargs: Any) -> None:
         """
         Draws the larva agent on the screen using the provided ScreenManager.
 
@@ -208,7 +209,7 @@ class LarvaSegmented(Larva, SegmentedBodySensored):
             self.draw_segs(v, **kwargs)
         super().draw(v, **kwargs)
 
-    def set_default_color(self, color):
+    def set_default_color(self, color: Any) -> None:
         """
         Sets the default color for the larva and its segments.
 
@@ -218,7 +219,7 @@ class LarvaSegmented(Larva, SegmentedBodySensored):
         super().set_default_color(color)
         self.segs.set_default_color(color)
 
-    def invert_default_color(self):
+    def invert_default_color(self) -> None:
         """
         Inverts the default color of the larva agent.
 
@@ -229,7 +230,7 @@ class LarvaSegmented(Larva, SegmentedBodySensored):
         super().invert_default_color()
         self.segs.set_default_color(self.default_color)
 
-    def draw_selected(self, v, **kwargs) -> None:
+    def draw_selected(self, v: Any, **kwargs: Any) -> None:
         """
         Draws the selected larva on the screen.
 
@@ -268,7 +269,7 @@ class LarvaMotile(LarvaSegmented):
 
     __displayname__ = "Behaving & growing larva"
 
-    def __init__(self, brain, energetics, life_history, body, **kwargs):
+    def __init__(self, brain: Any, energetics: Any, life_history: Any, body: dict[str, Any], **kwargs: Any) -> None:
         super().__init__(**body, **kwargs)
         self.carried_objects = []
         self.brain = self.build_brain(brain)
@@ -276,7 +277,7 @@ class LarvaMotile(LarvaSegmented):
         self.food_detected, self.feeder_motion = None, False
         self.cum_food_detected, self.amount_eaten = 0, 0
 
-    def build_brain(self, conf):
+    def build_brain(self, conf: Any) -> Any:
         """Build the brain for the larva agent."""
         if conf.nengo:
             from ..modules.nengobrain import NengoBrain
@@ -287,7 +288,7 @@ class LarvaMotile(LarvaSegmented):
 
             return DefaultBrain(agent=self, conf=conf, dt=self.model.dt)
 
-    def feed(self, source, motion):
+    def feed(self, source: Any | None, motion: bool) -> float:
         """
         Feeds the larva from a given source based on its motion.
 
@@ -317,7 +318,7 @@ class LarvaMotile(LarvaSegmented):
         else:
             return 0
 
-    def build_energetics(self, energetic_pars, life_history):
+    def build_energetics(self, energetic_pars: Any | None, life_history: Any | None) -> None:
         """
         Initializes and builds the energetics model for the larva.
 
@@ -370,7 +371,7 @@ class LarvaMotile(LarvaSegmented):
             self.mass = None
             # self.length = None
 
-    def run_energetics(self, V_eaten):
+    def run_energetics(self, V_eaten: float) -> None:
         """
         Update the energetics of the larva based on the volume of food eaten.
 
@@ -391,7 +392,7 @@ class LarvaMotile(LarvaSegmented):
         # TODO add this again
         # self.adjust_body_vertices()
 
-    def get_feed_success(self, t):
+    def get_feed_success(self, t: float) -> int:
         if self.feeder_motion:
             if self.on_food:
                 return 1
@@ -401,7 +402,7 @@ class LarvaMotile(LarvaSegmented):
             return 0
 
     @property
-    def on_food_dur_ratio(self):
+    def on_food_dur_ratio(self) -> float:
         return (
             self.cum_food_detected * self.model.dt / self.cum_dur
             if self.cum_dur != 0
@@ -409,17 +410,17 @@ class LarvaMotile(LarvaSegmented):
         )
 
     @property
-    def on_food(self):
+    def on_food(self) -> bool:
         return self.food_detected is not None
 
-    def get_on_food(self, t):
+    def get_on_food(self, t: float) -> bool:
         return self.on_food
 
     @property
-    def scaled_amount_eaten(self):
+    def scaled_amount_eaten(self) -> float:
         return self.amount_eaten / self.mass
 
-    def resolve_carrying(self, food):
+    def resolve_carrying(self, food: Any | None) -> None:
         """
         Handles the logic for an agent to carry a food object.
 
@@ -526,10 +527,10 @@ class LarvaMotile(LarvaSegmented):
             raise
         self.set_color(color)
 
-    def sense(self):
+    def sense(self) -> None:
         pass
 
-    def step(self):
+    def step(self) -> None:
         """
         Perform a single step in the simulation for the larva agent.
 
@@ -580,6 +581,6 @@ class LarvaMotile(LarvaSegmented):
         except:
             pass
 
-    def prepare_motion(self, lin, ang):
+    def prepare_motion(self, lin: float, ang: float) -> None:
         pass
         # Overriden by subclasses

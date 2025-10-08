@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Any, Tuple
 import os
 import warnings
 
@@ -22,7 +24,7 @@ from ... import util
 from ...param import PositiveNumber
 from . import LarvaMotile
 
-__all__ = [
+__all__: list[str] = [
     "BaseController",
     "LarvaSim",
 ]
@@ -82,7 +84,7 @@ class BaseController(param.Parameterized):
         objects=["torque", "velocity"], doc="Mode of angular motion generation"
     )
 
-    def compute_delta_rear_angle(self, bend, dst, length):
+    def compute_delta_rear_angle(self, bend: float, dst: float, length: float) -> float:
         """
         Compute the change in rear angle based on bend, distance, and length.
 
@@ -142,13 +144,13 @@ class LarvaSim(LarvaMotile, BaseController):
 
     __displayname__ = "Simulated larva"
 
-    def __init__(self, physics={}, Box2D={}, sensorimotor=None, **kwargs):
+    def __init__(self, physics: dict[str, Any] = {}, Box2D: dict[str, Any] = {}, sensorimotor: Any = None, **kwargs: Any) -> None:
         BaseController.__init__(self, **physics)
         LarvaMotile.__init__(self, **kwargs)
 
         self.collision_with_object = False
 
-    def compute_ang_vel(self, amp):
+    def compute_ang_vel(self, amp: float) -> float:
         """
         Compute angular velocity based on torque amplitude.
 
@@ -175,7 +177,7 @@ class LarvaSim(LarvaMotile, BaseController):
             * self.dt
         )
 
-    def prepare_motion(self, lin, ang):
+    def prepare_motion(self, lin: float, ang: float) -> None:
         """
         Prepare translational and angular motion.
 
@@ -200,7 +202,7 @@ class LarvaSim(LarvaMotile, BaseController):
         self.position_body(lin_vel, ang_vel)
 
     @property
-    def border_collision(self):
+    def border_collision(self) -> bool:
         """
         Check for collisions with borders.
 
@@ -231,7 +233,7 @@ class LarvaSim(LarvaMotile, BaseController):
                 return True
 
     @property
-    def larva_collision(self):
+    def larva_collision(self) -> bool:
         """
         Check for collisions with other larvae.
 
@@ -247,7 +249,7 @@ class LarvaSim(LarvaMotile, BaseController):
         else:
             return False
 
-    def position_head_in_tank(self, hr0, ho0, l0, fov0, fov1, ang_vel, lin_vel):
+    def position_head_in_tank(self, hr0: Tuple[float, float], ho0: float, l0: float, fov0: float, fov1: float, ang_vel: float, lin_vel: float) -> tuple[float, float]:
         """
         Position the larva's head in the simulated tank.
 
@@ -324,7 +326,7 @@ class LarvaSim(LarvaMotile, BaseController):
         lin_vel = lv(lin_vel)
         return ang_vel, lin_vel
 
-    def position_body(self, lin_vel, ang_vel):
+    def position_body(self, lin_vel: float, ang_vel: float) -> None:
         """
         Position the larva's body based on translational and angular motion.
 
@@ -369,7 +371,7 @@ class LarvaSim(LarvaMotile, BaseController):
         pos = tuple(self.global_midspine_of_body)
         self.update_larva_pose(pos, ho1, lin_vel, ang_vel)
 
-    def update_larva_pose(self, position, orientation, lin_vel=0, ang_vel=0):
+    def update_larva_pose(self, position: tuple[float, float], orientation: float, lin_vel: float = 0, ang_vel: float = 0) -> None:
         """
         Update the larva's pose and trajectories' log.
 
@@ -391,7 +393,7 @@ class LarvaSim(LarvaMotile, BaseController):
         self.model.space.move_to(self, np.array(position))
         self.compute_body_bend()
 
-    def reset_larva_pose(self, reset_trajectories=False):
+    def reset_larva_pose(self, reset_trajectories: bool = False) -> None:
         """
         Reset the larva's pose to the initial position and orientation.
 

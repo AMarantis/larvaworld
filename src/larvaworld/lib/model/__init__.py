@@ -4,10 +4,14 @@ simulations, as well as the modules comprising the layered behavioral architectu
 modeling the nervous system, body and metabolism.
 """
 
+from __future__ import annotations
+
+from typing import Any
+
 __displayname__ = "Modeling"
 
 # Provide a lazy facade for common classes historically re-exported from here.
-__all__ = [
+__all__: list[str] = [
     # Subpackages (lazy loaded)
     "deb",
     "modules",
@@ -54,7 +58,7 @@ __all__ = [
     "DEB",
 ]
 
-_NAME_TO_MODULE = {
+_NAME_TO_MODULE: dict[str, str] = {
     # object.py classes
     "Object": "larvaworld.lib.model.object",
     "GroupedObject": "larvaworld.lib.model.object",
@@ -91,7 +95,7 @@ _NAME_TO_MODULE = {
     "DEB": "larvaworld.lib.model.deb.deb",
 }
 
-_SUBPACKAGES = {
+_SUBPACKAGES: dict[str, str] = {
     "deb": "larvaworld.lib.model.deb",
     "modules": "larvaworld.lib.model.modules",
     "agents": "larvaworld.lib.model.agents",
@@ -100,7 +104,7 @@ _SUBPACKAGES = {
 }
 
 
-def __getattr__(name):
+def __getattr__(name: str) -> Any:
     from importlib import import_module
     
     # Check if it's a subpackage
@@ -121,5 +125,5 @@ def __getattr__(name):
     return obj
 
 
-def __dir__():
+def __dir__() -> list[str]:
     return sorted(list(globals().keys()) + __all__)

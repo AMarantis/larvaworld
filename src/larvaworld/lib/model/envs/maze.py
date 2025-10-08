@@ -1,8 +1,10 @@
+from __future__ import annotations
+from typing import Any, List
 import random
 
 from shapely.geometry import LineString
 
-__all__ = [
+__all__: list[str] = [
     "Cell",
     "Maze",
 ]
@@ -20,16 +22,16 @@ class Cell:
     # A wall separates a pair of cells in the N-S or W-E directions.
     wall_pairs = {"N": "S", "S": "N", "E": "W", "W": "E"}
 
-    def __init__(self, x, y):
+    def __init__(self, x: int, y: int) -> None:
         """Initialize the cell at (x,y). At first it is surrounded by walls."""
         self.x, self.y = x, y
         self.walls = {"N": True, "S": True, "E": True, "W": True}
 
-    def has_all_walls(self):
+    def has_all_walls(self) -> bool:
         """Does this cell still have all its walls?"""
         return all(self.walls.values())
 
-    def knock_down_wall(self, other, wall):
+    def knock_down_wall(self, other: "Cell", wall: str) -> None:
         """Knock down the wall between cells self and other."""
         self.walls[wall] = False
         other.walls[Cell.wall_pairs[wall]] = False
@@ -38,7 +40,7 @@ class Cell:
 class Maze:
     """A Maze, represented as a grid of cells."""
 
-    def __init__(self, nx, ny, ix=0, iy=0, height=1.0):
+    def __init__(self, nx: int, ny: int, ix: int = 0, iy: int = 0, height: float = 1.0) -> None:
         """
         Initialize the maze grid.
         The maze consists of nx x ny cells and will be constructed starting
@@ -50,11 +52,11 @@ class Maze:
         self.ix, self.iy = ix, iy
         self.maze_map = [[Cell(x, y) for y in range(ny)] for x in range(nx)]
 
-    def cell_at(self, x, y):
+    def cell_at(self, x: int, y: int) -> Cell:
         """Return the Cell object_class at (x,y)."""
         return self.maze_map[x][y]
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return a (crude) string representation of the maze."""
         maze_rows = ["-" * self.nx * 2]
         for y in range(self.ny):
@@ -74,7 +76,7 @@ class Maze:
             maze_rows.append("".join(maze_row))
         return "\n".join(maze_rows)
 
-    def write_svg(self, filename):
+    def write_svg(self, filename: str) -> None:
         """Write an SVG image of the maze to filename."""
         aspect_ratio = self.nx / self.ny
         # Pad the maze all around by this amount.
@@ -93,7 +95,7 @@ class Maze:
             )
 
         # Write the SVG image file for maze
-        with open(filename, "W") as f:
+        with open(filename, "w") as f:
             # SVG preamble and styles.
             print('<?xml version="1.0" encoding="utf-8"?>', file=f)
             print('<svg xmlns="http://www.w3.org/2000/svg"', file=f)
@@ -134,7 +136,7 @@ class Maze:
             print(f'<line x1="0" y1="0" x2="0" y2="{height}"/>', file=f)
             print("</svg>", file=f)
 
-    def find_valid_neighbours(self, cell):
+    def find_valid_neighbours(self, cell: Cell) -> List[tuple[str, Cell]]:
         """Return a list of unvisited neighbours to cell."""
         delta = [("W", (-1, 0)), ("E", (1, 0)), ("S", (0, 1)), ("N", (0, -1))]
         neighbours = []
@@ -146,7 +148,7 @@ class Maze:
                     neighbours.append((direction, neighbour))
         return neighbours
 
-    def make_maze(self):
+    def make_maze(self) -> None:
         # Total number of cells.
         n = self.nx * self.ny
         cell_stack = []

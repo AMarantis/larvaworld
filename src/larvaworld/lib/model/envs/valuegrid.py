@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Any
 import math
 
 import agentpy
@@ -18,7 +20,7 @@ from ...param import (
 from ...screen import ScreenTextBox
 from .. import Object
 
-__all__ = [
+__all__: list[str] = [
     "SpatialEntity",
     "Grid",
     "GridOverSpace",
@@ -37,7 +39,7 @@ class SpatialEntity(Viewable, Object):
     color = param.Color(default="white")
     visible = param.Boolean(default=False)
 
-    def record_positions(self, label="p"):
+    def record_positions(self, label: str = "p") -> None:
         """
         Records the positions of each agent.
 
@@ -58,11 +60,11 @@ class Grid(SpatialEntity):
     )
 
     @property
-    def X(self):
+    def X(self) -> int:
         return self.grid_dims[0]
 
     @property
-    def Y(self):
+    def Y(self) -> int:
         return self.grid_dims[1]
 
 
@@ -75,7 +77,7 @@ class GridOverSpace(Grid, agentpy.Grid):
     # fixed_max = param.Boolean(False, doc='whether the max is kept constant')
     # grid_dims = PositiveIntegerRange((51, 51), softmax=500, doc='The spatial resolution of the food grid.')
 
-    def __init__(self, model, **kwargs):
+    def __init__(self, model: Any, **kwargs: Any) -> None:
         Grid.__init__(self, **kwargs)
         agentpy.Grid.__init__(self, model=model, shape=self.grid_dims, **kwargs)
         self._torus = self.space._torus
@@ -90,20 +92,20 @@ class GridOverSpace(Grid, agentpy.Grid):
         self.grid_vertices = self.generate_grid_vertices()
 
     @property
-    def space(self):
+    def space(self) -> Any:
         return self.model.space
 
-    def get_grid_cell(self, p):
+    def get_grid_cell(self, p: Any) -> tuple[int, int]:
         return tuple(np.floor(self.XY * (p / self.xy + 0.5)).astype(int))
 
-    def generate_grid_vertices(self):
+    def generate_grid_vertices(self) -> np.ndarray:
         vertices = np.zeros([self.X, self.Y, 4, 2])
         for i in range(self.X):
             for j in range(self.Y):
                 vertices[i, j] = self.cell_vertices(i, j)
         return vertices
 
-    def cell_vertices(self, i, j):
+    def cell_vertices(self, i: int, j: int) -> np.ndarray:
         x, y = self.xy / self.XY
         X, Y = self.X / 2, self.Y / 2
         return np.array(
@@ -123,7 +125,7 @@ class ValueGrid(Grid):
 
     # grid_dims = PositiveIntegerRange((51, 51),softmax=500, doc='The spatial resolution of the food grid.')
 
-    def __init__(self, sources=None, max_value=None, min_value=0.0, **kwargs):
+    def __init__(self, sources: list[Any] | None = None, max_value: float | None = None, min_value: float = 0.0, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
         if sources is None:
@@ -139,7 +141,7 @@ class ValueGrid(Grid):
         if self.model is not None:
             self.match_space(self.model.space)
 
-    def match_space(self, space):
+    def match_space(self, space: Any) -> None:
         self.xy0 = np.array(space.dims)
         self.x, self.y = self.xy0 / self.XY0
         x0, x1, y0, y1 = space.range
@@ -149,20 +151,20 @@ class ValueGrid(Grid):
         )
         self.grid_vertices = self.generate_grid_vertices()
 
-    def update_values(self):
+    def update_values(self) -> None:
         pass
 
-    def add_value(self, p, value):
+    def add_value(self, p: Any, value: float):
         return self.add_cell_value(self.get_grid_cell(p), value)
 
-    def get_value(self, p):
+    def get_value(self, p: Any):
         return self.grid[self.get_grid_cell(p)]
         # return self.get_cell_value(self.get_grid_cell(p))
 
-    def get_grid_cell(self, p):
+    def get_grid_cell(self, p: Any) -> tuple[int, int]:
         return tuple(np.floor(self.XY0 * (p / self.xy0 + 0.5)).astype(int))
 
-    def add_cell_value(self, cell, value):
+    def add_cell_value(self, cell: tuple[int, int], value: float):
         v0 = self.grid[cell]
         v1 = v0 + value
         if not self.fixed_max:
@@ -177,14 +179,14 @@ class ValueGrid(Grid):
         else:
             return value
 
-    def generate_grid_vertices(self):
+    def generate_grid_vertices(self) -> np.ndarray:
         vertices = np.zeros([self.X, self.Y, 4, 2])
         for i in range(self.X):
             for j in range(self.Y):
                 vertices[i, j] = self.cell_vertices(i, j)
         return vertices
 
-    def cell_vertices(self, i, j):
+    def cell_vertices(self, i: int, j: int) -> np.ndarray:
         x, y = self.x, self.y
         X, Y = self.X / 2, self.Y / 2
         return np.array(
@@ -196,16 +198,16 @@ class ValueGrid(Grid):
             ]
         )
 
-    def cel_pos(self, i, j):
+    def cel_pos(self, i: int, j: int) -> tuple[float, float]:
         return self.x * (i - self.X / 2 + 0.5), self.y * (j - self.Y / 2 + 0.5)
 
-    def reset(self):
+    def reset(self) -> None:
         self.grid = np.ones(self.grid_dims) * self.initial_value
 
-    def empty_grid(self):
+    def empty_grid(self) -> None:
         self.grid = np.zeros(self.grid_dims)
 
-    def draw_peak(self, v):
+    def draw_peak(self, v: Any) -> None:
         idx = np.unravel_index(self.grid.argmax(), self.grid.shape)
         p = self.cel_pos(*idx)
 
@@ -219,7 +221,7 @@ class ValueGrid(Grid):
         )
         text_box.draw(v)
 
-    def draw(self, v, **kwargs):
+    def draw(self, v: Any, **kwargs: Any) -> None:
         Cgrid = self.get_color_grid().reshape([self.X, self.Y, 3])
         try:
             for i in range(self.X):
@@ -232,7 +234,7 @@ class ValueGrid(Grid):
             self.draw_isocontours(v)
         self.draw_peak(v)
 
-    def draw_isocontours(self, v):
+    def draw_isocontours(self, v: Any) -> None:
         N = 6
         k = 4
         g = self.grid
@@ -259,7 +261,7 @@ class ValueGrid(Grid):
                 except:
                     pass
 
-    def get_color_grid(self):
+    def get_color_grid(self) -> np.ndarray:
         g = self.grid.flatten()
         v0, v1 = self.min_value, self.max_value
         gg = (g - v0) / (v1 - v0)
@@ -281,15 +283,15 @@ class FoodGrid(ValueGrid):
         doc="The substrate where the agent feeds",
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
-    def get_color(self, v):
+    def get_color(self, v: float):
         v0, v1 = self.min_value, self.max_value
         q = (v - v0) / (v1 - v0)
         return util.col_range(q, low=(255, 255, 255), high=self.color, mul255=True)
 
-    def draw(self, v, **kwargs):
+    def draw(self, v: Any, **kwargs: Any) -> None:
         v.draw_polygon(
             self.model.space.vertices, self.get_color(v=self.initial_value), filled=True
         )
@@ -308,7 +310,7 @@ class OdorScape(ValueGrid):
         objects=["Gaussian", "Diffusion"], doc="The odorscape algorithm"
     )
 
-    def __init__(self, subclass_initialized=False, **kwargs):
+    def __init__(self, subclass_initialized: bool = False, **kwargs: Any):
         if subclass_initialized:
             super().__init__(**kwargs)
         else:
@@ -338,10 +340,10 @@ class AnalyticalValueLayer(OdorScape):
         lambda source, value, pos, rel_pos: value + source.odor.gaussian_value(rel_pos)
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(subclass_initialized=True, **kwargs)
 
-    def get_value(self, pos):
+    def get_value(self, pos: tuple[float, float]) -> float:
         value = 0
         for s in self.sources:
             p = s.get_position()
@@ -349,7 +351,7 @@ class AnalyticalValueLayer(OdorScape):
             value = AnalyticalValueLayer.value_function(s, value, pos, rel_pos)
         return value
 
-    def get_grid(self):
+    def get_grid(self) -> np.ndarray:
         X, Y = self.meshgrid
 
         @np.vectorize
@@ -361,7 +363,7 @@ class AnalyticalValueLayer(OdorScape):
         self.max_value = np.max(V.flatten())
         return V
 
-    def draw_isocontours(self, v):
+    def draw_isocontours(self, v: Any) -> None:
         for s in self.sources:
             p = s.get_position()
 
@@ -388,10 +390,10 @@ class AnalyticalValueLayer(OdorScape):
 class GaussianValueLayer(AnalyticalValueLayer):
     odorscape = param.Selector(default="Gaussian")
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
-    def get_value(self, pos):
+    def get_value(self, pos: tuple[float, float]) -> float:
         value = 0
         for s in self.sources:
             p = s.get_position()
@@ -420,10 +422,10 @@ class DiffusionValueLayer(OdorScape):
         Doing the math, sigma ends up reeeeally small
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(subclass_initialized=True, **kwargs)
 
-    def update_values(self):
+    def update_values(self) -> None:
         k = 1000
         if self.model.windscape is not None:
             v, a = self.model.windscape.wind_speed, self.model.windscape.wind_direction
@@ -464,7 +466,7 @@ class WindScape(SpatialEntity):
         {}, label="air-puffs", doc="Repetitive or single air-puff stimuli."
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
         self.max_dim = np.max(self.model.space.dims)
@@ -478,7 +480,7 @@ class WindScape(SpatialEntity):
         for idx, puff in self.puffs.items():
             self.add_puff(**puff)
 
-    def get_value(self, agent):
+    def get_value(self, agent: Any) -> float:
         if self.obstructed(agent.pos):
             return 0
         else:
@@ -487,7 +489,7 @@ class WindScape(SpatialEntity):
                 np.abs(util.angle_dif(o, self.wind_direction)) / 180 * self.wind_speed
             )
 
-    def obstructed(self, pos):
+    def obstructed(self, pos: tuple[float, float]) -> bool:
         p0 = geometry.Point(pos)
         p1 = geometry.Point(
             p0.x - self.max_dim * math.cos(self.wind_direction),
@@ -497,7 +499,7 @@ class WindScape(SpatialEntity):
 
         return any([l.intersects(ll) for l in self.model.border_lines])
 
-    def draw(self, v, **kwargs):
+    def draw(self, v: Any, **kwargs: Any) -> None:
         if self.wind_speed > 0:
             for p0, p1 in self.scapelines:
                 l = geometry.LineString([p0, p1])
@@ -516,7 +518,7 @@ class WindScape(SpatialEntity):
                 )
         self.draw_phi += self.wind_speed
 
-    def generate_scapelines(self, D, N, A):
+    def generate_scapelines(self, D: float, N: int, A: float):
         ds = D / N * np.sqrt(2)
         p0s = util.rotate_points_around_point(
             [(-D, (i - N / 2) * ds) for i in range(N)], -A
@@ -526,15 +528,15 @@ class WindScape(SpatialEntity):
         )
         return [(p0, p1) for p0, p1 in zip(p0s, p1s)]
 
-    def set_wind_direction(self, A):
+    def set_wind_direction(self, A: float) -> None:
         self.wind_direction = A
         self.scapelines = self.generate_scapelines(
             self.max_dim, self.N, self.wind_direction
         )
 
     def add_puff(
-        self, duration, speed, direction=None, start_time=None, N=1, interval=10.0
-    ):
+        self, duration: float, speed: float, direction: float | None = None, start_time: float | None = None, N: int | None = 1, interval: float = 10.0
+    ) -> None:
         m = self.model
 
         Nticks = int(duration / m.dt)
@@ -553,7 +555,7 @@ class WindScape(SpatialEntity):
                 "wind_direction": self.wind_direction,
             }
 
-    def update(self):
+    def update(self) -> None:
         for t, args in self.events.items():
             wd = args["wind_direction"]
             if self.model.Nticks == t:
@@ -567,12 +569,12 @@ class ThermoScape(ValueGrid):
 
     def __init__(
         self,
-        plate_temp=22,
-        spread=0.1,
-        thermo_sources=None,
-        thermo_source_dTemps=None,
-        **kwargs,
-    ):
+        plate_temp: float = 22,
+        spread: float = 0.1,
+        thermo_sources: list[list[float]] | None = None,
+        thermo_source_dTemps: list[float] | None = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(**kwargs)
         if thermo_source_dTemps is None:
             thermo_source_dTemps = [8, -8, 8, -8]
@@ -594,7 +596,7 @@ class ThermoScape(ValueGrid):
         self.thermo_spread = spread
         self.generate_thermoscape()
 
-    def generate_thermoscape(self):
+    def generate_thermoscape(self) -> None:
         """
         size is the length of the square arena in mm.
         rezo is the resolution with 1 being a mm, 0.1 being a 10th of a mm.
@@ -616,7 +618,7 @@ class ThermoScape(ValueGrid):
 
         self.thermoscape_layers = rv_dict
 
-    def get_value(self, pos):
+    def get_value(self, pos: tuple[float, float]):
         size, size2 = [1, 1]
         pos_ad = [size * pos[0], size2 * pos[1]]
         pos_temp = {}
@@ -637,7 +639,7 @@ class ThermoScape(ValueGrid):
                 thermo_gain["warm"] += dgain
         return thermo_gain
 
-    def get_grid(self):
+    def get_grid(self) -> np.ndarray:
         X, Y = self.meshgrid
 
         @np.vectorize
@@ -649,7 +651,7 @@ class ThermoScape(ValueGrid):
         self.max_value = np.max(V.flatten())
         return V
 
-    def draw_isocontours(self, v):  # @todo need to make a draw function for thermogrid.
+    def draw_isocontours(self, v: Any):  # @todo need to make a draw function for thermogrid.
         for k in self.thermo_sources:
             p = self.thermo_sources.k
             for r in np.arange(0, 0.050, 0.01):

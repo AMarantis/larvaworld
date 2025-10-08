@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Any
 import os
 import warnings
 
@@ -22,7 +23,7 @@ from ...param import PositiveNumber, RangeRobust
 from .basic import Effector
 from .remote_brian_interface import RemoteBrianModelInterface
 
-__all__ = [
+__all__: list[str] = [
     "Sensor",
     "Olfactor",
     "OSNOlfactor",
@@ -53,7 +54,7 @@ class Sensor(Effector):
         default=util.AttrDict(), doc="Dictionary of sensor gain per stimulus ID"
     )
 
-    def __init__(self, brain=None, **kwargs):
+    def __init__(self, brain: Any | None = None, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.brain = brain
         self.exp_decay_coef = np.exp(-self.dt * self.decay_coef)
@@ -61,14 +62,14 @@ class Sensor(Effector):
         self.dX = util.AttrDict({id: 0.0 for id in self.gain_ids})
         self.gain = self.gain_dict
 
-    def compute_dif(self, input):
+    def compute_dif(self, input: Any) -> None:
         pass
 
-    def update_gain_via_memory(self, mem=None, **kwargs):
+    def update_gain_via_memory(self, mem: Any | None = None, **kwargs: Any) -> None:
         if mem is not None:
             self.gain = mem.step(dx=self.get_dX(), **kwargs)
 
-    def update(self):
+    def update(self) -> None:
         if len(self.input) == 0:
             self.output = 0
         elif self.brute_force:
@@ -82,28 +83,28 @@ class Sensor(Effector):
                 [self.gain[id] * self.dX[id] for id in self.gain_ids]
             )
 
-    def affect_locomotion(self, L):
+    def affect_locomotion(self, L: Any) -> None:
         pass
 
-    def get_dX(self):
+    def get_dX(self) -> dict[Any, float]:
         return self.dX
 
-    def get_X_values(self, t, N):
+    def get_X_values(self, t: float, N: int) -> list[float]:
         return list(self.X.values())
 
-    def get_gain(self):
+    def get_gain(self) -> dict[Any, float]:
         return self.gain
 
-    def set_gain(self, value, gain_id):
+    def set_gain(self, value: float, gain_id: Any) -> None:
         self.gain[gain_id] = value
 
-    def reset_gain(self, gain_id):
+    def reset_gain(self, gain_id: Any) -> None:
         self.gain[gain_id] = self.gain_dict[gain_id]
 
-    def reset_all_gains(self):
+    def reset_all_gains(self) -> None:
         self.gain = self.gain_dict
 
-    def compute_single_dx(self, cur, prev):
+    def compute_single_dx(self, cur: float, prev: float) -> float:
         if self.perception == "log":
             return cur / prev - 1 if prev != 0 else 0
         elif self.perception == "linear":
@@ -111,7 +112,7 @@ class Sensor(Effector):
         elif self.perception == "null":
             return cur
 
-    def compute_dX(self, input):
+    def compute_dX(self, input: dict[Any, float]) -> None:
         for id, cur in input.items():
             if id not in self.X:
                 self.add_novel_gain(id, con=cur)
@@ -120,7 +121,7 @@ class Sensor(Effector):
                 self.dX[id] = self.compute_single_dx(cur, prev)
         self.X = input
 
-    def add_novel_gain(self, id, con=0.0, gain=0.0):
+    def add_novel_gain(self, id: Any, con: float = 0.0, gain: float = 0.0) -> None:
         self.gain_dict[id] = gain
         self.gain[id] = gain
         self.dX[id] = 0.0
@@ -132,10 +133,10 @@ class Sensor(Effector):
 
 
 class Olfactor(Sensor):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
-    def affect_locomotion(self, L):
+    def affect_locomotion(self, L: Any) -> None:
         if self.output < 0 and L.stride_completed:
             if np.random.uniform(0, 1, 1) <= np.abs(self.output):
                 L.intermitter.interrupt_locomotion()
@@ -169,10 +170,10 @@ class Toucher(Sensor):
         doc="The location indexes of sensors around body contour.",
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
-    def affect_locomotion(self, L):
+    def affect_locomotion(self, L: Any) -> None:
         for id in self.gain_ids:
             if self.dX[id] == 1:
                 L.intermitter.trigger_locomotion()
@@ -186,7 +187,7 @@ class Windsensor(Sensor):
     gain_dict = param.Dict(default=util.AttrDict({"windsensor": 1.0}))
     perception = param.Selector(default="null")
 
-    def __init__(self, weights, **kwargs):
+    def __init__(self, weights: Any, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.weights = weights
 
@@ -196,44 +197,44 @@ class Thermosensor(Sensor):
     # cool_gain = PositiveNumber(0.0, label='cool sensitivity coef', doc='The gain of the cool sensor.')
     # warm_gain = PositiveNumber(0.0, label='warm sensitivity coef', doc='The gain of the warm sensor.')
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
     @property
-    def warm_sensor_input(self):
+    def warm_sensor_input(self) -> float:
         return self.X["warm"]
 
     @property
-    def warm_sensor_perception(self):
+    def warm_sensor_perception(self) -> float:
         return self.dX["warm"]
 
     @property
-    def cool_sensor_input(self):
+    def cool_sensor_input(self) -> float:
         return self.X["cool"]
 
     @property
-    def cool_sensor_perception(self):
+    def cool_sensor_perception(self) -> float:
         return self.dX["cool"]
 
     @property
-    def cool_gain(self):
+    def cool_gain(self) -> float:
         return self.gain["cool"]
 
     @property
-    def warm_gain(self):
+    def warm_gain(self) -> float:
         return self.gain["warm"]
 
 
 class OSNOlfactor(Olfactor):
     def __init__(
         self,
-        response_key="OSN_rate",
-        server_host="localhost",
-        server_port=5795,
-        remote_dt=100,
-        remote_warmup=500,
-        **kwargs,
-    ):
+        response_key: str = "OSN_rate",
+        server_host: str = "localhost",
+        server_port: int = 5795,
+        remote_dt: int = 100,
+        remote_warmup: int = 500,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(**kwargs)
         self.brianInterface = RemoteBrianModelInterface(
             server_host, server_port, remote_dt
@@ -244,7 +245,7 @@ class OSNOlfactor(Olfactor):
         self.agent_id = RemoteBrianModelInterface.getRandomModelId()
         self.sim_id = RemoteBrianModelInterface.getRandomModelId()
 
-    def normalized_sigmoid(self, a, b, x):
+    def normalized_sigmoid(self, a: float, b: float, x: float):
         """
         Returns array of a horizontal mirrored normalized sigmoid function
         output between 0 and 1
@@ -254,7 +255,7 @@ class OSNOlfactor(Olfactor):
         # return 1 * (s - min(s)) / (max(s) - min(s))  # normalize function to 0-1
         return s
 
-    def update(self):
+    def update(self) -> None:
         agent_id = (
             self.brain.agent.unique_id if self.brain is not None else self.agent_id
         )

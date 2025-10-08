@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Any
 import os
 import warnings
 
@@ -20,7 +21,7 @@ from scipy import signal
 from ...param import Phase, PositiveNumber
 from .basic import StepEffector, StepOscillator
 
-__all__ = [
+__all__: list[str] = [
     "Crawler",
     "StrideOscillator",
     "GaussOscillator",
@@ -50,13 +51,13 @@ class StrideOscillator(Crawler, StepOscillator):
         doc="The standard deviation of the displacement achieved in a single peristaltic stride as a fraction of the body length.",
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         # print(self.stride_dst_std,self.stride_dst_mean)
         self.step_to_length = self.new_stride
 
     @property
-    def new_stride(self):
+    def new_stride(self) -> float:
         return np.random.normal(loc=self.stride_dst_mean, scale=self.stride_dst_std)
 
     @property
@@ -67,10 +68,10 @@ class StrideOscillator(Crawler, StepOscillator):
     #     self.oscillate()
     #     self.output = self.Act
 
-    def act_on_complete_iteration(self):
+    def act_on_complete_iteration(self) -> None:
         self.step_to_length = self.new_stride
 
-    def suppresion_relief(self, phi_range):
+    def suppresion_relief(self, phi_range: tuple[float, float]) -> bool:
         return self.phi_in_range(phi_range)
 
 
@@ -84,12 +85,12 @@ class GaussOscillator(StrideOscillator):
         doc="The std of the gaussian window for the velocity oscillation during a stride cycle.",
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.gauss_w = signal.gaussian(360, std=self.std * 360, sym=False)
 
     @property
-    def Act_Phi(self):
+    def Act_Phi(self) -> float:
         return self.gauss_w[int(np.rad2deg(self.phi))]
 
 
@@ -103,10 +104,10 @@ class SquareOscillator(StrideOscillator):
     )
 
     @property
-    def Act_Phi(self):
+    def Act_Phi(self) -> float:
         return float(signal.square(self.phi, duty=self.duty))
 
-    def suppresion_relief(self, phi_range):
+    def suppresion_relief(self, phi_range: tuple[float, float]) -> bool:
         return self.phi <= 2 * np.pi * self.duty
 
 
@@ -126,7 +127,7 @@ class PhaseOscillator(StrideOscillator):
     )
 
     @property
-    def Act_Phi(self):
+    def Act_Phi(self) -> float:
         return np.cos(self.phi - self.max_vel_phase)
 
     @property

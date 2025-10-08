@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Any
 import os
 import warnings
 
@@ -17,7 +19,7 @@ import numpy as np
 from ... import util
 from . import Larva, LarvaContoured, LarvaSegmented
 
-__all__ = [
+__all__: list[str] = [
     "LarvaReplay",
     "LarvaReplayContoured",
     "LarvaReplaySegmented",
@@ -46,7 +48,7 @@ class LarvaReplay(Larva):
 
     __displayname__ = "Replay larva"
 
-    def __init__(self, data, **kwargs):
+    def __init__(self, data: Any, **kwargs: Any) -> None:
         self.data = data
         fo0 = self.data.front_orientation[0]
         if np.isnan(fo0):
@@ -54,7 +56,7 @@ class LarvaReplay(Larva):
 
         super().__init__(pos=self.data.pos[0], orientation=fo0, **kwargs)
 
-    def step(self):
+    def step(self) -> None:
         """
         Update the replay larva's position and orientation based on recorded data.
 
@@ -71,7 +73,7 @@ class LarvaReplay(Larva):
             self.model.space.move_to(self, np.array(self.pos))
 
     @property
-    def midline_xy(self):
+    def midline_xy(self) -> list[tuple[float, float]]:
         """
         Get the xy coordinates of the midline points based on recorded data.
 
@@ -84,7 +86,7 @@ class LarvaReplay(Larva):
         return util.np2Dtotuples(self.data.midline[self.model.t])
 
     @property
-    def front_orientation(self):
+    def front_orientation(self) -> float:
         """
         Get the front orientation of the replay larva based on recorded data.
 
@@ -97,7 +99,7 @@ class LarvaReplay(Larva):
         return self.data.front_orientation[self.model.t]
 
     @property
-    def rear_orientation(self):
+    def rear_orientation(self) -> float:
         """
         Get the rear orientation of the replay larva based on recorded data.
 
@@ -120,7 +122,7 @@ class LarvaReplayContoured(LarvaReplay, LarvaContoured):
 
     __displayname__ = "Contoured replay larva"
 
-    def step(self):
+    def step(self) -> None:
         """
         Update the replay larva's position, orientation, and contour based on recorded data.
 
@@ -134,7 +136,7 @@ class LarvaReplayContoured(LarvaReplay, LarvaContoured):
         self.vertices = self.contour_xy
 
     @property
-    def contour_xy(self):
+    def contour_xy(self) -> list[tuple[float, float]]:
         """
         Get the xy coordinates of the contour points based on recorded data.
 
@@ -160,7 +162,7 @@ class LarvaReplaySegmented(LarvaReplay, LarvaSegmented):
 
     __displayname__ = "Segmented replay larva"
 
-    def step(self):
+    def step(self) -> None:
         """
         Update the replay larva's position, orientation, and body segments based on recorded data.
 

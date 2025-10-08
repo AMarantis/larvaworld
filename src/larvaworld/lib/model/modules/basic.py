@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Any
 import os
 import warnings
 
@@ -19,7 +20,7 @@ import param
 from ...param import PositiveNumber
 from ..modules.oscillator import Oscillator, Timer
 
-__all__ = [
+__all__: list[str] = [
     "Effector",
     "StepEffector",
     "StepOscillator",
@@ -50,18 +51,18 @@ class Effector(Timer):
         precedence=-3, label="output range", doc="The output range of the module."
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.input = 0
         self.output = 0
 
-    def update_output(self, output):
+    def update_output(self, output: Any) -> Any:
         return self.apply_noise(output, self.output_noise, self.output_range)
 
-    def update_input(self, input):
+    def update_input(self, input: Any) -> Any:
         return self.apply_noise(input, self.input_noise, self.input_range)
 
-    def apply_noise(self, value, noise=0, range=None):
+    def apply_noise(self, value: Any, noise: float = 0, range: Any | None = None) -> Any:
         if type(value) in [int, float]:
             value *= 1 + np.random.normal(scale=noise)
             if range is not None and len(range) == 2:
@@ -77,19 +78,19 @@ class Effector(Timer):
             pass
         return value
 
-    def get_output(self, t):
+    def get_output(self, t: float) -> Any:
         return self.output
 
-    def update(self):
+    def update(self) -> None:
         pass
 
-    def act(self, **kwargs):
+    def act(self, **kwargs: Any) -> None:
         pass
 
-    def inact(self, **kwargs):
+    def inact(self, **kwargs: Any) -> None:
         pass
 
-    def step(self, A_in=0, **kwargs):
+    def step(self, A_in: float = 0, **kwargs: Any) -> Any:
         self.input = self.update_input(A_in)
         self.update()
         if self.active:
@@ -108,51 +109,51 @@ class StepEffector(Effector):
         doc="The initial amplitude of the oscillation.",
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
     @property
-    def Act_coef(self):
+    def Act_coef(self) -> Any:
         return self.amp
 
     @property
-    def Act_Phi(self):
+    def Act_Phi(self) -> float:
         return 1
 
     @property
-    def Act(self):
+    def Act(self) -> Any:
         return self.Act_coef * self.Act_Phi
 
-    def set_amp(self, v):
+    def set_amp(self, v: Any) -> None:
         self.amp = v
 
-    def get_amp(self, t):
+    def get_amp(self, t: float) -> Any:
         return self.amp
 
-    def act(self):
+    def act(self) -> None:
         self.output = self.Act
 
-    def inact(self):
+    def inact(self) -> None:
         self.output = 0
 
 
 class StepOscillator(Oscillator, StepEffector):
-    def act(self):
+    def act(self) -> None:
         self.oscillate()
         self.output = self.Act
 
 
 class SinOscillator(StepOscillator):
     @property
-    def Act_Phi(self):
+    def Act_Phi(self) -> float:
         return np.sin(self.phi)
 
 
 class NengoEffector(StepOscillator):
-    def start_effector(self):
+    def start_effector(self) -> None:
         super().start_effector()
         self.set_freq(self.initial_freq)
 
-    def stop_effector(self):
+    def stop_effector(self) -> None:
         super().stop_effector()
         self.set_freq(0)

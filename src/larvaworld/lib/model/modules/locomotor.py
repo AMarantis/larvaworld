@@ -15,7 +15,7 @@ else:
     )
 from ...param import ClassAttr, NestedConf
 from .module_modes import moduleDB as MD
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from .crawler import Crawler
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from .intermitter import Intermitter
     from .crawl_bend_interference import Interference as _Interference
 
-__all__ = [
+__all__: list[str] = [
     "Locomotor",
 ]
 
@@ -52,30 +52,30 @@ class Locomotor(NestedConf):
         doc="The peristaltic crawling module",
     )
 
-    def __init__(self, conf, dt=0.1, **kwargs):
-        self.dt = dt
+    def __init__(self, conf: Any, dt: float = 0.1, **kwargs: Any) -> None:
+        self.dt: float = dt
         kwargs.update(MD.build_locomodules(conf=conf, dt=dt))
         super().__init__(**kwargs)
 
-    def on_new_pause(self):
+    def on_new_pause(self) -> None:
         if self.crawler:
             self.crawler.stop_effector()
         if self.feeder:
             self.feeder.stop_effector()
 
-    def on_new_run(self):
+    def on_new_run(self) -> None:
         if self.crawler:
             self.crawler.start_effector()
         if self.feeder:
             self.feeder.stop_effector()
 
-    def on_new_feed(self):
+    def on_new_feed(self) -> None:
         if self.crawler:
             self.crawler.stop_effector()
         if self.feeder:
             self.feeder.start_effector()
 
-    def step_intermitter(self, **kwargs):
+    def step_intermitter(self, **kwargs: Any) -> None:
         if self.intermitter:
             pre_state = self.intermitter.cur_state
             cur_state = self.intermitter.step(**kwargs)
@@ -88,20 +88,20 @@ class Locomotor(NestedConf):
             # print(cur_state)
 
     @property
-    def stride_completed(self):
+    def stride_completed(self) -> bool:
         if self.crawler:
             return self.crawler.complete_iteration
         else:
             return False
 
     @property
-    def feed_motion(self):
+    def feed_motion(self) -> bool:
         if self.feeder:
             return self.feeder.complete_iteration
         else:
             return False
 
-    def step(self, A_in=0, length=1, on_food=False):
+    def step(self, A_in: float = 0, length: float = 1, on_food: bool = False) -> tuple[float, float, bool]:
         C, F, T, If = self.crawler, self.feeder, self.turner, self.interference
         if If:
             If.cur_attenuation = 1

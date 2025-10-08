@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Any
 import os
 import warnings
 
@@ -17,7 +19,7 @@ import numpy as np
 from ... import util
 from .larva_robot import LarvaRobot
 
-__all__ = ["LarvaOffline"]
+__all__: list[str] = ["LarvaOffline"]
 
 __displayname__ = "Offline agent"
 
@@ -27,12 +29,12 @@ class LarvaOffline(LarvaRobot):
     Subclass of LarvaRobot that simulates the behavior of a larva in an offline environment.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.fo = self.orientation
         self.ro = self.orientation
 
-    def step(self):
+    def step(self) -> None:
         """
         Perform a single simulation step for the larva agent.
 

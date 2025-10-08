@@ -2,9 +2,13 @@
 Agent classes for the agent-based-modeling simulations.
 """
 
+from __future__ import annotations
+
+from typing import Any
+
 __displayname__ = "Agents"
 
-__all__ = [
+__all__: list[str] = [
     "NonSpatialAgent", "PointAgent", "OrientedAgent", "MobilePointAgent", "MobileAgent",
     "Source", "Food",
     "Larva", "LarvaContoured", "LarvaSegmented", "LarvaMotile",
@@ -14,7 +18,7 @@ __all__ = [
     "LarvaOffline",
 ]
 
-_NAME_TO_MODULE = {
+_NAME_TO_MODULE: dict[str, str] = {
     # Agent bases
     "NonSpatialAgent": "larvaworld.lib.model.agents._agent",
     "PointAgent": "larvaworld.lib.model.agents._agent",
@@ -42,7 +46,7 @@ _NAME_TO_MODULE = {
     "LarvaOffline": "larvaworld.lib.model.agents.larva_offline",
 }
 
-def __getattr__(name):
+def __getattr__(name: str) -> Any:
     module_path = _NAME_TO_MODULE.get(name)
     if module_path is None:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
@@ -53,5 +57,5 @@ def __getattr__(name):
     globals()[name] = obj
     return obj
 
-def __dir__():
+def __dir__() -> list[str]:
     return sorted(list(globals().keys()) + __all__)

@@ -2,13 +2,14 @@
 Modules comprising the layered behavioral architecture modeling the nervous system,body and metabolism
 """
 
+from __future__ import annotations
 
-# from . import crawler, turner,crawl_bend_interference,intermitter
+from typing import Any
 
 __displayname__ = "Modular behavioral architecture"
 
 # Public API: explicit, lazy re-exports of commonly used symbols
-__all__ = [
+__all__: list[str] = [
     "Brain",
     "DefaultBrain",
     "Locomotor",
@@ -28,7 +29,7 @@ __all__ = [
     "ProximitySensor",
 ]
 
-_NAME_TO_MODULE = {
+_NAME_TO_MODULE: dict[str, str] = {
     "Brain": "larvaworld.lib.model.modules.brain",
     "DefaultBrain": "larvaworld.lib.model.modules.brain",
     "Locomotor": "larvaworld.lib.model.modules.locomotor",
@@ -48,7 +49,7 @@ _NAME_TO_MODULE = {
     "ProximitySensor": "larvaworld.lib.model.modules.sensor2",
 }
 
-def __getattr__(name):
+def __getattr__(name: str) -> Any:
     """
     Lazily resolve public symbols on first access to avoid importing
     heavy submodules at package import time.
@@ -63,5 +64,5 @@ def __getattr__(name):
     globals()[name] = obj  # cache for subsequent lookups
     return obj
 
-def __dir__():  # help tooling: list public symbols
+def __dir__() -> list[str]:  # help tooling: list public symbols
     return sorted(list(globals().keys()) + __all__)

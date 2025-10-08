@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Any
 import random
 
 import numpy as np
@@ -5,7 +7,7 @@ import numpy as np
 from ... import util
 from ...model.modules import RotTriangle
 
-__all__ = [
+__all__: list[str] = [
     "DifferentialDriveRobot",
     "SensorDrivenRobot",
 ]
@@ -14,7 +16,7 @@ __displayname__ = "Braitenberg agent"
 
 
 class DifferentialDriveRobot(RotTriangle):
-    def __init__(self, unique_id, model, x, y, length, wheel_radius):
+    def __init__(self, unique_id: Any, model: Any, x: float, y: float, length: float, wheel_radius: float) -> None:
         direction = random.uniform(-np.pi, np.pi)
         super().__init__(
             x,
@@ -34,23 +36,23 @@ class DifferentialDriveRobot(RotTriangle):
         self.deltax = None
         self.deltay = None
 
-    def step(self):
+    def step(self) -> None:
         """Updates x, y and direction"""
         self.delta_x()
         self.delta_y()
         self.delta_direction()
 
-    def move_duration(self, seconds):
+    def move_duration(self, seconds: float) -> None:
         """Moves the robot for an 's' amount of seconds"""
         for i in range(int(seconds / self._delta)):
             self.step()
 
-    def print_xyd(self):
+    def print_xyd(self) -> None:
         """Prints the x,y position and direction"""
         print("x = " + str(self.x) + " " + "y = " + str(self.y))
         print("direction = " + str(self.direction))
 
-    def delta_x(self):
+    def delta_x(self) -> None:
         self.deltax = (
             self._delta
             * (self.wheel_radius * 0.5)
@@ -59,7 +61,7 @@ class DifferentialDriveRobot(RotTriangle):
         )
         self.x += self.deltax
 
-    def delta_y(self):
+    def delta_y(self) -> None:
         self.deltay = (
             self._delta
             * (self.wheel_radius * 0.5)
@@ -68,7 +70,7 @@ class DifferentialDriveRobot(RotTriangle):
         )
         self.y += self.deltay
 
-    def delta_direction(self):
+    def delta_direction(self) -> None:
         self.direction += (
             self._delta
             * (self.wheel_radius / self.length)
@@ -82,14 +84,14 @@ class DifferentialDriveRobot(RotTriangle):
 
 
 class SensorDrivenRobot(DifferentialDriveRobot):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.collision_with_object = False
         self.left_motor_controller = None
         self.right_motor_controller = None
         self.label = None
 
-    def step(self):
+    def step(self) -> None:
         if not self.collision_with_object:
             try:
                 self.left_motor_controller.sense_and_act()
@@ -108,13 +110,13 @@ class SensorDrivenRobot(DifferentialDriveRobot):
             self.speed_left_wheel = 0
             self.speed_right_wheel = 0
 
-    def set_left_motor_controller(self, left_motor_controller):
+    def set_left_motor_controller(self, left_motor_controller: Any) -> None:
         self.left_motor_controller = left_motor_controller
 
-    def set_right_motor_controller(self, right_motor_controller):
+    def set_right_motor_controller(self, right_motor_controller: Any) -> None:
         self.right_motor_controller = right_motor_controller
 
-    def draw(self, scene):
+    def draw(self, scene: Any) -> None:
         # draw the sensor lines
 
         # in scene_loader a robot doesn't have sensors

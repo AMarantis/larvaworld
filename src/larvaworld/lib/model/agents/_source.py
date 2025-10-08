@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Any
 import os
 import warnings
 
@@ -19,7 +21,7 @@ from ...param import ClassAttr, PositiveNumber, Substrate, xy_uniform_circle
 # ScreenManager import deferred due to circular dependency - will be imported when needed
 from . import PointAgent
 
-__all__ = [
+__all__: list[str] = [
     "Source",
     "Food",
 ]
@@ -71,14 +73,14 @@ class Source(PointAgent):
         None, doc="Where the agent appears if regenerated"
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.is_carried_by = None
 
         # # put all agents into same group (negative so that no collisions are detected)
         # self._fixtures[0].filterData.groupIndex = -1
 
-    def step(self):
+    def step(self) -> None:
         if self.can_be_displaced:
             w = self.model.windscape
             if w is not None:
@@ -107,11 +109,11 @@ class Food(Source):
     )
     substrate = ClassAttr(Substrate, doc="The substrate where the agent feeds")
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.initial_amount = self.amount
 
-    def subtract_amount(self, amount):
+    def subtract_amount(self, amount: float) -> float:
         """
         Subtract a given amount of food from the source.
 
@@ -145,7 +147,7 @@ class Food(Source):
                 pass
         return np.min([amount, prev_amount])
 
-    def draw(self, v, filled: bool = None) -> None:
+    def draw(self, v: Any, filled: bool | None = None) -> None:
         """
         Draws the agent on the screen.
 

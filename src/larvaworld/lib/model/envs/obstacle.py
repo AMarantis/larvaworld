@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Any
 import numpy as np
 import param
 from shapely import geometry
@@ -10,7 +12,7 @@ from ...model import GroupedObject
 from ...param import Pos2D, ViewableLine
 from .. import Object
 
-__all__ = [
+__all__: list[str] = [
     "Obstacle",
     "Box",
     "Wall",
@@ -19,7 +21,7 @@ __all__ = [
 
 
 class Obstacle(GroupedObject, ViewableLine):
-    def __init__(self, model=None, edges=None, **kwargs):
+    def __init__(self, model: Any | None = None, edges: Any | None = None, **kwargs: Any) -> None:
         Object.__init__(self, model=model)
         ViewableLine.__init__(self, **kwargs)
 
@@ -33,7 +35,7 @@ class Obstacle(GroupedObject, ViewableLine):
 class Box(Obstacle, Pos2D):
     closed = param.Boolean(True)
 
-    def __init__(self, x=0, y=0, size=1, **kwargs):
+    def __init__(self, x: float = 0, y: float = 0, size: float = 1, **kwargs: Any) -> None:
         # self.x = x
         # self.y = y
         self.size = size
@@ -57,8 +59,8 @@ class Wall(Obstacle):
     closed = param.Boolean(False)
 
     def __init__(
-        self, point1=geometry.Point(0, 0), point2=geometry.Point(-1, 1), **kwargs
-    ):
+        self, point1: geometry.Point = geometry.Point(0, 0), point2: geometry.Point = geometry.Point(-1, 1), **kwargs: Any
+    ) -> None:
         self.point1 = point1
         self.point2 = point2
 
@@ -70,7 +72,7 @@ class Wall(Obstacle):
 class Border(Obstacle):
     closed = param.Boolean(False)
 
-    def __init__(self, vertices=[], points=None, **kwargs):
+    def __init__(self, vertices: list[Any] = [], points: Any | None = None, **kwargs: Any) -> None:
         self.points = points
         self.border_xy, self.border_lines = self.define_lines(vertices)
         edges = []
@@ -83,7 +85,7 @@ class Border(Obstacle):
 
         super().__init__(vertices=vertices, edges=edges, **kwargs)
 
-    def define_lines(self, vertices, s=1):
+    def define_lines(self, vertices: list[Any], s: float = 1) -> tuple[list[Any], list[geometry.LineString]]:
         # print(points)
         # print(len(points))
 
@@ -98,7 +100,7 @@ class Border(Obstacle):
         xy = [np.array([[x, y] for x, y in zip(xs, ys)]) for xs, ys in ps]
         return xy, ls
 
-    def contained(self, p):
+    def contained(self, p: Any) -> bool:
         return any(
             [l.distance(geometry.Point(p)) < self.width for l in self.border_lines]
         )

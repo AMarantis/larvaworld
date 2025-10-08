@@ -19,14 +19,14 @@ import numpy as np
 
 from ... import util
 from ...param import ClassAttr, NestedConf
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     # Type-only import to avoid runtime cycle
     from .locomotor import Locomotor
 from .module_modes import moduleDB as MD
 
-__all__ = [
+__all__: list[str] = [
     "Brain",
     "DefaultBrain",
 ]
@@ -48,7 +48,7 @@ class Brain(NestedConf):
         doc="The temperature sensor",
     )
 
-    def __init__(self, conf, agent=None, dt=None, **kwargs):
+    def __init__(self, conf: Any, agent: Any | None = None, dt: float | None = None, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.agent = agent
         if dt is None:
@@ -96,14 +96,14 @@ class Brain(NestedConf):
                 kws = {"dt": dt, "brain": self}
                 M.mem = MD.build_memory_module(conf=m, **kws)
 
-    def init_sensors(self):
+    def init_sensors(self) -> None:
         if self.toucher is not None and self.agent is not None:
             self.agent.add_touch_sensors(self.toucher.touch_sensors)
             for s in self.agent.touch_sensorIDs:
                 if s not in self.toucher.gain:
                     self.toucher.add_novel_gain(id=s, gain=self.toucher.initial_gain)
 
-    def sense_odors(self, pos=None):
+    def sense_odors(self, pos: Any | None = None) -> dict[str, Any]:
         try:
             a = self.agent
             if pos is None:
@@ -112,7 +112,7 @@ class Brain(NestedConf):
         except:
             return {}
 
-    def sense_food_multi(self, **kwargs):
+    def sense_food_multi(self, **kwargs: Any) -> dict[Any, int]:
         try:
             a = self.agent
             kws = {
@@ -127,14 +127,14 @@ class Brain(NestedConf):
         except:
             return {}
 
-    def sense_wind(self, **kwargs):
+    def sense_wind(self, **kwargs: Any) -> dict[str, float]:
         try:
             a = self.agent
             return {"windsensor": a.model.windscape.get_value(a)}
         except:
             return {"windsensor": 0.0}
 
-    def sense_thermo(self, pos=None):
+    def sense_thermo(self, pos: Any | None = None) -> dict[str, float]:
         try:
             a = self.agent
             if pos is None:
@@ -146,7 +146,7 @@ class Brain(NestedConf):
         except AttributeError:
             return {"cool": 0, "warm": 0}
 
-    def sense(self, pos=None, reward=False):
+    def sense(self, pos: Any | None = None, reward: bool = False) -> None:
         kws = {"pos": pos}
         for m, M in self.modalities.items():
             if M.sensor:
@@ -154,35 +154,35 @@ class Brain(NestedConf):
                 M.A = M.sensor.step(M.func(**kws))
 
     @property
-    def A_in(self):
+    def A_in(self) -> float:
         return np.sum([M.A for m, M in self.modalities.items()])
         # return self.A_olf + self.A_touch + self.A_thermo + self.A_wind
 
     @property
-    def A_olf(self):
+    def A_olf(self) -> float:
         return self.modalities["olfaction"].A
 
     @property
-    def A_touch(self):
+    def A_touch(self) -> float:
         return self.modalities["touch"].A
 
     @property
-    def A_thermo(self):
+    def A_thermo(self) -> float:
         return self.modalities["thermosensation"].A
 
     @property
-    def A_wind(self):
+    def A_wind(self) -> float:
         return self.modalities["windsensation"].A
 
 
 class DefaultBrain(Brain):
-    def __init__(self, conf, agent=None, dt=None, **kwargs):
+    def __init__(self, conf: Any, agent: Any | None = None, dt: float | None = None, **kwargs: Any) -> None:
         if dt is None:
             dt = agent.model.dt
         kws = {"dt": dt, "brain": self}
         kwargs.update(MD.build_sensormodules(conf=conf, **kws))
         super().__init__(agent=agent, dt=dt, conf=conf, **kwargs)
 
-    def step(self, pos, on_food=False, **kwargs):
+    def step(self, pos: Any, on_food: bool = False, **kwargs: Any) -> tuple[float, float, bool]:
         self.sense(pos=pos, reward=on_food)
         return self.locomotor.step(A_in=self.A_in, on_food=on_food, **kwargs)

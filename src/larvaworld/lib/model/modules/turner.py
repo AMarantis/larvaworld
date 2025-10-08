@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Any
 import os
 import warnings
 
@@ -20,7 +21,7 @@ import param
 from ...param import PositiveInteger, PositiveNumber
 from .basic import Effector, SinOscillator, StepEffector
 
-__all__ = [
+__all__: list[str] = [
     "Turner",
     "ConstantTurner",
     "SinTurner",
@@ -100,7 +101,7 @@ class NeuralOscillator(Turner):
         doc="The neuron spike-rate response steepness coefficient.",
     )
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.param.base_activation.bounds = self.activation_range
         self.r1 = self.activation_range[1] - self.base_activation
@@ -123,26 +124,26 @@ class NeuralOscillator(Turner):
         self.scaled_tau = self.dt / self.tau
         self.warm_up()
 
-    def warm_up(self):
+    def warm_up(self) -> None:
         for i in range(1000):
             if random.uniform(0, 1) < 0.5:
                 self.step()
 
-    def update(self):
+    def update(self) -> None:
         if self.input < 0:
             a = self.r0 * self.input
         elif self.input >= 0:
             a = self.r1 * self.input
         self.activation = self.base_activation + a
 
-    def act(self):
+    def act(self) -> None:
         self.oscillate()
         self.output = self.E_r - self.E_l
 
-    def inact(self):
+    def inact(self) -> None:
         self.output = 0
 
-    def oscillate(self):
+    def oscillate(self) -> None:
         A = self.activation
         t = self.scaled_tau
         tau_h = 3 / (1 + (0.04 * A) ** 2)
@@ -179,14 +180,14 @@ class NeuralOscillator(Turner):
         self.H_C_l += t_h * (-self.H_C_l + self.E_l)
         self.H_C_r += t_h * (-self.H_C_r + self.E_r)
 
-    def compute_R(self, x, h):
+    def compute_R(self, x: float, h: float) -> float:
         if x > 0:
             r = self.m * x**self.n / (x**self.n + h**self.n)
             return r
         else:
             return 0.0
 
-    def get_state(self):
+    def get_state(self) -> list[float]:
         state = [
             self.E_l,
             self.H_E_l,

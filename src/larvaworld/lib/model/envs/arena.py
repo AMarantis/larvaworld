@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Any
 import agentpy
 import numpy as np
 import param
@@ -7,7 +9,7 @@ from ... import util
 from ...param import BoundedArea
 from .valuegrid import SpatialEntity
 
-__all__ = [
+__all__: list[str] = [
     "Arena",
 ]
 
@@ -19,7 +21,7 @@ class ViewableBoundedArea(SpatialEntity, BoundedArea):
 class Arena(ViewableBoundedArea, agentpy.Space):
     boundary_margin = param.Magnitude(0.96)
 
-    def __init__(self, model=None, **kwargs):
+    def __init__(self, model: Any | None = None, **kwargs: Any) -> None:
         ViewableBoundedArea.__init__(self, **kwargs)
         self.edges = [
             [Point(x1, y1), Point(x2, y2)]
@@ -35,14 +37,14 @@ class Arena(ViewableBoundedArea, agentpy.Space):
         self.accessible_sources = None
         self.accessible_sources_sorted = None
 
-    def place_agent(self, agent, pos):
+    def place_agent(self, agent: Any, pos: Any) -> None:
         pos = pos if isinstance(pos, np.ndarray) else np.array(pos)
         self.positions[agent] = pos  # Add pos to agent_dict
 
-    def move_agent(self, agent, pos):
+    def move_agent(self, agent: Any, pos: Any) -> None:
         self.move_to(agent, pos)
 
-    def add_sources(self, sources, positions):
+    def add_sources(self, sources: list[Any], positions: list[Any]) -> None:
         for source, pos in zip(sources, positions):
             pos = pos if isinstance(pos, np.ndarray) else np.array(pos)
             if source.can_be_displaced:
@@ -52,7 +54,7 @@ class Arena(ViewableBoundedArea, agentpy.Space):
                 self.stable_source_positions.append(pos)
                 self.stable_sources.append(source)
 
-    def source_positions_in_array(self):
+    def source_positions_in_array(self) -> None:
         if len(self.displacable_sources) > 0:
             for i, source in enumerate(self.displacable_sources):
                 self.displacable_source_positions[i] = np.array(source.get_position())
@@ -71,14 +73,14 @@ class Arena(ViewableBoundedArea, agentpy.Space):
             self.source_positions = np.array(self.stable_source_positions)
             self.sources = np.array(self.stable_sources)
 
-    def accesible_sources(self, pos, radius):
+    def accesible_sources(self, pos: Any, radius: float):
         return self.sources[
             np.where(util.eudi5x(self.source_positions, pos) <= radius)
         ].tolist()
 
     def accessible_sources_multi(
-        self, agents, positive_amount=True, return_closest=True
-    ):
+        self, agents: Any, positive_amount: bool = True, return_closest: bool = True
+    ) -> None:
         self.source_positions_in_array()
         if positive_amount:
             idx = np.array([s.amount > 0 for s in self.sources])
@@ -102,7 +104,7 @@ class Arena(ViewableBoundedArea, agentpy.Space):
             }
         self.accessible_sources = dic
 
-    def draw(self, v=None):
+    def draw(self, v: Any | None = None):
         import matplotlib.pyplot as plt
         from matplotlib.figure import Figure
 
