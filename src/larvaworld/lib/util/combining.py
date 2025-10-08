@@ -1,12 +1,13 @@
 """
 Methods for detecting and combining files
 """
+from __future__ import annotations
 
 import os
 
 import numpy as np
 
-__all__ = [
+__all__: list[str] = [
     "files_in_dir",
     "combine_images",
     "combine_videos",
@@ -14,11 +15,11 @@ __all__ = [
 ]
 
 
-def select_filenames(filenames, suf="", pref=""):
+def select_filenames(filenames: list[str], suf: str = "", pref: str = "") -> list[str]:
     return [f for f in filenames if (f.endswith(suf) and f.startswith(pref))]
 
 
-def files_in_dir(dir, sort=True, include_subdirs=False, suf="", pref=""):
+def files_in_dir(dir: str, sort: bool = True, include_subdirs: bool = False, suf: str = "", pref: str = "") -> list[str]:
     """
     Select files from directory fulfilling filename conditions
 
@@ -57,13 +58,13 @@ def files_in_dir(dir, sort=True, include_subdirs=False, suf="", pref=""):
 
 
 def combine_images(
-    files=None,
-    file_dir=".",
-    save_as="combined_image.pdf",
-    save_to=None,
-    size=(1000, 1000),
-    figsize=None,
-):
+    files: list[str] | None = None,
+    file_dir: str = ".",
+    save_as: str = "combined_image.pdf",
+    save_to: str | None = None,
+    size: tuple[int, int] = (1000, 1000),
+    figsize: tuple[int, int] | None = None,
+) -> None:
     """
     Merge multiple image files into one single file and store it
 
@@ -84,7 +85,7 @@ def combine_images(
 
     """
 
-    def get_dxy(N, size=(1000, 1000)):
+    def get_dxy(N: int, size: tuple[int, int] = (1000, 1000)) -> tuple[int, int]:
         x, y = size
         if N <= 4:
             dx = int(x / 2)
@@ -130,8 +131,8 @@ def combine_images(
 
 
 def combine_videos(
-    files=None, file_dir=".", save_to=None, save_as="combined_videos.mp4"
-):
+    files: list[str] | None = None, file_dir: str = ".", save_to: str | None = None, save_as: str = "combined_videos.mp4"
+) -> None:
     """
     Merge multiple video files into one single file and store it
 
@@ -187,13 +188,13 @@ def combine_videos(
 
 
 def combine_pdfs(
-    files=None,
-    file_dir=".",
-    pref="",
-    save_to=None,
-    save_as="final.pdf",
-    include_subdirs=True,
-):
+    files: list[str] | None = None,
+    file_dir: str = ".",
+    pref: str = "",
+    save_to: str | None = None,
+    save_as: str = "final.pdf",
+    include_subdirs: bool = True,
+) -> None:
     """
     Merge multiple pdf files into one single pdf and store it
 

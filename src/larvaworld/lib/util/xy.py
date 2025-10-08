@@ -1,6 +1,7 @@
 """
 Methods for managing spatial metrics (2D x-y arrays)
 """
+from __future__ import annotations
 
 import copy
 import random
@@ -19,7 +20,7 @@ from scipy.signal import find_peaks
 from ... import vprint
 from . import AttrDict, cols_exist, flatten_list, nam, rotate_points_around_point
 
-__all__ = [
+__all__: list[str] = [
     "fft_max",
     "detect_strides",
     "stride_interp",

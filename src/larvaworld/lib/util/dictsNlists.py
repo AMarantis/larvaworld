@@ -1,6 +1,9 @@
 """
 Classes and methods for managing nested dictionaries and lists
 """
+from __future__ import annotations
+
+from typing import Any
 
 import copy
 import json
@@ -10,7 +13,7 @@ import typing
 import agentpy.sequences
 import pandas as pd
 
-__all__ = [
+__all__: list[str] = [
     "AttrDict",
     "load_dict",
     "save_dict",
@@ -32,24 +35,24 @@ class AttrDict(dict):
     Dictionary subclass whose entries can be accessed as attributes (as well as normally).
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super(AttrDict, self).__init__(*args, **kwargs)
         self.__dict__ = self.autonest(d=self)
 
-    def autonest(self, d):
+    def autonest(self, d: dict) -> dict:
         for k, data in d.items():
             d[k] = self.from_nested_dicts(data)
         return d
 
     @classmethod
-    def from_nested_dicts(cls, data):
+    def from_nested_dicts(cls, data: Any):
         """Construct nested NestDicts from nested dictionaries."""
         if not isinstance(data, dict):
             return data
         else:
             return cls(data)
 
-    def replace_keys(self, pairs={}):
+    def replace_keys(self, pairs: dict = {}):
         dic = {}
         for k, v in self.items():
             if k in list(pairs.keys()):
@@ -58,10 +61,10 @@ class AttrDict(dict):
                 dic[k] = v
         return AttrDict(dic)
 
-    def get_copy(self):
+    def get_copy(self) -> "AttrDict":
         return AttrDict(copy.deepcopy(self))
 
-    def flatten(self, parent_key="", sep="."):
+    def flatten(self, parent_key: str = "", sep: str = ".") -> "AttrDict":
         items = []
         for k, v in self.items():
             new_key = parent_key + sep + k if parent_key else k
@@ -75,7 +78,7 @@ class AttrDict(dict):
                 items.append((new_key, v))
         return AttrDict(dict(items))
 
-    def unflatten(self, sep="."):
+    def unflatten(self, sep: str = ".") -> "AttrDict":
         dic = {}
         for k, v in self.items():
             if v == "empty_dict":
@@ -89,12 +92,12 @@ class AttrDict(dict):
             dd[parts[-1]] = v
         return AttrDict(dic)
 
-    def update_existingdict(self, dic):
+    def update_existingdict(self, dic: dict) -> None:
         for k, v in dic.items():
             if k in list(self.keys()):
                 self[k] = v
 
-    def update_existingdict_by_suffix(self, dic):
+    def update_existingdict_by_suffix(self, dic: dict) -> None:
         for k, v in dic.items():
             k1s = [k0 for k0 in self.keylist if k0.endswith(k)]
             if len(k1s) == 1:
@@ -103,35 +106,35 @@ class AttrDict(dict):
             elif len(k1s) > 1:
                 print(f"Non unique suffix : {k}")
 
-    def update_nestdict(self, dic):
+    def update_nestdict(self, dic: dict) -> "AttrDict":
         dic0_f = self.flatten()
         dic0_f.update(dic)
         return dic0_f.unflatten()
 
-    def update_nestdict_copy(self, dic):
+    def update_nestdict_copy(self, dic: dict) -> "AttrDict":
         return self.get_copy().update_nestdict(dic)
 
-    def new_dict(self, dic):
+    def new_dict(self, dic: dict) -> "AttrDict":
         return self.get_copy().update_nestdict(dic)
 
-    def update_existingnestdict(self, dic):
+    def update_existingnestdict(self, dic: dict) -> "AttrDict":
         dic0_f = self.flatten()
         dic0_f.update_existingdict(dic)
         return dic0_f.unflatten()
 
-    def update_existingnestdict_by_suffix(self, dic):
+    def update_existingnestdict_by_suffix(self, dic: dict) -> "AttrDict":
         dic0_f = self.flatten()
         dic0_f.update_existingdict_by_suffix(dic)
         return dic0_f.unflatten()
 
-    def save(self, file):
+    def save(self, file: str) -> None:
         save_dict(self, file)
 
     @classmethod
-    def load(cls, file):
+    def load(cls, file: str) -> "AttrDict":
         return load_dict(file)
 
-    def print(self, flat=False):
+    def print(self, flat: bool = False) -> None:
         if flat:
             for k, v in self.flatten().items():
                 print(f"      {k} : {v}")
@@ -149,11 +152,11 @@ class AttrDict(dict):
             print_nested_level(self, pref=pref0)
 
     @property
-    def keylist(self):
+    def keylist(self) -> "SuperList":
         return SuperList(self.keys())
 
     @classmethod
-    def merge_dicts(cls, l):
+    def merge_dicts(cls, l: list[dict]) -> "AttrDict":
         D = {}
         for d in l:
             for k, v in d.items():
@@ -161,7 +164,7 @@ class AttrDict(dict):
         return cls(D)
 
     @classmethod
-    def merge_nestdicts(cls, l):
+    def merge_nestdicts(cls, l: list[dict]) -> "AttrDict":
         D = {}
         for d in l:
             for k, v in AttrDict(d).flatten().items():
@@ -181,7 +184,7 @@ class AttrDict(dict):
     #                 pass
 
 
-def load_dict(file):
+def load_dict(file: str) -> AttrDict:
     try:
         with open(file, "rb") as tfp:
             d = pickle.load(tfp)
@@ -194,7 +197,7 @@ def load_dict(file):
     return AttrDict(d)
 
 
-def save_dict(d, file):
+def save_dict(d: dict, file: str) -> None:
     if file is not None:
         try:
             with open(file, "wb") as fp:
@@ -208,7 +211,7 @@ def save_dict(d, file):
 
 
 class bidict(dict):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super(bidict, self).__init__(*args, **kwargs)
         self.inverse = {}
         for key, value in self.items():
@@ -229,15 +232,15 @@ class bidict(dict):
 
 class SuperList(list):
     @property
-    def N(self):
+    def N(self) -> int:
         return len(self)
 
     @property
-    def sorted(self):
+    def sorted(self) -> "SuperList":
         return SuperList(sorted(self))
 
     @property
-    def flatten(self):
+    def flatten(self) -> "SuperList":
         l = SuperList()
         for a in self:
             if not isinstance(a, list):
@@ -248,7 +251,7 @@ class SuperList(list):
         return l
 
     @property
-    def unique(self):
+    def unique(self) -> "SuperList":
         if len(self) == 0:
             return SuperList()
         elif len(self) == 1:
@@ -258,7 +261,7 @@ class SuperList(list):
             seen_add = seen.add
             return SuperList([x for x in self if not (x in seen or seen_add(x))])
 
-    def group_by_n(self, n=2):
+    def group_by_n(self, n: int = 2) -> "SuperList":
         Nmore = int(len(self) % n)
         N = int((len(self) - Nmore) / n)
         g = [self[i * n : (i + 1) * n] for i in range(N)]
@@ -267,40 +270,40 @@ class SuperList(list):
         return SuperList(g)
 
     @property
-    def in_pairs(self):
+    def in_pairs(self) -> "SuperList":
         return self.group_by_n(n=2)
 
-    def existing(self, df):
+    def existing(self, df) -> "SuperList":
         return SuperList(existing_cols(self, df))
 
-    def nonexisting(self, df):
+    def nonexisting(self, df) -> "SuperList":
         return SuperList(nonexisting_cols(self, df))
 
-    def exist_in(self, df):
+    def exist_in(self, df) -> bool:
         return cols_exist(self, df)
 
     def __add__(self, *args, **kwargs):  # real signature unknown
         """Return self+value."""
         return SuperList(super().__add__(*args, **kwargs))
 
-    def suf(self, suf=""):
+    def suf(self, suf: str = "") -> "SuperList":
         return SuperList([i for i in self if i.endswith(suf)])
 
-    def pref(self, pref=""):
+    def pref(self, pref: str = "") -> "SuperList":
         return SuperList([i for i in self if i.startswith(pref)])
 
-    def contains(self, l=""):
+    def contains(self, l: str = "") -> "SuperList":
         return SuperList([i for i in self if l in i])
 
 
 class ItemList(agentpy.sequences.AgentSequence, list):
-    def __init__(self, objs=(), cls=None, *args, **kwargs):
+    def __init__(self, objs=(), cls=None, *args: Any, **kwargs: Any):
         if isinstance(objs, int):
             objs = self._obj_gen(objs, cls, *args, **kwargs)
         super().__init__(objs)
 
     @staticmethod
-    def _obj_gen(n, cls, *args, **kwargs):
+    def _obj_gen(n: int, cls, *args: Any, **kwargs: Any):
         """Generate objects for sequence."""
         for i in range(n):
             # AttrIter values get broadcasted among agents
@@ -309,7 +312,7 @@ class ItemList(agentpy.sequences.AgentSequence, list):
             }
             yield cls(**i_kwargs)
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name: str, value):
         if isinstance(value, list):
             # Apply each value to each agent
             for obj, v in zip(self, value):
@@ -332,7 +335,7 @@ def nonexisting_cols(cols, df):
     return [col for col in cols if col not in df]
 
 
-def cols_exist(cols, df):
+def cols_exist(cols, df) -> bool:
     if isinstance(df, pd.DataFrame):
         df = df.columns.values
     return set(cols).issubset(df)
@@ -342,7 +345,7 @@ def flatten_list(l):
     return [item for sublist in l for item in sublist]
 
 
-def checkEqual(l1, l2):
+def checkEqual(l1, l2) -> bool:
     for a in l1:
         if a not in l2:
             return False

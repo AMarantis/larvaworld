@@ -1,13 +1,14 @@
 """
 Methods for managing colors
 """
+from __future__ import annotations
 
 import random
 
 import matplotlib
 import numpy as np
 
-__all__ = [
+__all__: list[str] = [
     "invert_color",
     "random_colors",
     "N_colors",
@@ -22,7 +23,7 @@ __all__ = [
 ]
 
 
-def invert_color(col):
+def invert_color(col: str | list[int] | tuple[int, int, int]) -> tuple[str, str]:
     if type(col) in [list, tuple] and len(col) == 3:
         if not all([0 <= i <= 1 for i in col]):
             col = list(np.array(col) / 255)
@@ -34,7 +35,7 @@ def invert_color(col):
     return col, col2
 
 
-def random_colors(n):
+def random_colors(n: int) -> list[np.ndarray]:
     ret = []
     r = int(random.random() * 200)
     g = int(random.random() * 200)
@@ -87,19 +88,19 @@ def N_colors(N: int, as_rgb: bool = False) -> list:
     return cs
 
 
-def colorname2tuple(name):
+def colorname2tuple(name: str) -> tuple[float, float, float]:
     c0 = matplotlib.colors.to_rgb(name)
     c1 = tuple([i * 255 for i in c0])
     return c1
 
 
-def colortuple2str(t):
+def colortuple2str(t: tuple[float, float, float]) -> str:
     if any([tt > 1 for tt in t]):
         t = tuple([tt / 255 for tt in t])
     return matplotlib.colors.rgb2hex(t)
 
 
-def col_range(q, low=(255, 0, 0), high=(255, 255, 255), mul255=False):
+def col_range(q, low: tuple[int, int, int] | str = (255, 0, 0), high: tuple[int, int, int] | str = (255, 255, 255), mul255: bool = False):
     if isinstance(low, str):
         low = colorname2tuple(low)
     if isinstance(high, str):
@@ -125,14 +126,14 @@ class Color:
     DARK_GRAY = (64, 64, 64)
 
     @staticmethod
-    def random_color(min_r=0, min_g=0, min_b=0, max_r=255, max_g=255, max_b=255):
+    def random_color(min_r: int = 0, min_g: int = 0, min_b: int = 0, max_r: int = 255, max_g: int = 255, max_b: int = 255) -> tuple[int, int, int]:
         r = random.randint(min_r, max_r)
         g = random.randint(min_g, max_g)
         b = random.randint(min_b, max_b)
         return r, g, b
 
     @staticmethod
-    def random_bright(min_value=200):
+    def random_bright(min_value: int = 200) -> tuple[int, int, int]:
         r = random.randint(min_value, 255)
         g = random.randint(min_value, 255)
         b = random.randint(min_value, 255)
@@ -141,7 +142,7 @@ class Color:
         # return colortuple2str((r, g, b))
 
     @staticmethod
-    def timeseries_to_col(a, lim=1.0, color_range=[RED, GREEN]):
+    def timeseries_to_col(a, lim: float = 1.0, color_range: list[tuple[int, int, int]] = [RED, GREEN]):
         t = np.clip(np.abs(a) / lim, a_min=0, a_max=1)
         (r1, b1, g1), (r2, b2, g2) = color_range
         r, b, g = r2 - r1, b2 - b1, g2 - g1
@@ -153,7 +154,7 @@ class Color:
     # @staticmethod
 
 
-def combine_hex_values(d):
+def combine_hex_values(d: dict[str, float] | dict[tuple[int, int, int], float]) -> str:
     dd = {}
     for k, v in d.items():
         if type(k) == str:
@@ -171,7 +172,7 @@ def combine_hex_values(d):
     # @staticmethod
 
 
-def mix2colors(c0, c1):
+def mix2colors(c0: str, c1: str) -> str:
     cc = combine_hex_values(d={c0: 0.7, c1: 0.3})
     return cc
 

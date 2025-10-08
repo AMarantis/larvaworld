@@ -7,6 +7,9 @@ This file used to eagerly star-import many submodules, which made importing
 same symbols on first access to preserve backwards compatibility without the
 eager cost.
 """
+from __future__ import annotations
+
+from typing import Any
 
 __displayname__ = "Auxilliary methods"
 
@@ -49,7 +52,7 @@ def _load_all() -> None:
     _LOADED = True
 
 
-def __getattr__(name):
+def __getattr__(name: str) -> Any:
     # Defer legacy star-imports until the first attribute access
     if not _LOADED:
         _load_all()

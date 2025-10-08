@@ -1,5 +1,7 @@
-# import warnings
+from __future__ import annotations
+
 import math
+from typing import Any, Callable
 
 import numpy as np
 from numpy.lib import scimath
@@ -8,7 +10,7 @@ from scipy.optimize import minimize
 # from scipy.stats import levy, norm, rv_discrete, ks_2samp
 
 
-__all__ = [
+__all__: list[str] = [
     "simplex",
     "beta0",
     "exp_bout",
@@ -16,7 +18,7 @@ __all__ = [
 ]
 
 
-def simplex(func, x0, args=()):
+def simplex(func: Callable[..., float], x0: float | np.ndarray, args: tuple[Any, ...] = ()) -> float:
     res = minimize(
         func,
         x0,
@@ -27,7 +29,7 @@ def simplex(func, x0, args=()):
     return res
 
 
-def beta0(x0, x1):
+def beta0(x0: float, x1: float) -> float:
     """
     Beta function used in the DEB textbook (p.58)
 
@@ -57,7 +59,7 @@ def beta0(x0, x1):
     return np.real(f1 - f0)
 
 
-def critical_bout(c=0.9, sigma=1, N=1000, tmax=1100, tmin=1):
+def critical_bout(c: float = 0.9, sigma: float = 1, N: int = 1000, tmax: int = 1100, tmin: int = 1) -> int:
     t = 0
     S = 1
     S_prev = 0
@@ -78,7 +80,7 @@ def critical_bout(c=0.9, sigma=1, N=1000, tmax=1100, tmin=1):
     return t
 
 
-def exp_bout(beta=0.01, tmax=1100, tmin=1):
+def exp_bout(beta: float = 0.01, tmax: int = 1100, tmin: int = 1) -> int:
     t = 0
     S = 0
     while S <= 0:

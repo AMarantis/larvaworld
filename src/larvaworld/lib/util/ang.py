@@ -1,12 +1,13 @@
 """
 Methods for managing angular metrics
 """
+from __future__ import annotations
 
 import math
 
 import numpy as np
 
-__all__ = [
+__all__: list[str] = [
     "wrap_angle_to_0",
     "angles_between_vectors",
     "angle_dif",
@@ -98,7 +99,7 @@ def angles_between_vectors(
     return a
 
 
-def angle_dif(angle_1, angle_2, in_deg=True):
+def angle_dif(angle_1: float, angle_2: float, in_deg: bool = True) -> float:
     """
     Computes the difference between two angles
 
@@ -122,11 +123,11 @@ def angle_dif(angle_1, angle_2, in_deg=True):
         return (a + np.pi) % (np.pi * 2) - np.pi
 
 
-def rotationMatrix(a):
+def rotationMatrix(a: float) -> np.ndarray:
     return np.array([[np.cos(a), -np.sin(a)], [np.sin(a), np.cos(a)]])
 
 
-def rotate_points_around_point(points, radians, origin=None):
+def rotate_points_around_point(points: np.ndarray, radians: float, origin: tuple[float, float] | None = None) -> np.ndarray:
     """
     Rotate multiple points around a given point clockwise
 

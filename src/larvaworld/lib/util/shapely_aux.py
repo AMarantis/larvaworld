@@ -1,10 +1,11 @@
 """
 Methods for managing shapely-based metrics
 """
+from __future__ import annotations
 
 from shapely import geometry
 
-__all__ = [
+__all__: list[str] = [
     "segments_intersection",
     "detect_nearest_obstacle",
 ]
@@ -23,7 +24,7 @@ def segments_intersection(segment_1, segment_2):
     )
 
 
-def segments_intersection_p(p0_x, p0_y, p1_x, p1_y, p2_x, p2_y, p3_x, p3_y):
+def segments_intersection_p(p0_x: float, p0_y: float, p1_x: float, p1_y: float, p2_x: float, p2_y: float, p3_x: float, p3_y: float):
     EPSILON = 0.000001
     s1_x = p1_x - p0_x
     s1_y = p1_y - p0_y
