@@ -154,6 +154,9 @@ cython_debug/
 /src/larvaworld/data/SchleyerGroup/raw/naive
 /src/larvaworld/lib/reg/confDicts/
 
+# Test output media files
+/media/
+
 #Poetry
 # poetry.lock
 .idea/**
