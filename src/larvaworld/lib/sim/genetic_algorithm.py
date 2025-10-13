@@ -1,5 +1,8 @@
 from __future__ import annotations
-from typing import Any, List
+from typing import TYPE_CHECKING, Any, List, Optional
+
+if TYPE_CHECKING:
+    from ..process.dataset import LarvaDataset
 import math
 import multiprocessing
 import random
@@ -60,7 +63,25 @@ exclusion_funcs = AttrDict({"bend_errors": bend_error_exclusion})
 
 
 class GAevaluation(Evaluation):
-    """Class that implements the genetic algorithm evaluation process."""
+    """
+    Genetic algorithm evaluation configuration.
+    
+    Extends Evaluation with GA-specific fitness functions, exclusion
+    criteria, and optimization operators for evolutionary search.
+    
+    Attributes:
+        exclusion_mode: If True, apply exclusion criteria instead of fitness.
+        exclude_func_name: Name of exclusion function from exclusion_funcs.
+        fitness_func_name: Name of fitness function from fitness_funcs.
+        fit_kws: Keyword arguments passed to fitness function.
+    
+    Example:
+        >>> ga_eval = GAevaluation(
+        ...     fitness_func_name='dst2source',
+        ...     exclusion_mode=False,
+        ...     fit_kws={'target_xy': (0, 0)}
+        ... )
+    """
 
     exclusion_mode = param.Boolean(
         default=False, label="exclusion mode", doc="Whether to apply exclusion mode"
@@ -112,7 +133,27 @@ class GAevaluation(Evaluation):
 
 
 class GAselector(SpaceDict):
-    """Class that implements the genetic algorithm selection process."""
+    """
+    Genetic algorithm selection and evolution configuration.
+    
+    Manages population size, selection strategy, and evolutionary
+    parameters for GA optimization process.
+    
+    Attributes:
+        Ngenerations: Number of generations to evolve (None = infinite).
+        Nagents: Population size per generation.
+        Nelits: Number of elite agents preserved each generation.
+        selection_ratio: Fraction of population selected for breeding.
+        bestConfID: Configuration ID for storing best model.
+    
+    Example:
+        >>> selector = GAselector(
+        ...     Ngenerations=50,
+        ...     Nagents=20,
+        ...     Nelits=3,
+        ...     selection_ratio=0.3
+        ... )
+    """
 
     Ngenerations = param.Integer(
         default=None,
@@ -262,7 +303,29 @@ class GAselector(SpaceDict):
 
 
 class GAlauncher(BaseRun):
-    def __init__(self, dataset: Any | None = None, evaluator: Any | None = None, **kwargs: Any):
+    """
+    Genetic algorithm launcher for model optimization.
+    
+    Runs evolutionary optimization to evolve agent models toward
+    target behaviors specified by evaluation criteria.
+    
+    Attributes:
+        evaluator: GAevaluation instance defining fitness function.
+        selector: GAselector instance managing evolution parameters.
+        genome_dict: Current generation genome configurations.
+        best_genome: Best genome found across all generations.
+        best_fitness: Fitness value of best genome.
+    
+    Example:
+        >>> launcher = GAlauncher(
+        ...     dataset=ref_dataset,
+        ...     evaluator=ga_eval,
+        ...     ga_select_kws={'Ngenerations': 50}
+        ... )
+        >>> launcher.simulate()
+    """
+    
+    def __init__(self, dataset: Optional[LarvaDataset] = None, evaluator: Optional[GAevaluation] = None, **kwargs: Any):
         """
         Simulation mode 'Ga' launches a genetic algorith optimization simulation of a specified agent model.
         """
@@ -704,7 +767,7 @@ class GA_thread(threading.Thread):
 def optimize_mID(
     mID0: str,
     ks: list[str],
-    evaluator: Any,
+    evaluator: GAevaluation,
     mID1: str | None = None,
     experiment: str = "exploration",
     Nagents: int = 10,
@@ -714,22 +777,33 @@ def optimize_mID(
     **kwargs: Any,
 ):
     """
-    Optimize a model configuration (stored under a unique ID) using a genetic algorithm.
-
-    Parameters:
-    mID0 (str): The initial model ID to start the optimization from.
-    ks (list): List of keys defining the search space for the genetic algorithm.
-    evaluator (callable): A function to evaluate the fitness of each genome.
-    mID1 (str, optional): The model ID to store the best configuration. Defaults to mID0.
-    experiment (str, optional): The type of experiment to run. Defaults to "exploration".
-    Nagents (int, optional): Number of agents in the population. Defaults to 10.
-    Nelits (int, optional): Number of elite genomes to carry over to the next generation. Defaults to 2.
-    Ngenerations (int, optional): Number of generations to run the genetic algorithm. Defaults to 3.
-    duration (float, optional): Duration of each simulation in the genetic algorithm. Defaults to 0.5.
-    **kwargs: Additional keyword arguments to pass to the GAlauncher.
-
+    Optimize model configuration using genetic algorithm.
+    
+    Evolves agent model parameters through evolutionary search to
+    optimize fitness according to evaluator criteria.
+    
+    Args:
+        mID0: Initial model configuration ID.
+        ks: List of parameter keys defining search space.
+        evaluator: GAevaluation instance for fitness computation.
+        mID1: Model ID for storing optimized configuration (default: mID0).
+        experiment: Experiment type for simulations (default: 'exploration').
+        Nagents: Population size per generation (default: 10).
+        Nelits: Number of elite agents preserved (default: 2).
+        Ngenerations: Number of evolution generations (default: 3).
+        duration: Simulation duration per agent (default: 0.5).
+        **kwargs: Additional arguments passed to GAlauncher.
+    
     Returns:
-    dict: A dictionary with the model ID as the key and the best genome configuration as the value.
+        GAlauncher instance with optimization results.
+    
+    Example:
+        >>> launcher = optimize_mID(
+        ...     mID0='explorer',
+        ...     ks=['crawler.f', 'turner.ang_v'],
+        ...     evaluator=ga_eval,
+        ...     Ngenerations=50
+        ... )
     """
     if mID1 is None:
         mID1 = mID0

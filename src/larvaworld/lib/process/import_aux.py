@@ -208,6 +208,21 @@ def read_timeseries_from_raw_files_per_larva(
 
 
 def get_Schleyer_metadata_inv_x(dir: str) -> bool:
+    """
+    Determine if x-axis should be inverted based on Schleyer lab metadata.
+    
+    Reads metadata file to check odor side configuration and returns
+    whether x-axis inversion is needed for consistent data orientation.
+    
+    Args:
+        dir: Directory containing vidAndLogs/metadata.txt file.
+    
+    Returns:
+        True if x-axis should be inverted (odor on right), False otherwise.
+    
+    Example:
+        >>> inv_x = get_Schleyer_metadata_inv_x('/path/to/dataset')
+    """
     try:
 
         def read_Schleyer_metadata(dir):
@@ -620,25 +635,28 @@ def generate_dataframes(
     complete_ticks: bool = True,
     **kwargs: Any,
 ) -> tuple[Optional[pd.DataFrame], Optional[pd.DataFrame]]:
-    # """
-    # Helper function that generates both timeseries & endpoint dataframes from single tracks
-    #
-    # Parameters
-    # ----------
-    # s : pd.DataFrame
-    #     The timeseries dataframe
-    # complete_ticks : boolean
-    #     Whether to complete timeseries missing ticks with nans
-    #     Defaults to False
-    # interpolate_ticks : boolean
-    #     Whether to interpolate timeseries into a fixed timestep timeseries
-    #     Defaults to False
-    #
-    # Returns
-    # -------
-    # pd.DataFrame
-    #
-    # """
+    """
+    Generate timeseries and endpoint DataFrames from single tracks.
+    
+    Concatenates individual larva tracks and computes endpoint metrics,
+    with optional tick completion and interpolation.
+    
+    Args:
+        dfs: List of single-track DataFrames.
+        dt: Tracking timestep in seconds.
+        complete_ticks: If True, fill missing ticks with NaNs.
+        **kwargs: Additional arguments passed to concatenate_larva_tracks.
+    
+    Returns:
+        Tuple of (step_df, endpoint_df), or (None, None) if no valid tracks.
+    
+    Example:
+        >>> step_df, end_df = generate_dataframes(
+        ...     dfs=[track1, track2],
+        ...     dt=0.1,
+        ...     complete_ticks=True
+        ... )
+    """
 
     if len(dfs) == 0:
         return None, None

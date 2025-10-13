@@ -18,6 +18,28 @@ __all__: list[str] = [
 
 
 class Sensor2:
+    """
+    Base class for robot sensors in 2D simulation.
+    
+    Provides interface for sensor value reading and visualization
+    with configurable orientation, saturation, and noise.
+    
+    Attributes:
+        robot: Parent robot instance.
+        delta_direction: Sensor orientation offset in radians.
+        saturation_value: Maximum sensor reading value.
+        error: Sensor noise/error magnitude.
+        value: Current sensor reading.
+    
+    Example:
+        >>> sensor = Sensor2(
+        ...     robot=my_robot,
+        ...     delta_direction=0.5,
+        ...     saturation_value=1.0,
+        ...     error=0.1
+        ... )
+    """
+    
     def __init__(self, robot: Any, delta_direction: float, saturation_value: float, error: float) -> None:
         self.robot = robot
         self.delta_direction = delta_direction
@@ -35,6 +57,24 @@ class Sensor2:
 
 
 class LightSensor(Sensor2):
+    """
+    Light intensity sensor for robot navigation.
+    
+    Detects light sources in simulation environment, calculating
+    intensity based on distance and direction using ray-casting.
+    
+    Attributes:
+        LENGTH_SENSOR_LINE: Ray-casting distance for sensor (100 units).
+    
+    Example:
+        >>> light_sensor = LightSensor(
+        ...     robot=my_robot,
+        ...     delta_direction=0.0,
+        ...     saturation_value=100.0,
+        ...     error=0.05,
+        ...     scene=sim_scene
+        ... )
+    """
     LENGTH_SENSOR_LINE = 100
 
     def __init__(self, robot: Any, delta_direction: float, saturation_value: float, error: float, scene: Any):
@@ -88,6 +128,25 @@ class LightSensor(Sensor2):
 
 
 class ProximitySensor(Sensor2):
+    """
+    Proximity sensor for obstacle detection.
+    
+    Detects nearby obstacles using ray-casting, returning distance
+    to nearest obstacle in sensor direction.
+    
+    Attributes:
+        max_distance: Maximum detection range.
+        collision_distance: Distance threshold for collision (default: 12).
+    
+    Example:
+        >>> prox_sensor = ProximitySensor(
+        ...     robot=my_robot,
+        ...     delta_direction=-0.785,
+        ...     saturation_value=50.0,
+        ...     error=0.1,
+        ...     max_distance=100
+        ... )
+    """
     # COLLISION_DISTANCE = 12  # px
 
     def __init__(

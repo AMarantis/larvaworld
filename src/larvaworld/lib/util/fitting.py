@@ -19,6 +19,23 @@ __all__: list[str] = [
 
 
 def simplex(func: Callable[..., float], x0: float | np.ndarray, args: tuple[Any, ...] = ()) -> float:
+    """
+    Nelder-Mead simplex optimization.
+    
+    Minimizes function using Nelder-Mead algorithm with tight tolerance.
+    
+    Args:
+        func: Function to minimize.
+        x0: Initial parameter value(s).
+        args: Additional arguments passed to func.
+    
+    Returns:
+        Optimized parameter value.
+    
+    Example:
+        >>> def cost(x): return (x - 3)**2
+        >>> result = simplex(cost, x0=0.0)
+    """
     res = minimize(
         func,
         x0,
@@ -60,6 +77,25 @@ def beta0(x0: float, x1: float) -> float:
 
 
 def critical_bout(c: float = 0.9, sigma: float = 1, N: int = 1000, tmax: int = 1100, tmin: int = 1) -> int:
+    """
+    Stochastic bout duration with critical dynamics.
+    
+    Simulates behavioral bout durations using critical point dynamics
+    with population size N and control parameters c, sigma.
+    
+    Args:
+        c: Control parameter (default: 0.9).
+        sigma: Noise parameter (default: 1).
+        N: Population size (default: 1000).
+        tmax: Maximum bout duration (default: 1100).
+        tmin: Minimum bout duration (default: 1).
+    
+    Returns:
+        Bout duration in timesteps.
+    
+    Example:
+        >>> duration = critical_bout(c=0.9, sigma=1.0, N=1000)
+    """
     t = 0
     S = 1
     S_prev = 0
@@ -81,6 +117,23 @@ def critical_bout(c: float = 0.9, sigma: float = 1, N: int = 1000, tmax: int = 1
 
 
 def exp_bout(beta: float = 0.01, tmax: int = 1100, tmin: int = 1) -> int:
+    """
+    Stochastic bout duration with exponential dynamics.
+    
+    Simulates behavioral bout durations using exponential waiting time
+    with rate parameter beta.
+    
+    Args:
+        beta: Rate parameter for exponential process (default: 0.01).
+        tmax: Maximum bout duration (default: 1100).
+        tmin: Minimum bout duration (default: 1).
+    
+    Returns:
+        Bout duration in timesteps.
+    
+    Example:
+        >>> duration = exp_bout(beta=0.01, tmax=1000)
+    """
     t = 0
     S = 0
     while S <= 0:
