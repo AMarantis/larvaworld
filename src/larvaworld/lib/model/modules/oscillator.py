@@ -27,6 +27,24 @@ __all__: list[str] = [
 
 # class Timer(NestedConf):
 class Timer(param.Parameterized):
+    """
+    Base timer module for time tracking and activation control.
+    
+    Provides time-step counting, activation state management, and
+    iteration tracking. Base class for all time-dependent modules.
+    
+    Attributes:
+        dt: Simulation time step in seconds
+        ticks: Current elapsed ticks since last reset
+        total_ticks: Total ticks since initialization
+        active: Whether timer/module is currently active
+        complete_iteration: Flag for iteration completion
+    
+    Example:
+        >>> timer = Timer(dt=0.1)
+        >>> timer.count_time()
+        >>> print(f"Elapsed: {timer.t} seconds")
+    """
     dt = PositiveNumber(
         0.1,
         precedence=2,
@@ -69,6 +87,29 @@ class Timer(param.Parameterized):
 
 
 class Oscillator(Timer):
+    """
+    Oscillator module for phase-based periodic behaviors.
+    
+    Extends Timer with phase tracking and oscillation mechanics.
+    Manages phase progression, iteration detection, and frequency control
+    for all oscillatory behavioral modules.
+    
+    Attributes:
+        freq: Oscillation frequency in Hz
+        phi: Current oscillation phase in radians (0-2π)
+        initial_freq: Frequency at initialization (stored for reset)
+        iteration_counter: Number of completed oscillation cycles
+        complete_iteration: True when phase completes full 2π cycle
+    
+    Args:
+        random_phi: If True, randomize initial phase (default: True)
+        **kwargs: Additional keyword arguments passed to parent Timer
+    
+    Example:
+        >>> oscillator = Oscillator(freq=1.5, random_phi=False)
+        >>> oscillator.oscillate()
+        >>> print(f"Phase: {oscillator.phi}, Completed: {oscillator.complete_iteration}")
+    """
     freq = PositiveNumber(
         label="oscillation frequency", doc="The initial frequency of the oscillator."
     )

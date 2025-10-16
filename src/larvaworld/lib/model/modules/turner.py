@@ -30,6 +30,19 @@ __all__: list[str] = [
 
 
 class Turner(Effector):
+    """
+    Base turner module for directional control.
+    
+    Abstract base class for body-bending modules that control angular
+    velocity and directional changes during locomotion.
+    
+    Attributes:
+        input_range: Valid input range for sensory activation (-1 to 1)
+    
+    Example:
+        >>> # Use concrete subclasses like ConstantTurner, SinTurner, NeuralOscillator
+        >>> turner = SinTurner(freq=0.58, amp=0.5)
+    """
     input_range = param.Range(
         (-1, 1),
         bounds=(-1, 1),
@@ -42,14 +55,65 @@ class Turner(Effector):
 
 
 class ConstantTurner(Turner, StepEffector):
+    """
+    Constant-output turner for simple directional control.
+    
+    Provides step-based turning behavior with constant angular velocity
+    when active. Simplest turner implementation for baseline locomotion.
+    
+    Example:
+        >>> turner = ConstantTurner(amp=0.3)
+        >>> angular_velocity = turner.step()
+    """
     pass
 
 
 class SinTurner(Turner, SinOscillator):
+    """
+    Sinusoidal turner for oscillatory directional control.
+    
+    Extends Turner with sinusoidal oscillation, producing periodic
+    left-right turning patterns. Commonly used for exploratory behavior.
+    
+    Attributes:
+        freq: Oscillation frequency in Hz (0.0-2.0)
+    
+    Example:
+        >>> turner = SinTurner(freq=0.58, amp=0.4)
+        >>> angular_velocity = turner.step()
+    """
     freq = PositiveNumber(0.58, bounds=(0.0, 2.0))
 
 
 class NeuralOscillator(Turner):
+    """
+    Neural oscillator turner using Wilson-Cowan dynamics.
+    
+    Implements biologically realistic central pattern generator (CPG)
+    for directional control using coupled excitatory/inhibitory neural
+    populations. Produces emergent oscillatory turning behavior from
+    neural dynamics rather than prescribed waveforms.
+    
+    Attributes:
+        base_activation: Baseline neural activation level (10-40 Hz)
+        activation_range: Valid activation range bounds (0-100 Hz)
+        tau: Neural time constant for population dynamics (seconds)
+        w_ee, w_ce, w_ec, w_cc: Synaptic connection weights between populations
+        m: Maximum neural spike rate (Hz)
+        n: Spike-rate response steepness coefficient
+        E_l, E_r: Left/right excitatory population activities
+        C_l, C_r: Left/right inhibitory population activities
+        H_E_l, H_E_r, H_C_l, H_C_r: Hysteresis variables for populations
+    
+    Example:
+        >>> neural_turner = NeuralOscillator(
+        ...     base_activation=20.0,
+        ...     tau=0.1,
+        ...     w_ee=3.0,
+        ...     w_ec=4.0
+        ... )
+        >>> angular_velocity = neural_turner.step(A_in=0.5)
+    """
     base_activation = PositiveNumber(
         20.0,
         bounds=(10.0, 40.0),
