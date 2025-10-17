@@ -134,7 +134,7 @@ class ConfType(param.Parameterized):
         self.param.params("dict").item_type = self.dict_entry_type
         self.load()
 
-    def getID(self, id: int | str | list[int | str]):
+    def getID(self, id: int | str | list[int | str]) -> util.AttrDict | list[util.AttrDict]:
         """
         Retrieve the configuration stored under an id from the dictionary.
         If the provided id is a list, the method will recursively retrieve the configuration under each id in the list.
@@ -157,7 +157,7 @@ class ConfType(param.Parameterized):
             vprint(f"{self.conftype} Configuration {id} does not exist", 1)
             raise ValueError()
 
-    def get(self, id: str | list[str]):
+    def get(self, id: str | list[str]) -> Any | list[Any]:
         """
         Retrieve a generator for a configuration entry by id.
         If the provided id is a list, recursively retrieve entries for each id in the list.
@@ -361,7 +361,7 @@ class ConfType(param.Parameterized):
         return conf
 
     @param.depends("dict", watch=True)
-    def confID_selector(self, default: Optional[str] = None, single: bool = True):
+    def confID_selector(self, default: Optional[str] = None, single: bool = True) -> OptionalSelector | param.ListSelector:
         """
         A configuration selector object.
 
@@ -389,7 +389,7 @@ class ConfType(param.Parameterized):
             return param.ListSelector(**kws)
 
     @property
-    def reset_func(self):
+    def reset_func(self) -> Any:
         """
         Shortcut for the reset configuration function.
 
@@ -423,7 +423,7 @@ class ConfType(param.Parameterized):
         return sorted(list(self.dict.keys()))
 
     @property
-    def conf_class(self):
+    def conf_class(self) -> type | None:
         """
         Determines the configuration generator class based on the `conftype` attribute.
 
@@ -443,7 +443,7 @@ class ConfType(param.Parameterized):
             return util.AttrDict
 
     @property
-    def dict_entry_type(self):
+    def dict_entry_type(self) -> type:
         """
         Returns the type of dictionary entry used as a configuration.
 
@@ -638,7 +638,7 @@ class RefType(ConfType):
                 self.delete(id)
 
     @property
-    def dict_entry_type(self):
+    def dict_entry_type(self) -> type:
         """
         Get the type of dictionary entries.
 
@@ -667,7 +667,7 @@ class RefType(ConfType):
         )
 
     @property
-    def RefGroupIDs(self):
+    def RefGroupIDs(self) -> list:
         """
         Get the IDs of reference groups.
 

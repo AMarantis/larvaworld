@@ -135,7 +135,20 @@ gen.GTRvsS = GTRvsS  # GTRvsS is a function, not a class
 
 class SimConfiguration(RuntimeOps, SimMetricOps, SimOps):
     """
-    The configuration of a simulation run.
+    Base configuration for simulation runs.
+    
+    Combines runtime, metrics, and simulation operations with automatic
+    ID generation and directory management for different simulation types.
+    
+    Attributes:
+        runtype: Simulation mode (Exp, Batch, Ga, Eval, Replay)
+        experiment: Name of the experiment configuration
+        id: Unique identifier for the simulation run
+        dir: Directory path for simulation output
+    
+    Example:
+        >>> config = SimConfiguration(runtype='Exp', experiment='dish')
+        >>> run_id = config.generate_id('Exp', 'dish')
     """
 
     runtype = param.Selector(objects=SIMTYPES, doc="The simulation mode")
@@ -161,7 +174,7 @@ class SimConfiguration(RuntimeOps, SimMetricOps, SimOps):
         idx = reg.config.next_idx(exp, conftype=runtype)
         return f"{exp}_{idx}"
 
-    def exp_selector_param(self, runtype: str):
+    def exp_selector_param(self, runtype: str) -> param.Selector | param.Parameter:
         defaults = {
             "Exp": "dish",
             "Batch": "PItest_off",
@@ -178,7 +191,17 @@ class SimConfiguration(RuntimeOps, SimMetricOps, SimOps):
 
 class SimConfigurationParams(SimConfiguration):
     """
-    The configuration of a simulation run with parameters.
+    Simulation configuration with parameter loading and larva group management.
+    
+    Extends SimConfiguration with support for loading experiment parameters
+    from configuration dictionaries and updating larva group compositions.
+    
+    Attributes:
+        parameters: Experiment parameter dictionary (loaded or provided)
+    
+    Example:
+        >>> config = SimConfigurationParams(runtype='Exp', experiment='dish', N=20)
+        >>> params = config.parameters
     """
 
     parameters = param.Parameter(default=None)
@@ -313,7 +336,19 @@ def source_generator(
 
 class FoodConf(NestedConf):
     """
-    The configuration of food sources in the arena.
+    Configuration for food sources and odor landscapes in the arena.
+    
+    Manages food source groups, individual sources, and optional food grids.
+    Provides factory methods for common arena layouts (patches, corners, etc.).
+    
+    Attributes:
+        source_groups: Dictionary of food/odor source groups
+        source_units: Dictionary of individual food/odor sources
+        food_grid: Optional uniform food grid covering the arena
+    
+    Example:
+        >>> food = FoodConf.double_patch(x=0.06, r=0.025)
+        >>> food = FoodConf.foodNodor_4corners(d=0.05)
     """
 
     source_groups = ClassDict(
@@ -451,7 +486,22 @@ gen.EnrichConf = EnrichConf
 
 class EnvConf(NestedConf):
     """
-    The configuration of the simulation's virtual environment.
+    Configuration for the simulation's virtual environment.
+    
+    Defines arena geometry, food sources, obstacles, and sensory landscapes
+    (odor, wind, thermal) for the simulated world.
+    
+    Attributes:
+        arena: Arena configuration (shape, dimensions, torus)
+        food_params: Food and odor source configuration
+        border_list: Dictionary of obstacle borders in the arena
+        odorscape: Optional odor landscape (Gaussian/Analytical/Diffusion)
+        windscape: Optional wind landscape
+        thermoscape: Optional thermal landscape
+    
+    Example:
+        >>> env = EnvConf.dish(xy=0.1)
+        >>> env = EnvConf.maze(n=15, h=0.1)
     """
 
     arena = ClassAttr(gen.Arena, doc="The arena configuration")
@@ -636,7 +686,21 @@ gen.Env = EnvConf
 
 class LabFormat(NestedConf):
     """
-    The configuration of the lab format.
+    Configuration for lab-specific data import formats.
+    
+    Defines how experimental data from different labs is structured,
+    tracked, and imported into the larvaworld system.
+    
+    Attributes:
+        labID: Identifier of the laboratory
+        tracker: Dataset tracking metadata
+        filesystem: Lab-specific file structure and naming conventions
+        env_params: Environment configuration for imported data
+        preprocess: Preprocessing steps for raw data
+    
+    Example:
+        >>> lab = LabFormat(labID='SchleyerGroup')
+        >>> raw_path = lab.raw_folder
     """
 
     labID = param.String(doc="The identifier ID of the lab")
@@ -646,15 +710,15 @@ class LabFormat(NestedConf):
     preprocess = ClassAttr(PreprocessConf, doc="The preprocessing configuration")
 
     @property
-    def path(self):
+    def path(self) -> str:
         return f"{DATA_DIR}/{self.labID}Group"
 
     @property
-    def raw_folder(self):
+    def raw_folder(self) -> str:
         return f"{self.path}/raw"
 
     @property
-    def processed_folder(self):
+    def processed_folder(self) -> str:
         return f"{self.path}/processed"
 
     def get_source_dir(self, parent_dir, raw_folder=None, merged=False):
@@ -953,7 +1017,23 @@ class LabFormat(NestedConf):
 
 class ExpConf(SimOps):
     """
-    The configuration of the experiment.
+    Configuration for experiment simulations.
+    
+    Defines complete experiment setup including environment, larva groups,
+    temporal epochs, data collection, and post-processing enrichment.
+    
+    Attributes:
+        env_params: Virtual environment configuration
+        experiment: Experiment ID selector
+        trials: Temporal epochs defining experiment phases
+        collections: List of data types to collect
+        larva_groups: Dictionary of larva group configurations
+        parameter_dict: Parameters passed to all agents
+        enrichment: Post-simulation data enrichment configuration
+    
+    Example:
+        >>> exp = ExpConf.imitation_exp(refID='SchleyerGroup_dish_0')
+        >>> agents = exp.agent_confs
     """
 
     env_params = ClassAttr(gen.Env, doc="The environment configuration")
@@ -1009,7 +1089,19 @@ gen.Exp = ExpConf
 
 class ReplayConfGroup(NestedConf):
     """
-    The population-related configuration of the dataset replay.
+    Population-level configuration for dataset replay.
+    
+    Controls group-wide replay settings including agent selection,
+    spatial transposition, and environment configuration.
+    
+    Attributes:
+        agent_ids: List of agent indices to display (empty = all agents)
+        transposition: Coordinate transformation ('origin', 'arena', 'center')
+        track_point: Midline point index for position tracking
+        env_params: Environment configuration selector
+    
+    Example:
+        >>> replay = ReplayConfGroup(agent_ids=[0,1,2], transposition='center')
     """
 
     agent_ids = param.List(
@@ -1030,7 +1122,18 @@ class ReplayConfGroup(NestedConf):
 
 class ReplayConfUnit(NestedConf):
     """
-    The individual-related configuration of the dataset replay.
+    Individual-level configuration for dataset replay visualization.
+    
+    Controls single-larva view settings including camera fixation
+    and close-up visualization modes.
+    
+    Attributes:
+        close_view: Whether to show close-range zoomed view
+        fix_segment: Optional body segment to fixate (rear/front)
+        fix_point: Optional midline point to fixate at screen center
+    
+    Example:
+        >>> replay = ReplayConfUnit(close_view=True, fix_point=6)
     """
 
     close_view = param.Boolean(
@@ -1049,7 +1152,21 @@ class ReplayConfUnit(NestedConf):
 
 class ReplayConf(ReplayConfGroup, ReplayConfUnit):
     """
-    The configuration of the dataset replay.
+    Complete configuration for replaying experimental datasets.
+    
+    Combines group and individual replay settings with reference dataset
+    selection and temporal/spatial filtering options.
+    
+    Attributes:
+        refID: Reference dataset ID selector
+        refDir: Optional direct path to dataset directory
+        time_range: Optional temporal slice to replay (start, end) in seconds
+        overlap_mode: Whether to draw trajectory overlap image
+        draw_Nsegs: Optional number of body segments to simplify to
+    
+    Example:
+        >>> replay = ReplayConf(refID='dish_0', time_range=(0, 60))
+        >>> replay = ReplayConf(refDir='path/to/data', overlap_mode=True)
     """
 
     refID = reg.conf.Ref.confID_selector()
