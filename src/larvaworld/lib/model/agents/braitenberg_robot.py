@@ -16,7 +16,35 @@ __displayname__ = "Braitenberg agent"
 
 
 class DifferentialDriveRobot(RotTriangle):
-    def __init__(self, unique_id: Any, model: Any, x: float, y: float, length: float, wheel_radius: float) -> None:
+    """
+    Two-wheeled differential drive robot with triangular body.
+    
+    Implements differential steering kinematics where left/right wheel
+    speeds control translation and rotation. Used as base for Braitenberg
+    vehicle simulations with sensor-motor coupling.
+    
+    Attributes:
+        speed_left_wheel: Angular velocity of left wheel (rad/s)
+        speed_right_wheel: Angular velocity of right wheel (rad/s)
+        wheel_radius: Radius of drive wheels (meters)
+        length: Robot body length (meters)
+        deltax: X displacement in last timestep
+        deltay: Y displacement in last timestep
+        
+    Example:
+        >>> robot = DifferentialDriveRobot(
+        ...     unique_id='robot_1',
+        ...     model=sim_model,
+        ...     x=0.5, y=0.5,
+        ...     length=0.01,
+        ...     wheel_radius=0.002
+        ... )
+        >>> robot.speed_left_wheel = 1.0
+        >>> robot.speed_right_wheel = 0.8
+        >>> robot.step()  # Update position based on wheel speeds
+    """
+    
+    def __init__(self, unique_id: str, model: Any, x: float, y: float, length: float, wheel_radius: float) -> None:
         direction = random.uniform(-np.pi, np.pi)
         super().__init__(
             x,
@@ -84,6 +112,32 @@ class DifferentialDriveRobot(RotTriangle):
 
 
 class SensorDrivenRobot(DifferentialDriveRobot):
+    """
+    Differential drive robot with sensorimotor control.
+    
+    Extends DifferentialDriveRobot with bilateral motor controllers
+    and sensors, implementing reactive Braitenberg vehicle behaviors
+    (obstacle avoidance, phototaxis, etc.) via sensor-motor coupling.
+    
+    Attributes:
+        left_motor_controller: Left motor controller with sensor
+        right_motor_controller: Right motor controller with sensor
+        collision_with_object: Collision detection flag
+        label: Optional robot label for visualization
+        
+    Example:
+        >>> robot = SensorDrivenRobot(
+        ...     unique_id='braitenberg_1',
+        ...     model=sim_model,
+        ...     x=0.5, y=0.5,
+        ...     length=0.01,
+        ...     wheel_radius=0.002
+        ... )
+        >>> robot.set_left_motor_controller(left_motor)
+        >>> robot.set_right_motor_controller(right_motor)
+        >>> robot.step()  # Sense and act
+    """
+    
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.collision_with_object = False

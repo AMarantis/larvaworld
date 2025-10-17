@@ -40,11 +40,21 @@ __displayname__ = "Agent"
 
 class NonSpatialAgent(GroupedObject):
     """
-    An agent lacking spatial positioning in space.
-
-    Args:
-        odor (dict) : An optional dictionary containing odor information of the agent.
-
+    Base agent class without spatial positioning.
+    
+    Provides minimal agent functionality including unique ID, group membership,
+    and odor signature, without position or movement capabilities. Used as
+    foundation for spatial agent classes.
+    
+    Attributes:
+        odor: Odor signature of the agent (Odor instance)
+        model: Reference to the ABM model containing this agent
+        unique_id: Unique identifier for this agent
+        dt: Timestep duration from model (property)
+        
+    Example:
+        >>> agent = NonSpatialAgent(unique_id='agent_001', odor={'id': 'odorA'})
+        >>> agent.step()  # Base implementation (no-op)
     """
 
     __displayname__ = "Non-spatial agent"
@@ -64,8 +74,22 @@ class NonSpatialAgent(GroupedObject):
 
 class PointAgent(RadiallyExtended, NonSpatialAgent, Viewable):
     """
-    Agent with a point spatial representation.
-    This agent class extends the NonSpatialAgent class and represents agents as points.
+    Spatial agent with point geometry and visualization.
+    
+    Extends NonSpatialAgent with 2D position, radius, and drawing capabilities.
+    Combines RadiallyExtended (circular shape) with Viewable (color/visibility)
+    to provide basic spatial agent with visual representation.
+    
+    Attributes:
+        pos: Current (x, y) position in meters
+        radius: Agent radius for drawing and collision detection
+        color: Display color (string name or RGB tuple)
+        visible: Whether agent is currently visible
+        id_box: ID label box for visualization
+        
+    Example:
+        >>> agent = PointAgent(pos=(0.5, 0.5), radius=0.001, color='blue')
+        >>> agent.draw(screen_manager, filled=True)
     """
 
     __displayname__ = "Point agent"
@@ -120,8 +144,20 @@ class PointAgent(RadiallyExtended, NonSpatialAgent, Viewable):
 
 class OrientedAgent(OrientedPoint, PointAgent):
     """
-    An agent represented as an oriented point in space.
-    This agent class extends the PointAgent class and adds orientation to the agent.
+    Spatial agent with position and directional orientation.
+    
+    Extends PointAgent with orientation angle, enabling directional movement
+    and heading-based behaviors. Combines OrientedPoint spatial properties
+    with PointAgent visualization.
+    
+    Attributes:
+        orientation: Current heading angle in radians
+        front_orientation: Forward-facing orientation angle
+        rear_orientation: Backward-facing orientation angle
+        
+    Example:
+        >>> agent = OrientedAgent(pos=(0.5, 0.5), orientation=np.pi/4)
+        >>> agent.set_orientation(np.pi/2)  # Face north
     """
 
     __displayname__ = "Oriented agent"
@@ -132,8 +168,19 @@ class OrientedAgent(OrientedPoint, PointAgent):
 
 class MobilePointAgent(MobilePoint, PointAgent):
     """
-    A mobile point agent.
-    This agent class extends the PointAgent class and adds mobility with point representation.
+    Mobile spatial agent with velocity tracking.
+    
+    Extends PointAgent with linear and angular velocity properties,
+    enabling dynamic movement in 2D space. Combines MobilePoint kinematics
+    with PointAgent visualization and odor signature.
+    
+    Attributes:
+        lin_vel: Linear velocity magnitude in m/s
+        ang_vel: Angular velocity in rad/s
+        
+    Example:
+        >>> agent = MobilePointAgent(pos=(0.5, 0.5), lin_vel=0.001)
+        >>> agent.set_lin_vel(0.002)  # Update velocity
     """
 
     __displayname__ = "Mobile point agent"
@@ -144,8 +191,24 @@ class MobilePointAgent(MobilePoint, PointAgent):
 
 class MobileAgent(MobileVector, PointAgent):
     """
-    An agent represented in space as a mobile oriented vector.
-    This agent class extends the PointAgent class and uses vector representation for mobility.
+    Mobile spatial agent with vector representation and velocity tracking.
+    
+    Extends PointAgent with oriented vector geometry (front/rear ends),
+    linear and angular velocities, and comprehensive motion properties.
+    Foundation for larva agents with directional movement.
+    
+    Attributes:
+        length: Vector length in meters (body length)
+        orientation: Heading angle in radians
+        lin_vel: Linear velocity in m/s
+        ang_vel: Angular velocity in rad/s
+        last_pos_vel: Previous timestep translational velocity (property)
+        last_scaled_pos_vel: Previous velocity scaled by body length (property)
+        last_orientation_vel: Previous timestep angular velocity (property)
+        
+    Example:
+        >>> agent = MobileAgent(pos=(0.5, 0.5), length=0.003, orientation=0)
+        >>> agent.update_all(lin_vel=0.001, ang_vel=0.1)
     """
 
     __displayname__ = "Mobile agent"
@@ -159,11 +222,11 @@ class MobileAgent(MobileVector, PointAgent):
         return self.last_delta_orientation / self.dt
 
     @property
-    def last_pos_vel(self) -> Any:
+    def last_pos_vel(self) -> np.ndarray:
         """The last translational velocity of the agent."""
         return self.last_delta_pos / self.dt
 
     @property
-    def last_scaled_pos_vel(self) -> Any:
+    def last_scaled_pos_vel(self) -> np.ndarray:
         """The last translational velocity of the agent, scaled to its vector length."""
         return self.last_delta_pos / self.length / self.dt

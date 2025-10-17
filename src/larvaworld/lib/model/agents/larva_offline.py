@@ -26,7 +26,22 @@ __displayname__ = "Offline agent"
 
 class LarvaOffline(LarvaRobot):
     """
-    Subclass of LarvaRobot that simulates the behavior of a larva in an offline environment.
+    Simplified larva agent for offline kinematic simulation.
+    
+    Extends LarvaRobot for lightweight simulation without full environment,
+    using minimal physics (orientation tracking, bend angle constraints).
+    Used for rapid trajectory generation and parameter exploration.
+    
+    Attributes:
+        fo: Front orientation angle (radians)
+        ro: Rear orientation angle (radians)
+        body_bend: Current body bend angle (radians)
+        dst: Distance traveled in last timestep
+        cum_dst: Cumulative distance traveled
+        
+    Example:
+        >>> larva = LarvaOffline(model='explorer', length=0.003)
+        >>> larva.step()  # Kinematic update without environment
     """
 
     def __init__(self, **kwargs: Any) -> None:

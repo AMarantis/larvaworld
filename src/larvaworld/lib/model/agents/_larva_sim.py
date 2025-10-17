@@ -34,36 +34,27 @@ __displayname__ = "Simulation larva"
 
 class BaseController(param.Parameterized):
     """
-    Base controller for larva motion simulation.
-
-    Parameters
-    ----------
-    lin_vel_coef : float, positive
-        Coefficient for translational velocity.
-    ang_vel_coef : float, positive
-        Coefficient for angular velocity.
-    lin_force_coef : float, positive
-        Coefficient for force.
-    torque_coef : float, positive
-        Coefficient for torque.
-    body_spring_k : float, positive
-        Torsional spring constant for body bending.
-    bend_correction_coef : float, positive
-        Bend correction coefficient.
-    lin_damping : float, positive
-        Translational damping coefficient.
-    ang_damping : float, positive
-        Angular damping coefficient.
-    lin_mode : str
-        Mode of translational motion generation ('velocity', 'force', 'impulse').
-    ang_mode : str
-        Mode of angular motion generation ('torque', 'velocity').
-
-    Methods
-    -------
-    compute_delta_rear_angle(bend, dst, length)
-        Compute the change in rear angle based on bend, distance, and length.
-
+    Physics controller for larva kinematic simulation.
+    
+    Provides motion generation modes (velocity/force/torque), damping
+    coefficients, and body mechanics (torsional spring, bend correction)
+    for realistic larva movement simulation.
+    
+    Attributes:
+        lin_vel_coef: Translational velocity scaling coefficient (default: 1.0)
+        ang_vel_coef: Angular velocity scaling coefficient (default: 1.0)
+        lin_force_coef: Force scaling coefficient (default: 1.0)
+        torque_coef: Torque scaling coefficient (default: 0.5)
+        body_spring_k: Torsional spring constant for body bending (default: 1.0)
+        bend_correction_coef: Bend angle correction factor (default: 1.0)
+        lin_damping: Translational damping coefficient (default: 1.0)
+        ang_damping: Angular damping coefficient (default: 1.0)
+        lin_mode: Motion mode ('velocity', 'force', or 'impulse')
+        ang_mode: Rotation mode ('torque' or 'velocity')
+        
+    Example:
+        >>> controller = BaseController(torque_coef=0.8, body_spring_k=1.5)
+        >>> delta_angle = controller.compute_delta_rear_angle(0.2, 0.001, 0.003)
     """
 
     lin_vel_coef = PositiveNumber(1.0, doc="Coefficient for translational velocity")
@@ -114,32 +105,33 @@ class BaseController(param.Parameterized):
 
 class LarvaSim(LarvaMotile, BaseController):
     """
-    Simulated larva agent.
-
-    Parameters
-    ----------
-    physics : dict
-        Dictionary containing physical parameters for the larva simulation.
-    Box2D : dict
-        Dictionary containing Box2D parameters for the larva simulation.
-    **kwargs
-        Additional keyword arguments.
-
-    Methods
-    -------
-    compute_ang_vel(amp)
-        Compute angular velocity based on torque amplitude.
-    prepare_motion(lin, ang)
-        Prepare translational and angular motion.
-    border_collision : bool
-        Check for collisions with borders.
-    larva_collision : bool
-        Check for collisions with other larvae.
-    position_head_in_tank(hr0, ho0, l0, fov0, fov1, ang_vel, lin_vel)
-        Position the larva's head in the simulated tank.
-    position_body(lin_vel, ang_vel)
-        Position the larva's body based on translational and angular motion.
-
+    Physically-simulated larva agent with realistic biomechanics.
+    
+    Combines LarvaMotile behavioral capabilities with BaseController
+    physics to provide realistic simulation including body mechanics,
+    collision detection, and arena boundary handling.
+    
+    Attributes:
+        collision_with_object: Whether currently colliding with obstacle
+        body_bend: Current body bend angle (radians)
+        dst: Distance traveled in last timestep
+        cum_dst: Cumulative distance traveled
+        border_collision: Border collision detection (property)
+        larva_collision: Inter-larva collision detection (property)
+        
+    Args:
+        physics: Physics parameters dict (velocities, damping, spring constants)
+        Box2D: Box2D physics engine parameters (optional)
+        sensorimotor: Sensorimotor coupling parameters (optional)
+        **kwargs: Additional larva configuration
+        
+    Example:
+        >>> larva = LarvaSim(
+        ...     physics={'torque_coef': 0.5, 'body_spring_k': 1.0},
+        ...     brain={'olfactor': {'gain': 2.0}},
+        ...     body={'length': 0.003}
+        ... )
+        >>> larva.step()  # Physics-based simulation step
     """
 
     __displayname__ = "Simulated larva"

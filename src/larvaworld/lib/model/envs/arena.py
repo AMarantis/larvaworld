@@ -1,9 +1,12 @@
 from __future__ import annotations
-from typing import Any
+from typing import TYPE_CHECKING, Any
 import agentpy
 import numpy as np
 import param
 from shapely.geometry import Point
+
+if TYPE_CHECKING:
+    from matplotlib.figure import Figure
 
 from ... import util
 from ...param import BoundedArea
@@ -19,6 +22,25 @@ class ViewableBoundedArea(SpatialEntity, BoundedArea):
 
 
 class Arena(ViewableBoundedArea, agentpy.Space):
+    """
+    Simulation arena providing spatial environment for agents.
+    
+    Combines bounded area geometry with agentpy.Space functionality to create
+    a simulation environment where agents can be placed, moved, and interact
+    with sources. Supports both stable and displaceable source management.
+    
+    Attributes:
+        boundary_margin: Margin from arena boundaries (default: 0.96)
+        edges: List of boundary edge segments as Point pairs
+        stable_sources: List of non-movable sources
+        displacable_sources: List of movable sources
+        accessible_sources: Cached accessible sources for agents
+        
+    Example:
+        >>> arena = Arena(model=sim_model, dims=(1.0, 1.0))
+        >>> arena.place_agent(agent, (0.5, 0.5))
+        >>> arena.add_sources([food1, food2], [(0.2, 0.3), (0.8, 0.7)])
+    """
     boundary_margin = param.Magnitude(0.96)
 
     def __init__(self, model: Any | None = None, **kwargs: Any) -> None:
@@ -73,7 +95,7 @@ class Arena(ViewableBoundedArea, agentpy.Space):
             self.source_positions = np.array(self.stable_source_positions)
             self.sources = np.array(self.stable_sources)
 
-    def accesible_sources(self, pos: Any, radius: float):
+    def accessible_sources(self, pos: Any, radius: float) -> list[Any]:
         return self.sources[
             np.where(util.eudi5x(self.source_positions, pos) <= radius)
         ].tolist()
@@ -104,7 +126,7 @@ class Arena(ViewableBoundedArea, agentpy.Space):
             }
         self.accessible_sources = dic
 
-    def draw(self, v: Any | None = None):
+    def draw(self, v: Any | None = None) -> Figure:
         import matplotlib.pyplot as plt
         from matplotlib.figure import Figure
 

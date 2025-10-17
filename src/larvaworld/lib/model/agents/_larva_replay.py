@@ -30,20 +30,26 @@ __displayname__ = "Experimental replay larva"
 
 class LarvaReplay(Larva):
     """
-    Class representing a larva used to replay recorded data.
-
-    Parameters
-    ----------
-    data : ReplayData
-        The recorded data for the replay larva.
-    **kwargs
-        Additional keyword arguments to pass to the base `Larva` class constructor.
-
-    Notes
-    -----
-    This class extends the base `Larva` class to create a replay larva using recorded data. It initializes the replay
-    larva's position and orientation based on the provided data.
-
+    Larva agent for replaying experimental trajectory data.
+    
+    Extends Larva to replay pre-recorded positional and orientation data
+    from real experiments, enabling visualization and analysis of
+    experimental trajectories within the simulation environment.
+    
+    Attributes:
+        data: ReplayData instance with recorded trajectories
+        midline_xy: Midline points at current timestep (property)
+        front_orientation: Front orientation at current timestep (property)
+        rear_orientation: Rear orientation at current timestep (property)
+        
+    Args:
+        data: Recorded experimental data (positions, orientations, midlines)
+        **kwargs: Additional larva configuration
+        
+    Example:
+        >>> replay_data = load_experiment_data('SchleyerGroup')
+        >>> larva = LarvaReplay(data=replay_data['larva_0'])
+        >>> larva.step()  # Update to next recorded frame
     """
 
     __displayname__ = "Replay larva"
@@ -114,10 +120,19 @@ class LarvaReplay(Larva):
 
 class LarvaReplayContoured(LarvaReplay, LarvaContoured):
     """
-    Class representing a replay larva with contour data based on recorded data.
-
-    This class extends the `LarvaReplay` class and adds contour data to the replay larva based on recorded data.
-
+    Replay larva with contour body representation from experimental data.
+    
+    Combines LarvaReplay trajectory playback with LarvaContoured geometry,
+    displaying recorded contour vertices at each timestep for realistic
+    body shape visualization from experimental recordings.
+    
+    Attributes:
+        contour_xy: Contour vertices at current timestep (property)
+        
+    Example:
+        >>> replay_data = load_experiment_data('SchleyerGroup')
+        >>> larva = LarvaReplayContoured(data=replay_data['larva_0'])
+        >>> larva.step()  # Update to next frame with contour
     """
 
     __displayname__ = "Contoured replay larva"
@@ -153,11 +168,19 @@ class LarvaReplayContoured(LarvaReplay, LarvaContoured):
 
 class LarvaReplaySegmented(LarvaReplay, LarvaSegmented):
     """
-    Class representing a segmented replay larva based on recorded data.
-
-    This class extends the `LarvaReplay` class and creates a segmented replay larva with multiple body segments based on
-    recorded data.
-
+    Replay larva with segmented body from experimental data.
+    
+    Combines LarvaReplay trajectory playback with LarvaSegmented multi-segment
+    body, positioning and orienting each segment based on recorded midline
+    data for high-fidelity biomechanical visualization.
+    
+    Attributes:
+        segs: Body segments positioned from recorded midline data
+        
+    Example:
+        >>> replay_data = load_experiment_data('SchleyerGroup')
+        >>> larva = LarvaReplaySegmented(data=replay_data['larva_0'], Nsegs=11)
+        >>> larva.step()  # Update all segments to recorded positions
     """
 
     __displayname__ = "Segmented replay larva"

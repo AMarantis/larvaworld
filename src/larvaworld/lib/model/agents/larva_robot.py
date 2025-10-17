@@ -30,11 +30,23 @@ __displayname__ = "Braitenberg-like larva"
 
 class LarvaRobot(LarvaSim):
     """
-    A virtual larva with a parameter set as genome to be used in Genetic Algorithm optimization.
-    Inherits from LarvaSim.
-
+    Virtual larva agent for genetic algorithm optimization.
+    
+    Extends LarvaSim with genome-based parameter encoding, enabling
+    evolutionary optimization of behavioral parameters via GA. The genome
+    represents evolvable traits (locomotor gains, sensor weights, etc.).
+    
     Attributes:
-        genome (optional): The genome of the larva robot.
+        genome: Parameter genome vector for GA optimization (optional)
+        
+    Args:
+        larva_pars: Dictionary of larva configuration parameters
+        genome: Optional genome encoding of evolvable parameters
+        **kwargs: Additional agent configuration
+        
+    Example:
+        >>> genome = np.array([0.5, 1.2, 0.8])  # Evolvable parameters
+        >>> robot = LarvaRobot(larva_pars={'model': 'explorer'}, genome=genome)
     """
 
     def __init__(self, larva_pars: dict[str, Any], genome: Any | None = None, **kwargs: Any) -> None:
@@ -44,8 +56,29 @@ class LarvaRobot(LarvaSim):
 
 class ObstacleLarvaRobot(LarvaRobot):
     """
-    A specialized type of LarvaRobot designed to navigate environments with obstacles.
-    It uses proximity sensors and motor controllers to sense and act upon its surroundings.
+    Obstacle-avoiding larva robot with Braitenberg-like sensorimotor coupling.
+    
+    Extends LarvaRobot with bilateral proximity sensors and motor controllers
+    that implement reactive obstacle avoidance through differential actuation.
+    Uses sensor-motor coupling to generate turning away from obstacles.
+    
+    Attributes:
+        Lmotor: Left motor controller with proximity sensor
+        Rmotor: Right motor controller with proximity sensor
+        sensor_delta_direction: Angular offset of sensors from midline (radians)
+        sensor_saturation_value: Max sensor response value
+        obstacle_sensor_error: Sensor noise/error magnitude
+        sensor_max_distance: Maximum sensing distance
+        motor_coefficient: Motor gain coefficient
+        min_actuator_value: Minimum motor output value
+        
+    Example:
+        >>> robot = ObstacleLarvaRobot(
+        ...     larva_pars={'model': 'navigator'},
+        ...     sensor_delta_direction=0.4,
+        ...     motor_coefficient=8770.0
+        ... )
+        >>> robot.sense()  # Detect obstacles and adjust motors
     """
 
     sensor_delta_direction = PositiveNumber(0.4, doc="Sensor delta_direction")

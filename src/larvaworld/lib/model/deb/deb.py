@@ -32,8 +32,27 @@ __all__: list[str] = [
 ]
 
 
-# p.257 in S. a. L. M. Kooijman, “Dynamic Energy Budget theory for metabolic organisation : Summary of concepts of the third edition,” Water, vol. 365, p. 68, 2010.
+# p.257 in S. a. L. M. Kooijman, "Dynamic Energy Budget theory for metabolic organisation : Summary of concepts of the third edition," Water, vol. 365, p. 68, 2010.
 class DEB_model(NestedConf):
+    """
+    Dynamic Energy Budget (DEB) model parameters.
+    
+    Implements standard DEB theory parameters for metabolic organization
+    following Kooijman (2010). Provides core DEB equations for growth,
+    maintenance, reproduction, and aging.
+    
+    Key DEB parameters include surface-area specific rates (F_m, p_Am),
+    volume-specific costs (E_G, p_M), allocation fractions (kap, kap_X),
+    maturity thresholds (E_Hb, E_He), and aging parameters (h_a, s_G).
+    
+    Reference:
+        Kooijman (2010). "Dynamic Energy Budget theory for metabolic
+        organisation." Water, vol. 365, p. 68.
+    
+    Example:
+        >>> deb = DEB_model(species="rover")
+        >>> deb.compute_compound_pars()
+    """
     F_m = PositiveNumber(
         6.5, doc="maximum surface-area specific searching rate (l cm**-2 d**-1)"
     )
@@ -408,6 +427,26 @@ class DEB_model(NestedConf):
 
 
 class DEB_basic(DEB_model):
+    """
+    Basic DEB model with species-specific parameters and gut integration.
+    
+    Extends DEB_model with species phenotypes (rover/sitter), gut assimilation,
+    starvation strategies, and aging dynamics. Includes fitted parameters for
+    Drosophila larva phenotypes.
+    
+    Attributes:
+        id: Model identifier (default: "DEB model")
+        species: Phenotype selection ("default", "rover", "sitter")
+        starvation_strategy: Enable starvation response (default: False)
+        aging: Enable aging dynamics (default: False)
+        dt: Simulation timestep in days (default: 1/(24*60))
+        substrate: Feeding substrate configuration
+        assimilation_mode: Assimilation calculation method ("gut", "sim", "deb")
+    
+    Example:
+        >>> deb = DEB_basic(species="rover", aging=True, dt=1/1440)
+        >>> deb.step_basic(f=0.8, V=0.001)
+    """
     id = param.String("DEB model", doc="The unique ID of the DEB model")
     species = param.Selector(
         objects=["default", "rover", "sitter"],
@@ -745,6 +784,25 @@ class DEB_basic(DEB_model):
 
 
 class DEB(DEB_basic):
+    """
+    Full DEB model with hunger-driven behavior and data recording.
+    
+    Complete DEB implementation integrating energetics with behavioral control
+    through hunger-driven exploration-exploitation balance (EEB). Tracks and
+    records all DEB state variables over time for analysis.
+    
+    Attributes:
+        hunger_as_EEB: Use hunger to modulate EEB (default: True)
+        hunger_gain: Hunger sensitivity to reserve depletion (default: 1.0)
+        dict: AttrDict storing timeseries of DEB state variables
+              (age, mass, length, reserve, hunger, etc.)
+        save_to: File path for saving DEB trajectory data
+    
+    Example:
+        >>> deb = DEB(species="rover", hunger_as_EEB=True, save_to="results.h5")
+        >>> deb.step(f=0.9, V_food=0.002, dt=0.01)
+        >>> hunger = deb.get_hunger()
+    """
     hunger_as_EEB = param.Boolean(
         True,
         doc="Whether the DEB-generated hunger drive informs the exploration-exploitation balance.",
@@ -756,8 +814,8 @@ class DEB(DEB_basic):
     )
 
     def __init__(
-        self, save_dict=True, save_to=None, base_hunger=0.5, intermitter=None, **kwargs
-    ):
+        self, save_dict: bool = True, save_to: str | None = None, base_hunger: float = 0.5, intermitter: Any = None, **kwargs: Any
+    ) -> None:
         super().__init__(**kwargs)
         self.set_intermitter(base_hunger, intermitter)
         self.save_to = save_to
