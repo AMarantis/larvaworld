@@ -44,7 +44,26 @@ __all__: list[str] = [
 
 class MediaDrawOps(NestedConf):
     """
-    Options regarding the media (videos,images) to be stored during simulation.
+    Configuration for media output during simulation visualization.
+
+    Controls image and video recording options, including when to save
+    (final, snapshots, overlap), file paths, and video parameters.
+
+    Attributes:
+        image_mode: When to save images ('final', 'snapshots', 'overlap')
+        image_file: Filename for saved images (without .png extension)
+        snapshot_interval_in_sec: Seconds between snapshots
+        video_file: Filename for saved videos (without .mp4 extension)
+        media_dir: Directory for saving media files
+        fps: Video frames per second
+        save_video: Whether to save video output
+        vis_mode: Screen visualization mode ('video' or 'image')
+        show_display: Whether to launch pygame visualization
+
+    Example:
+        >>> media_ops = MediaDrawOps(save_video=True, fps=30, video_file='sim')
+        >>> media_ops.active  # True if any media output is enabled
+        >>> writer = media_ops.new_video_writer(fps=30)
     """
 
     image_mode = OptionalSelector(
@@ -122,7 +141,26 @@ class MediaDrawOps(NestedConf):
 
 class AgentDrawOps(NestedConf):
     """
-    Options for drawing the agents on the screen.
+    Configuration for agent rendering in pygame visualization.
+
+    Controls which agent features are drawn (trails, sensors, body parts)
+    and their visual properties during simulation display.
+
+    Attributes:
+        visible_trails: Whether to draw agent trajectories
+        trail_dt: Duration of trajectory trails in seconds
+        trail_color: Trail coloring mode ('normal', 'linear', 'angular')
+        draw_sensors: Whether to draw agent sensors
+        draw_contour: Whether to draw agent body contour
+        draw_segs: Whether to draw body segments
+        draw_midline: Whether to draw body midline
+        draw_centroid: Whether to draw centroid point
+        draw_head: Whether to draw head point
+        draw_orientations: Whether to draw body vector orientations
+
+    Example:
+        >>> agent_ops = AgentDrawOps(visible_trails=True, draw_sensors=True)
+        >>> agent_ops.trail_dt = 30.0  # 30 second trails
     """
 
     visible_trails = Boolean(False, doc="Draw the larva trajectories")
@@ -142,7 +180,23 @@ class AgentDrawOps(NestedConf):
 
 class ColorDrawOps(NestedConf):
     """
-    Options regarding coloring.
+    Configuration for color and display modes in visualization.
+
+    Controls coloring schemes, background settings, UI elements,
+    and interactive features for pygame simulation display.
+
+    Attributes:
+        intro_text: Whether to show introductory configuration screen
+        odor_aura: Whether to draw aura around odor sources
+        allow_clicks: Whether to allow mouse/keyboard input
+        black_background: Whether to use black background
+        random_colors: Whether to use random agent colors
+        color_behavior: Whether to color agents by behavior
+        panel_width: Side panel width in pixels
+
+    Example:
+        >>> color_ops = ColorDrawOps(black_background=True, color_behavior=True)
+        >>> color_ops.panel_width = 400  # Set side panel width
     """
 
     intro_text = Boolean(True, doc="Show the introductory configuration screen")
@@ -157,6 +211,19 @@ class ColorDrawOps(NestedConf):
 
 
 class ScreenOps(ColorDrawOps, AgentDrawOps, MediaDrawOps):
+    """
+    Combined configuration for all screen rendering options.
+
+    Inherits from ColorDrawOps, AgentDrawOps, and MediaDrawOps to provide
+    a unified configuration interface for all visualization settings.
+
+    Example:
+        >>> screen_ops = ScreenOps(
+        ...     save_video=True, visible_trails=True, black_background=True
+        ... )
+        >>> screen_ops.fps = 30
+        >>> screen_ops.trail_dt = 20.0
+    """
     pass
 
 
@@ -452,7 +519,24 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
 
 class ScreenManager(ScreenAreaPygame):
     """
-    Base class managing the pygame screen.
+    Main screen manager for pygame-based simulation visualization.
+
+    Manages pygame display, rendering loop, user input handling,
+    and media output (images/videos) during simulation runs.
+
+    Attributes:
+        selected_type: Type of currently selected item
+        selected_agents: List of currently selected agents
+        selection_color: Color for highlighting selections
+        dynamic_graphs: List of dynamic graph displays
+        focus_mode: Whether in focus/zoom mode
+        snapshot_interval: Frames between automatic snapshots
+        pygame_keys: Mapping of keyboard controls
+
+    Example:
+        >>> screen = ScreenManager(model=sim_model, show_display=True)
+        >>> screen.step()  # Render one frame
+        >>> screen.run()  # Run visualization loop
     """
 
     def __init__(self, **kwargs: Any) -> None:
@@ -1122,7 +1206,20 @@ class ScreenManager(ScreenAreaPygame):
 
 class GA_ScreenManager(ScreenManager):
     """
-    Screen manager for the Genetic Algorithm simulations.
+    Specialized screen manager for Genetic Algorithm visualizations.
+
+    Extends ScreenManager with GA-specific defaults: black background,
+    wider side panel for GA metrics, and simplified scene settings.
+
+    Attributes:
+        model: The GA simulation model
+        black_background: Uses black background by default
+        panel_width: Side panel width (default 600px for GA metrics)
+        scene: Scene configuration (default 'no_boxes')
+
+    Example:
+        >>> ga_screen = GA_ScreenManager(model=ga_model)
+        >>> ga_screen.run()  # Run GA visualization with defaults
     """
 
     def __init__(

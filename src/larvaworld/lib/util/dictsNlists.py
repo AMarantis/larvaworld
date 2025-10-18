@@ -32,10 +32,23 @@ __all__: list[str] = [
 
 class AttrDict(dict):
     """
-    Dictionary subclass whose entries can be accessed as attributes (as well as normally).
+    Dictionary subclass with attribute-style access.
+
+    Allows dictionary entries to be accessed using dot notation (as attributes)
+    in addition to standard bracket notation. Automatically converts nested
+    dictionaries to AttrDict instances.
+
+    Example:
+        >>> d = AttrDict({'a': 1, 'b': {'c': 2}})
+        >>> d.a
+        1
+        >>> d.b.c
+        2
+        >>> d['b']['c']
+        2
     """
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(AttrDict, self).__init__(*args, **kwargs)
         self.__dict__ = self.autonest(d=self)
 
@@ -45,14 +58,14 @@ class AttrDict(dict):
         return d
 
     @classmethod
-    def from_nested_dicts(cls, data: Any):
+    def from_nested_dicts(cls, data: Any) -> Any:
         """Construct nested NestDicts from nested dictionaries."""
         if not isinstance(data, dict):
             return data
         else:
             return cls(data)
 
-    def replace_keys(self, pairs: dict = {}):
+    def replace_keys(self, pairs: dict = {}) -> "AttrDict":
         dic = {}
         for k, v in self.items():
             if k in list(pairs.keys()):
@@ -185,6 +198,22 @@ class AttrDict(dict):
 
 
 def load_dict(file: str) -> AttrDict:
+    """
+    Load dictionary from pickle or JSON file.
+
+    Attempts to load from pickle first, falls back to JSON if that fails,
+    returns empty AttrDict if both fail.
+
+    Args:
+        file: Path to file containing pickled or JSON dictionary
+
+    Returns:
+        Loaded dictionary as AttrDict, or empty AttrDict on failure
+
+    Example:
+        >>> d = load_dict('config.pkl')
+        >>> d = load_dict('config.json')
+    """
     try:
         with open(file, "rb") as tfp:
             d = pickle.load(tfp)
@@ -198,6 +227,19 @@ def load_dict(file: str) -> AttrDict:
 
 
 def save_dict(d: dict, file: str) -> None:
+    """
+    Save dictionary to pickle or JSON file.
+
+    Attempts to save as pickle first, falls back to JSON if that fails.
+
+    Args:
+        d: Dictionary to save
+        file: Path to output file
+
+    Example:
+        >>> save_dict({'a': 1, 'b': 2}, 'config.pkl')
+        >>> save_dict({'a': 1, 'b': 2}, 'config.json')
+    """
     if file is not None:
         try:
             with open(file, "wb") as fp:
@@ -211,19 +253,35 @@ def save_dict(d: dict, file: str) -> None:
 
 
 class bidict(dict):
-    def __init__(self, *args: Any, **kwargs: Any):
+    """
+    Bidirectional dictionary with inverse mapping.
+
+    Maintains both forward (key→value) and inverse (value→keys) mappings.
+    The inverse attribute maps each value to a list of keys that map to it.
+
+    Attributes:
+        inverse: Dictionary mapping values to lists of keys
+
+    Example:
+        >>> bd = bidict({'a': 1, 'b': 2, 'c': 1})
+        >>> bd.inverse
+        {1: ['a', 'c'], 2: ['b']}
+        >>> bd['a']
+        1
+    """
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(bidict, self).__init__(*args, **kwargs)
         self.inverse = {}
         for key, value in self.items():
             self.inverse.setdefault(value, []).append(key)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value) -> None:
         if key in self:
             self.inverse[self[key]].remove(key)
         super(bidict, self).__setitem__(key, value)
         self.inverse.setdefault(value, []).append(key)
 
-    def __delitem__(self, key):
+    def __delitem__(self, key) -> None:
         self.inverse.setdefault(self[key], []).remove(key)
         if self[key] in self.inverse and not self.inverse[self[key]]:
             del self.inverse[self[key]]
@@ -231,6 +289,28 @@ class bidict(dict):
 
 
 class SuperList(list):
+    """
+    Enhanced list with utility properties and methods.
+
+    Extends built-in list with convenient properties for sorting, flattening,
+    deduplication, grouping, and DataFrame column operations.
+
+    Properties:
+        N: Length of list
+        sorted: Sorted copy of list
+        flatten: Recursively flattened list
+        unique: List with duplicates removed (preserves order)
+        in_pairs: List grouped into pairs
+
+    Example:
+        >>> sl = SuperList([3, 1, 2, 1])
+        >>> sl.unique
+        [3, 1, 2]
+        >>> sl.sorted
+        [1, 1, 2, 3]
+        >>> SuperList([[1, 2], [3, 4]]).flatten
+        [1, 2, 3, 4]
+    """
     @property
     def N(self) -> int:
         return len(self)
@@ -282,7 +362,7 @@ class SuperList(list):
     def exist_in(self, df) -> bool:
         return cols_exist(self, df)
 
-    def __add__(self, *args, **kwargs):  # real signature unknown
+    def __add__(self, *args, **kwargs) -> "SuperList":  # real signature unknown
         """Return self+value."""
         return SuperList(super().__add__(*args, **kwargs))
 
@@ -297,7 +377,17 @@ class SuperList(list):
 
 
 class ItemList(agentpy.sequences.AgentSequence, list):
-    def __init__(self, objs=(), cls=None, *args: Any, **kwargs: Any):
+    """
+    Agent sequence list with mass attribute setting.
+
+    Combines agentpy.AgentSequence with list functionality, allowing
+    batch attribute operations on agent collections.
+
+    Example:
+        >>> items = ItemList([agent1, agent2, agent3])
+        >>> items.speed = 5.0  # Sets speed=5.0 on all agents
+    """
+    def __init__(self, objs=(), cls=None, *args: Any, **kwargs: Any) -> None:
         if isinstance(objs, int):
             objs = self._obj_gen(objs, cls, *args, **kwargs)
         super().__init__(objs)
@@ -312,7 +402,7 @@ class ItemList(agentpy.sequences.AgentSequence, list):
             }
             yield cls(**i_kwargs)
 
-    def __setattr__(self, name: str, value):
+    def __setattr__(self, name: str, value) -> None:
         if isinstance(value, list):
             # Apply each value to each agent
             for obj, v in zip(self, value):
@@ -323,29 +413,100 @@ class ItemList(agentpy.sequences.AgentSequence, list):
                 setattr(obj, name, value)
 
 
-def existing_cols(cols, df):
+def existing_cols(cols: list[str], df: pd.DataFrame | list[str]) -> list[str]:
+    """
+    Filter column names to those that exist in DataFrame.
+
+    Args:
+        cols: List of column names to check
+        df: DataFrame or list of column names
+
+    Returns:
+        List of columns from cols that exist in df
+
+    Example:
+        >>> existing_cols(['a', 'b', 'c'], df)
+        ['a', 'c']  # if only 'a' and 'c' exist in df
+    """
     if isinstance(df, pd.DataFrame):
         df = df.columns.values
     return [col for col in cols if col in df]
 
 
-def nonexisting_cols(cols, df):
+def nonexisting_cols(cols: list[str], df: pd.DataFrame | list[str]) -> list[str]:
+    """
+    Filter column names to those that don't exist in DataFrame.
+
+    Args:
+        cols: List of column names to check
+        df: DataFrame or list of column names
+
+    Returns:
+        List of columns from cols that don't exist in df
+
+    Example:
+        >>> nonexisting_cols(['a', 'b', 'c'], df)
+        ['b']  # if only 'b' doesn't exist in df
+    """
     if isinstance(df, pd.DataFrame):
         df = df.columns.values
     return [col for col in cols if col not in df]
 
 
-def cols_exist(cols, df) -> bool:
+def cols_exist(cols: list[str], df: pd.DataFrame | list[str]) -> bool:
+    """
+    Check if all columns exist in DataFrame.
+
+    Args:
+        cols: List of column names to check
+        df: DataFrame or list of column names
+
+    Returns:
+        True if all columns in cols exist in df
+
+    Example:
+        >>> cols_exist(['a', 'b'], df)
+        True  # if both 'a' and 'b' exist
+    """
     if isinstance(df, pd.DataFrame):
         df = df.columns.values
     return set(cols).issubset(df)
 
 
-def flatten_list(l):
+def flatten_list(l: list[list[Any]]) -> list[Any]:
+    """
+    Flatten a list of lists into a single list.
+
+    Args:
+        l: List of lists to flatten
+
+    Returns:
+        Flattened list containing all items from sublists
+
+    Example:
+        >>> flatten_list([[1, 2], [3, 4], [5]])
+        [1, 2, 3, 4, 5]
+    """
     return [item for sublist in l for item in sublist]
 
 
-def checkEqual(l1, l2) -> bool:
+def checkEqual(l1: list[Any], l2: list[Any]) -> bool:
+    """
+    Check if two lists contain the same elements (order-independent).
+
+    Args:
+        l1: First list
+        l2: Second list
+
+    Returns:
+        True if both lists contain exactly the same elements
+
+    Example:
+        >>> checkEqual([1, 2, 3], [3, 2, 1])
+        True
+        >>> checkEqual([1, 2], [1, 2, 3])
+        False
+    """
     for a in l1:
         if a not in l2:
             return False
@@ -355,7 +516,20 @@ def checkEqual(l1, l2) -> bool:
     return True
 
 
-def unique_list(l):
+def unique_list(l: list[Any]) -> SuperList:
+    """
+    Remove duplicates from list while preserving order.
+
+    Args:
+        l: List to deduplicate
+
+    Returns:
+        SuperList with duplicates removed, first occurrence preserved
+
+    Example:
+        >>> unique_list([1, 2, 1, 3, 2])
+        [1, 2, 3]
+    """
     if len(l) == 0:
         return SuperList()
     elif len(l) == 1:
@@ -366,7 +540,21 @@ def unique_list(l):
         return SuperList([x for x in l if not (x in seen or seen_add(x))])
 
 
-def np2Dtotuples(a):
+def np2Dtotuples(a: Any) -> list[tuple[Any, Any]]:
+    """
+    Convert 2D numpy array to list of tuples.
+
+    Args:
+        a: 2D numpy array with shape (N, 2) or list of tuples
+
+    Returns:
+        List of (x, y) tuples
+
+    Example:
+        >>> arr = np.array([[1, 2], [3, 4]])
+        >>> np2Dtotuples(arr)
+        [(1, 2), (3, 4)]
+    """
     if isinstance(a, list) and all([isinstance(aa, tuple) for aa in a]):
         return a
     else:

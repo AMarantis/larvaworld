@@ -128,6 +128,26 @@ def init_controls() -> util.AttrDict:
 
 
 class ControlRegistry:
+    """
+    Registry for keyboard and mouse controls in pygame visualizations.
+
+    Manages keyboard shortcuts and mouse controls for interactive simulation
+    visualization. Controls are saved to and loaded from a configuration file.
+
+    Attributes:
+        path: Path to the controls configuration file
+        conf: AttrDict containing control mappings with sections:
+            - keys: Keyboard shortcuts organized by category
+            - mouse: Mouse control mappings
+            - pygame_keys: Pygame key constant mappings
+
+    Example:
+        >>> controls = ControlRegistry()
+        >>> controls.conf.keys['draw']['visible_trails']  # 'p'
+        >>> controls.conf.mouse['select item']  # 'left click'
+        >>> controls.save()  # Save current configuration
+        >>> loaded = controls.load()  # Load from file
+    """
     def __init__(self) -> None:
         self.path = f"{CONF_DIR}/controls.txt"
         self.conf = init_controls()

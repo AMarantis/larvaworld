@@ -135,12 +135,28 @@ class ScreenTextFontRel(ScreenTextFont):
 
 
 class ScreenTextBoxRect(ScreenTextFont, Viewable):
+    """
+    Text box with rectangular frame at fixed screen position.
+
+    Displays text within a rectangular frame, commonly used for
+    labels and status indicators in pygame visualizations.
+
+    Attributes:
+        visible: Whether the text box is visible
+        frame_rect: The rectangular frame object
+        linewidth: Width of the frame border
+        show_frame: Whether to draw the rectangular frame
+
+    Example:
+        >>> text_box = ScreenTextBoxRect(text="Status", frame_rect=rect)
+        >>> text_box.draw(viewer)
+    """
     visible = param.Boolean(False)
     frame_rect = param.ClassSelector(class_=object, doc="The frame rectangle")
     linewidth = PositiveNumber(10.0, doc="The linewidth to draw the box")
     show_frame = param.Boolean(True, doc="Draw the rectangular frame around the text")
 
-    def __init__(self, **kwargs: Any):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.text_centre = self.frame_rect.center
 
@@ -158,12 +174,28 @@ class ScreenTextBoxRect(ScreenTextFont, Viewable):
 
 
 class ScreenTextBox(ScreenTextFont, ViewableToggleable, Area2DPixel):
+    """
+    Toggle-able text box with frame at pixel coordinates.
+
+    Displays text within a rectangular area that can be toggled on/off,
+    with optional frame rendering for UI elements.
+
+    Attributes:
+        dims: Dimensions as (width, height) pixel tuple
+        visible: Whether the text box is visible
+        linewidth: Width of the frame border
+        show_frame: Whether to draw the rectangular frame
+
+    Example:
+        >>> text_box = ScreenTextBox(text="Info", dims=(200, 40))
+        >>> text_box.toggle()  # Show/hide
+    """
     dims = IntegerTuple(default=(140, 32))
     visible = param.Boolean(False)
     linewidth = PositiveNumber(0.001, doc="The linewidth to draw the box")
     show_frame = param.Boolean(True, doc="Draw the rectangular frame around the text")
 
-    def __init__(self, **kwargs: Any):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.frame_rect = None
 
@@ -185,10 +217,24 @@ class ScreenTextBox(ScreenTextFont, ViewableToggleable, Area2DPixel):
 
 
 class IDBox(ScreenTextFont, ViewableToggleable):
+    """
+    Text box displaying agent ID that follows the agent.
+
+    Renders agent unique ID as text near the agent position,
+    using the agent's color for visibility during visualization.
+
+    Attributes:
+        visible: Whether the ID box is visible
+        agent: The agent whose ID is displayed
+
+    Example:
+        >>> id_box = IDBox(agent=larva_agent)
+        >>> id_box.draw(viewer)  # Draws ID text near agent
+    """
     visible = param.Boolean(False)
     agent = param.ClassSelector(class_=Pos2D, doc="The agent owning the ID")
 
-    def __init__(self, **kwargs: Any):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.update_font()
         self.update_agent()
@@ -214,6 +260,21 @@ class PosPixelRel2AreaViewable(PosPixelRel2Area, Viewable):
 
 
 class ScreenMsgText(ScreenTextFontRel, Viewable):
+    """
+    Message text display with relative positioning.
+
+    Displays temporary or persistent messages at screen positions
+    relative to a reference area, used for notifications and alerts.
+
+    Attributes:
+        text_centre_scale: Text center position relative to reference
+        font_size_scale: Font size relative to window size
+        font_type: Font type for rendering
+
+    Example:
+        >>> msg = ScreenMsgText(reference_area=screen_area, text="Paused")
+        >>> msg.draw(viewer)
+    """
     text_centre_scale = param.NumericTuple(
         (0.91, 1), doc="The text center position relative to the position"
     )
@@ -222,7 +283,7 @@ class ScreenMsgText(ScreenTextFontRel, Viewable):
     )
     font_type = param.Parameter(default="SansitaOne.tff")
 
-    def __init__(self, reference_area: Any, **kwargs: Any):
+    def __init__(self, reference_area: Any, **kwargs: Any) -> None:
         reference_object = PosPixelRel2Area(
             reference_area=reference_area, pos_scale=(0.95, 0.1)
         )
@@ -238,9 +299,26 @@ class ScreenMsgText(ScreenTextFontRel, Viewable):
 
 
 class SimulationClock(PosPixelRel2AreaViewable):
+    """
+    Clock display for simulation time tracking.
+
+    Renders current simulation time in HH:MM:SS:ds format (hours:minutes:seconds:deciseconds)
+    at a fixed screen position during visualization.
+
+    Attributes:
+        pos_scale: Position scale relative to screen area
+        sim_step_in_dms: Simulation step size in deciseconds
+        hour, minute, second, dmsecond: Current time components
+        text_fonts: Dictionary of font objects for each time component
+
+    Example:
+        >>> clock = SimulationClock(sim_step_in_sec=0.1, reference_area=screen)
+        >>> clock.tick_clock()  # Advance by one time step
+        >>> clock.draw(viewer)  # Render current time
+    """
     pos_scale = param.NumericTuple((0.94, 0.04))
 
-    def __init__(self, sim_step_in_sec: float, **kwargs: Any):
+    def __init__(self, sim_step_in_sec: float, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         # Time Info
         self.sim_step_in_dms = int(sim_step_in_sec * 100)
@@ -299,9 +377,24 @@ class SimulationClock(PosPixelRel2AreaViewable):
 
 
 class SimulationScale(PosPixelRel2AreaViewable):
+    """
+    Scale bar display for spatial reference.
+
+    Renders a scale bar indicating spatial dimensions in millimeters,
+    helping interpret distances in the visualization.
+
+    Attributes:
+        pos_scale: Position scale relative to screen area
+        text_font: Font object for scale label
+        lines: Line segments forming the scale bar
+
+    Example:
+        >>> scale = SimulationScale(reference_area=screen)
+        >>> scale.draw(viewer)  # Draws scale bar with mm label
+    """
     pos_scale = param.NumericTuple((0.1, 0.04))
 
-    def __init__(self, **kwargs: Any):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         kws = {
             "reference_object": self,
@@ -344,9 +437,25 @@ class SimulationScale(PosPixelRel2AreaViewable):
 
 
 class SimulationState(PosPixelRel2AreaViewable):
+    """
+    Simulation state display for runtime information.
+
+    Renders current simulation state (running, paused, etc.) and
+    other status information during visualization.
+
+    Attributes:
+        pos_scale: Position scale relative to screen area
+        model: Reference to the simulation model
+        text_font: Font object for state text
+
+    Example:
+        >>> state = SimulationState(model=sim_model, reference_area=screen)
+        >>> state.set_text("PAUSED")
+        >>> state.draw(viewer)
+    """
     pos_scale = param.NumericTuple((0.85, 0.94))
 
-    def __init__(self, model: Any, **kwargs: Any):
+    def __init__(self, model: Any, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.model = model
         kws = {

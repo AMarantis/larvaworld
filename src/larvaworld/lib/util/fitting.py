@@ -48,14 +48,22 @@ def simplex(func: Callable[..., float], x0: float | np.ndarray, args: tuple[Any,
 
 def beta0(x0: float, x1: float) -> float:
     """
-    Beta function used in the DEB textbook (p.58)
+    Compute beta function used in DEB textbook (p.58).
+
+    Implements the beta function for Dynamic Energy Budget (DEB) modeling
+    as defined in the DEB textbook, page 58.
 
     Args:
-        x0:float
-        x1:float
+        x0: First parameter value
+        x1: Second parameter value
 
-    Returns:float
+    Returns:
+        Real part of the computed beta function difference
 
+    Example:
+        >>> result = beta0(0.5, 1.0)
+        >>> isinstance(result, float)
+        True
     """
     x03 = x0 ** (1 / 3)
     x13 = x1 ** (1 / 3)

@@ -18,7 +18,14 @@ __all__: list[str] = [
     "ParamRegistry",
 ]
 
-output_dict = AttrDict(
+#: Dictionary mapping module names to their output parameters.
+#:
+#: Each entry contains 'step' (per-timestep) and 'endpoint' (final) outputs.
+#:
+#: Example:
+#:     >>> output_dict['feeder']['step']
+#:     ['l', 'f_am', 'EEB', 'on_food', ...]
+output_dict: AttrDict = AttrDict(
     {
         "olfactor": {
             "step": ["c_odor1", "dc_odor1", "c_odor2", "dc_odor2", "A_olf"],
@@ -111,12 +118,31 @@ output_dict.brain = AttrDict(
     }
 )
 
-output_keys = list(output_dict.keys())
+#: List of all output module names (keys from output_dict).
+#:
+#: Example:
+#:     >>> output_keys
+#:     ['olfactor', 'loco', 'thermo', 'toucher', 'wind', 'feeder', 'gut', ...]
+output_keys: list[str] = list(output_dict.keys())
 
 
 class ParamClass:
     """
-    Class to store Larvaworld parameters in a database
+    Parameter database for storing and managing Larvaworld parameters.
+
+    Provides a comprehensive database of all parameters used in larvaworld simulations,
+    including physical parameters, behavioral parameters, and configuration options.
+    Supports parameter lookup, unit management, and symbolic notation.
+
+    Attributes:
+        dict: Dictionary of parameter definitions
+        ks: List of parameter keys
+        kdict: Flattened parameter dictionary for quick lookup
+
+    Example:
+        >>> pclass = ParamClass()
+        >>> pclass.dict['length']
+        {'p': 'body_length', 'k': 'l', 'd': 'Body length', ...}
     """
 
     def __init__(self) -> None:
@@ -1090,7 +1116,19 @@ class ParamClass:
 
 class ParamRegistry(ParamClass):
     """
-    Class to manage the parameter database.
+    Extended parameter registry with computation and display functionality.
+
+    Extends ParamClass with methods for parameter computation from datasets,
+    performance index (PI) tracking, and parameter display utilities. Used
+    as the central registry for all larvaworld parameter operations.
+
+    Attributes:
+        PI: AttrDict for storing Performance Index calculations
+
+    Example:
+        >>> preg = ParamRegistry()
+        >>> preg.get('l', dataset)  # Get body length parameter
+        >>> preg.compute(ks=['vel', 'acc'], d=dataset)
     """
 
     def __init__(self) -> None:

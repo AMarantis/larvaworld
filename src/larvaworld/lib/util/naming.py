@@ -96,7 +96,37 @@ class TexNaming:
 
 
 class NamingRegistry(AttrDict):
-    def __init__(self, *args: Any, **kwargs: Any):
+    """
+    Registry for systematic parameter naming and LaTeX formatting.
+
+    Provides dynamic attribute-based naming functions for scientific parameters,
+    supporting prefixes, suffixes, separators, and LaTeX math notation. Used
+    throughout larvaworld for consistent parameter naming conventions.
+
+    The registry supports:
+    - Dynamic naming with prefixes (e.g., 'final_', 'initial_')
+    - Parameter name expansions (e.g., 'vel' → 'velocity')
+    - XY coordinate generation for body points
+    - Midline and contour point naming
+    - LaTeX math formatting via TexNaming
+
+    Attributes:
+        k_pref: List of supported prefix keywords
+        k_pairs: Dictionary mapping short names to full names
+        tex: TexNaming instance for LaTeX formatting
+
+    Example:
+        >>> nam = NamingRegistry()
+        >>> nam.vel('x')  # velocity naming
+        'velocity_x'
+        >>> nam.final('position')  # prefix naming
+        'final_position'
+        >>> nam.xy('head')  # XY coordinates
+        ['head_x', 'head_y']
+        >>> nam.midline(3)  # body points
+        ['head', 'point2', 'tail']
+    """
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.k_pref = [
             "final",

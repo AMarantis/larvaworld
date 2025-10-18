@@ -237,27 +237,36 @@ def generate_distro_database():
     return d
 
 
-distroDB = generate_distro_database()
+#: Distribution database containing all predefined bout duration distributions.
+#:
+#: Contains configurations for behavioral bout distributions (pause, run, stridechain)
+#: including powerlaw, exponential, lognormal, levy, and combined distributions.
+#:
+#: Example:
+#:     >>> distroDB['powerlaw']['args']
+#:     ['alpha']
+distroDB: util.AttrDict = generate_distro_database()
 
 
-def get_dist(k: str, k0: str = "intermitter", v: Any = None, return_tabrows: bool = False, return_all: bool = False):
+def get_dist(k: str, k0: str = "intermitter", v: Any = None, return_tabrows: bool = False, return_all: bool = False) -> dict | tuple:
     """
     Retrieve a distribution from the database.
 
-    Parameters
-    ----------
-    k (str): Key to identify the distribution.
-    k0 (str, optional): Module key for the distribution. Defaults to 'intermitter'.
-    v (object, optional): An object containing distribution details. Defaults to None.
-    return_tabrows (bool, optional): If True, returns table rows. Defaults to False.
-    return_all (bool, optional): If True, returns all distribution details. Defaults to False.
+    Args:
+        k: Key to identify the distribution
+        k0: Module key for the distribution. Defaults to 'intermitter'
+        v: An object containing distribution details. Defaults to None
+        return_tabrows: If True, returns table rows. Defaults to False
+        return_all: If True, returns all distribution details. Defaults to False
 
-    Returns
-    -------
-    dict: A dictionary containing distribution details if return_tabrows and return_all are False.
-    tuple: Two lists of table rows if return_tabrows is True.
-    tuple: Three dictionaries containing distribution details if return_all is True.
+    Returns:
+        dict: A dictionary containing distribution details if return_tabrows and return_all are False.
+        tuple: Two lists of table rows if return_tabrows is True.
+        tuple: Three dictionaries containing distribution details if return_all is True.
 
+    Example:
+        >>> dist_info = get_dist('pause_dist', k0='intermitter')
+        >>> table_rows = get_dist('pause_dist', return_tabrows=True)
     """
     dict0 = {
         "stridechain_dist": (
@@ -327,55 +336,48 @@ def fit_bout_distros(
     combine: bool = True,
     fit_by: str = "pdf",
     eval_func_id: str = "KS2",
-):
+) -> util.AttrDict:
     """
-    Fits various distributions to the given data and evaluates their goodness of fit.
+    Fit various distributions to data and evaluate goodness of fit.
 
-    Parameters
-    ----------
-    x0 : array-like
-        The data to fit the distributions to.
-    xmin : float, optional
-        Minimum value to consider for fitting. If None, it is set to the minimum of x0.
-    xmax : float, optional
-        Maximum value to consider for fitting. If None, it is set to the maximum of x0.
-    discrete : bool, optional
-        Whether the data is discrete.
-    xmid : float, optional
-        Midpoint for lognormal-powerlaw distribution. If NaN, it is determined automatically.
-    overlap : float, optional
-        Overlap parameter for lognormal-powerlaw distribution.
-    Nbins : int, optional
-        Number of bins to use for density computation.
-    print_fits : bool, optional
-        Whether to print the fit results.
-    bout : str, optional
-        Label for the bout type.
-    combine : bool, optional
-        Whether to combine distributions.
-    fit_by : str, optional
-        Criterion to fit by ('pdf' or 'cdf').
-    eval_func_id : str, optional
-        Evaluation function identifier ('MSE', 'KS', 'KS2').
+    Fits multiple distribution types (powerlaw, exponential, lognormal, lognormal-powerlaw,
+    levy, normal, uniform) to the given data and evaluates their goodness of fit using
+    the specified evaluation function.
 
-    Returns
-    -------
-    dic : AttrDict
-        Dictionary containing fit results, including:
-        - values: Computed density values.
-        - pdfs: Probability density functions of the fitted distributions.
-        - cdfs: Cumulative density functions of the fitted distributions.
-        - Ks: Goodness of fit values.
-        - idx_Kmax: Index of the best fitting distribution.
-        - res: Rounded fit parameters.
-        - best: Dictionary of the best fitting distribution parameters.
-        - fits: Dictionary of all fit parameters.
+    Args:
+        x0: The data to fit the distributions to
+        xmin: Minimum value to consider for fitting. If None, set to minimum of x0
+        xmax: Maximum value to consider for fitting. If None, set to maximum of x0
+        discrete: Whether the data is discrete. Defaults to False
+        xmid: Midpoint for lognormal-powerlaw distribution. If NaN, determined automatically
+        overlap: Overlap parameter for lognormal-powerlaw distribution. Defaults to 0.0
+        Nbins: Number of bins to use for density computation. Defaults to 64
+        print_fits: Whether to print the fit results. Defaults to False
+        bout: Label for the bout type. Defaults to 'pause'
+        combine: Whether to combine distributions. Defaults to True
+        fit_by: Criterion to fit by ('pdf' or 'cdf'). Defaults to 'pdf'
+        eval_func_id: Evaluation function identifier ('MSE', 'KS', 'KS2'). Defaults to 'KS2'
 
-    Notes
-    -----
-    This function fits several distributions (powerlaw, exponential, lognormal, lognormal-powerlaw, levy, normal, uniform)
-    to the given data and evaluates their goodness of fit using the specified evaluation function.
+    Returns:
+        util.AttrDict: Dictionary containing fit results, including:
+            - values: Computed density values
+            - pdfs: Probability density functions of the fitted distributions
+            - cdfs: Cumulative density functions of the fitted distributions
+            - Ks: Goodness of fit values
+            - idx_Kmax: Index of the best fitting distribution
+            - res: Rounded fit parameters
+            - best: Dictionary of the best fitting distribution parameters
+            - fits: Dictionary of all fit parameters
 
+    Note:
+        This function fits several distributions (powerlaw, exponential, lognormal,
+        lognormal-powerlaw, levy, normal, uniform) to the given data and evaluates
+        their goodness of fit using the specified evaluation function.
+
+    Example:
+        >>> data = np.random.exponential(2.0, 1000)
+        >>> results = fit_bout_distros(data, xmin=0.1, xmax=10.0, bout='pause')
+        >>> best_fit = results['best']
     """
 
     def compute_density(x, xmin, xmax, Nbins=64):
@@ -712,10 +714,26 @@ def fit_bout_distros(
 
 class BoutGenerator:
     """
-    Class for generating behavioral epochs of given temporal-duration distribution
+    Generator for behavioral bout durations from statistical distributions.
+
+    Creates random bout durations (pause, run, stridechain) based on specified
+    distribution types from the distribution database. Supports powerlaw,
+    exponential, lognormal, levy, and other distributions.
+
+    Attributes:
+        name: Distribution name from distroDB
+        dt: Time step for converting to real time units
+        range: Valid range as (xmin, xmax) tuple
+        args: Distribution-specific arguments
+        dist: Built scipy.stats distribution object
+
+    Example:
+        >>> gen = BoutGenerator('exponential', range=(0.1, 10.0), dt=0.1, beta=0.5)
+        >>> duration = gen.sample()  # Single bout duration
+        >>> durations = gen.sample(size=100)  # 100 bout durations
     """
 
-    def __init__(self, name: str, range: tuple[float, float], dt: float, **kwargs: Any):
+    def __init__(self, name: str, range: tuple[float, float], dt: float, **kwargs: Any) -> None:
         self.name = name
         self.dt = dt
         self.range = range
