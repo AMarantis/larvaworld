@@ -56,6 +56,27 @@ def _ensure_matplotlib_config():
 
 
 class BasePlot:
+    """
+    Base class for creating customizable matplotlib plots.
+    
+    Provides common functionality for plot generation, styling, and output
+    management. Handles figure/axes creation, saving, and display options.
+    Subclasses implement specific plot types by overriding plot methods.
+    
+    Attributes:
+        filename: Output filename with extension
+        fit_filename: Filename for fit data CSV
+        save_to: Directory path for saving plots
+        return_fig: Whether to return figure object
+        show: Whether to display plot immediately
+        build_kws: Keyword arguments for figure building
+        
+    Example:
+        >>> plotter = BasePlot(name='myplot', save_to='./plots', suf='png')
+        >>> plotter.build(nrows=2, ncols=2)
+        >>> # ... add plot content ...
+        >>> plotter.save()
+    """
     def __init__(
         self,
         name: str = "larvaworld_plot",
@@ -399,6 +420,23 @@ class BasePlot:
 
 
 class AutoBasePlot(BasePlot):
+    """
+    Automatic plot generation with immediate figure building.
+    
+    Extends BasePlot by automatically calling build() during initialization,
+    creating the matplotlib figure and axes immediately. Supports both 2D
+    and 3D plots with customizable viewing angles.
+    
+    Attributes:
+        fig: Matplotlib Figure object
+        ax: Matplotlib Axes object (or array of Axes for subplots)
+        dim3: Whether plot is 3D
+        
+    Example:
+        >>> plot = AutoBasePlot(nrows=2, ncols=2, dim3=False)
+        >>> plot.ax[0, 0].plot(x, y)  # Use axes directly
+        >>> plot.save()
+    """
     def __init__(
         self,
         fig: Optional["Figure"] = None,
@@ -414,6 +452,28 @@ class AutoBasePlot(BasePlot):
 
 
 class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
+    """
+    Automatic plot generation with larvaworld dataset integration.
+    
+    Combines AutoBasePlot functionality with LarvaDatasetCollection to
+    enable direct plotting from larvaworld LarvaDataset objects. Handles
+    multiple datasets with automatic labeling, coloring, and unit conversion.
+    
+    Attributes:
+        datasets: Collection of LarvaDataset objects
+        labels: Dataset labels for legend
+        colors: Colors for each dataset
+        ks: Parameter keys to plot
+        key: Indexing key ('step', 'time', etc.)
+        klabels: Custom labels for parameters
+        Ndatasets: Number of datasets
+        Nks: Number of parameters
+        
+    Example:
+        >>> plot = AutoPlot(datasets=[d1, d2], labels=['Control', 'Test'])
+        >>> plot.plot(ks=['v', 'a'])  # Plot velocity and acceleration
+        >>> plot.save()
+    """
     def __init__(
         self,
         ks: Sequence[str] = [],
@@ -429,14 +489,6 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
         space_unit: str = "mm",
         **kwargs: Any,
     ) -> None:
-        """
-        Extension of the basic plotting class that receives datasets of type larvaworld.LarvaDataset
-        Args:
-            datasets: The datasets to access for plotting
-            labels: The labels by which the datasets will be indicated in the plots. If not specified the IDs of the datasets will be used
-            add_samples: Whether to also plot the reference datasets of any simulated datasets
-            **kwargs:
-        """
         LarvaDatasetCollection.__init__(
             self,
             datasets=datasets,
@@ -463,7 +515,7 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
             try:
                 dfs = self.datasets.get_par(k=k, key=key) * coeff
 
-                def get_vs_from_df(df):
+                def get_vs_from_df(df: pd.DataFrame) -> np.ndarray:
                     assert df is not None
                     v = df.dropna().values
                     if absolute:
@@ -815,6 +867,29 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
 
 
 class GridPlot(BasePlot):
+    """
+    Multi-panel grid layout for composite plots.
+    
+    Creates a grid-based figure layout using matplotlib GridSpec for
+    organizing multiple subplots. Supports automatic subplot placement
+    with optional lettering (A, B, C, ...) and flexible sizing.
+    
+    Attributes:
+        width: Number of columns in grid
+        height: Number of rows in grid
+        fig: Matplotlib Figure object
+        grid: GridSpec layout manager
+        cur_w: Current column position
+        cur_h: Current row position
+        letters: List of panel labels
+        letter_dict: Mapping of panel positions to letters
+        
+    Example:
+        >>> grid = GridPlot(name='composite', width=3, height=2)
+        >>> ax1 = grid.add()  # Add first panel
+        >>> ax2 = grid.add(N=2)  # Add panel spanning 2 columns
+        >>> grid.save()
+    """
     def __init__(
         self,
         name: str,
@@ -823,10 +898,6 @@ class GridPlot(BasePlot):
         scale: Tuple[int, int] = (1, 1),
         **kwargs: Any,
     ) -> None:
-        """
-        Class for compiling composite plots
-
-        """
         super().__init__(name, **kwargs)
         ws, hs = scale
         self.width, self.height = width, height

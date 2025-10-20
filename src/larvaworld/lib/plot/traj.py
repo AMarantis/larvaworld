@@ -35,6 +35,27 @@ def traj_1group(
     time_range: Optional[Tuple[int, int]] = None,
     **kwargs: Any,
 ) -> Any:
+    """
+    Plot trajectories for a single dataset.
+    
+    Creates 2D trajectory plot showing movement paths of all individuals
+    within arena boundaries with food sources marked.
+    
+    Args:
+        d: Dataset containing trajectory data
+        unit: Distance unit ('mm' or 'm'). Defaults to 'mm'
+        mode: Trajectory mode. Defaults to 'default'
+        title: Plot title. Defaults to None
+        single_color: Use single color for all tracks. Defaults to False
+        time_range: Time range (start, end) to slice. Defaults to None
+        **kwargs: Additional arguments passed to AutoBasePlot
+        
+    Returns:
+        Plot output (figure object or None based on return_fig setting)
+        
+    Example:
+        >>> fig = traj_1group(dataset, unit='mm', single_color=True)
+    """
     df = d.load_traj(mode=mode)
     xy = d.timeseries_slice(time_range=time_range, df=df)[d.c.traj_xy]
     c = d.config
@@ -83,6 +104,27 @@ def traj_grouped(
     single_color: bool = False,
     **kwargs: Any,
 ) -> Any:
+    """
+    Plot trajectories grouped by dataset.
+    
+    Creates multi-panel trajectory plots with one panel per dataset,
+    showing all individual tracks within each dataset.
+    
+    Args:
+        unit: Distance unit ('mm' or 'm'). Defaults to 'mm'
+        name: Plot name for saving. Auto-generated if None
+        subfolder: Subfolder for saving. Defaults to 'trajectories'
+        range: Time range (start, end) to slice. Defaults to None
+        mode: Trajectory mode. Defaults to 'default'
+        single_color: Use single color per dataset. Defaults to False
+        **kwargs: Additional arguments passed to AutoPlot
+        
+    Returns:
+        Plot output (figure object or None based on return_fig setting)
+        
+    Example:
+        >>> fig = traj_grouped(datasets=[d1, d2], unit='mm', range=(0, 60))
+    """
     if name is None:
         name = f"comparative_trajectories_{mode}"
 
@@ -160,6 +202,36 @@ def track_annotated(
     min_amp: Optional[float] = None,
     **kwargs: Any,
 ) -> Any:
+    """
+    Create annotated track with behavioral epochs highlighted.
+    
+    Generates time series plot with stride/turn epochs shown as colored
+    background regions and extrema marked.
+    
+    Args:
+        epoch: Epoch type ('stride' or 'turn'). Defaults to 'stride'
+        a: Parameter array to plot. Defaults to None
+        dt: Time step in seconds. Defaults to 0.1
+        a2plot: Alternative parameter to overlay. Defaults to None
+        ylab: Y-axis label. Auto-generated if None
+        ylim: Y-axis limits. Defaults to None
+        xlim: X-axis limits. Defaults to None
+        slice: Time slice (start, end). Defaults to None
+        agent_idx: Agent index. Defaults to 0
+        agent_id: Specific agent ID. Uses agent_idx if None
+        subfolder: Subfolder for saving. Defaults to 'tracks'
+        moving_average_interval: Smoothing window. Defaults to None
+        epoch_boundaries: Show epoch boundaries. Defaults to True
+        show_extrema: Mark velocity extrema. Defaults to True
+        min_amp: Minimum amplitude for turns. Defaults to None
+        **kwargs: Additional arguments passed to AutoPlot
+        
+    Returns:
+        Plot output (figure object or None based on return_fig setting)
+        
+    Example:
+        >>> fig = track_annotated(datasets=[d1], epoch='stride', agent_idx=0)
+    """
     temp = f"track_{slice[0]}-{slice[1]}" if slice is not None else "track"
     name = f"{temp}_{agent_id}" if agent_id is not None else f"{temp}_{agent_idx}"
     P = plot.AutoPlot(
@@ -180,7 +252,7 @@ def track_annotated(
 
     ax = P.axs[0]
 
-    def stride_epochs(a, ax):
+    def stride_epochs(a: np.ndarray, ax: Any) -> Tuple[list, np.ndarray]:
         i_min, i_max, strides = d.detect_strides(a=a)
         runs, run_counts = d.detect_stridechains(strides)
         if show_extrema and a2plot is None:
@@ -203,7 +275,7 @@ def track_annotated(
         pauses = d.detect_pauses(a, runs=runs)
         return [runs, pauses], strides
 
-    def turn_epochs(a, ax):
+    def turn_epochs(a: np.ndarray, ax: Any) -> Tuple[list, np.ndarray]:
         ax.axhline(0, color="black", alpha=1, linestyle="dashed", linewidth=1)
         Lturns, Rturns = d.detect_turns(a)
         if min_amp is not None:
@@ -288,10 +360,38 @@ def track_annotated(
 
 
 def annotated_strideplot(**kwargs: Any) -> Any:
+    """
+    Create stride-annotated track plot.
+    
+    Wrapper function that creates track with stride epochs highlighted.
+    
+    Args:
+        **kwargs: Arguments passed to track_annotated
+        
+    Returns:
+        Plot output (figure object or None based on return_fig setting)
+        
+    Example:
+        >>> fig = annotated_strideplot(datasets=[d1], agent_idx=0)
+    """
     return track_annotated(epoch="stride", **kwargs)
 
 
 def annotated_turnplot(**kwargs: Any) -> Any:
+    """
+    Create turn-annotated track plot.
+    
+    Wrapper function that creates track with turn epochs highlighted.
+    
+    Args:
+        **kwargs: Arguments passed to track_annotated
+        
+    Returns:
+        Plot output (figure object or None based on return_fig setting)
+        
+    Example:
+        >>> fig = annotated_turnplot(datasets=[d1], agent_idx=0)
+    """
     return track_annotated(epoch="turn", **kwargs)
 
 
@@ -304,6 +404,27 @@ def track_annotated_data(
     dur: float = 1,
     **kwargs: Any,
 ) -> Any:
+    """
+    Create annotated tracks for multiple individuals from datasets.
+    
+    Generates multi-panel figure with annotated tracks for multiple agents,
+    showing behavioral epochs and trajectory metrics.
+    
+    Args:
+        name: Plot name for saving. Auto-generated if None
+        subfolder: Subfolder for saving. Defaults to 'tracks'
+        epoch: Epoch type ('stride' or 'turn'). Defaults to 'stride'
+        a2plot_k: Additional parameter key to overlay. Defaults to None
+        agent_idx: List of agent indices to plot. Defaults to [3, 4, 5, 6]
+        dur: Duration in minutes. Defaults to 1
+        **kwargs: Additional arguments passed to AutoPlot
+        
+    Returns:
+        Plot output (figure object or None based on return_fig setting)
+        
+    Example:
+        >>> fig = track_annotated_data(datasets=[d1, d2], epoch='stride', agent_idx=[0, 1, 2])
+    """
     if name is None:
         name = f"annotated_{epoch}plot"
     Nidx = len(agent_idx)
@@ -325,7 +446,7 @@ def track_annotated_data(
     epoch_kdic = {"stride": "sv", "turn": "fov"}
     apar = reg.getPar(epoch_kdic[epoch])
 
-    def get_a(ss):
+    def get_a(ss: Any) -> np.ndarray:
         return ss[apar].values
 
     if a2plot_k is not None:
@@ -333,10 +454,10 @@ def track_annotated_data(
     else:
         par, lab = None, None
 
-    def get_a2plot(ss):
+    def get_a2plot(ss: Any) -> Optional[np.ndarray]:
         return ss[par].values if par is not None else None
 
-    def get_title(idx, c, e, l):
+    def get_title(idx: int, c: Any, e: Any, l: str) -> str:
         id = c.agent_ids[idx]
         ee = e.loc[id]
 
@@ -392,11 +513,41 @@ def track_annotated_data(
 
 @funcs.graph("stride track")
 def annotated_strideplot_data(**kwargs: Any) -> Any:
+    """
+    Create stride-annotated tracks for multiple individuals.
+    
+    Wrapper that generates annotated tracks with stride epochs for
+    multiple agents from datasets.
+    
+    Args:
+        **kwargs: Arguments passed to track_annotated_data
+        
+    Returns:
+        Plot output (figure object or None based on return_fig setting)
+        
+    Example:
+        >>> fig = annotated_strideplot_data(datasets=[d1, d2], agent_idx=[0, 1])
+    """
     return track_annotated_data(epoch="stride", **kwargs)
 
 
 @funcs.graph("turn track")
 def annotated_turnplot_data(**kwargs: Any) -> Any:
+    """
+    Create turn-annotated tracks for multiple individuals.
+    
+    Wrapper that generates annotated tracks with turn epochs for
+    multiple agents from datasets.
+    
+    Args:
+        **kwargs: Arguments passed to track_annotated_data
+        
+    Returns:
+        Plot output (figure object or None based on return_fig setting)
+        
+    Example:
+        >>> fig = annotated_turnplot_data(datasets=[d1, d2], agent_idx=[0, 1])
+    """
     return track_annotated_data(epoch="turn", **kwargs)
 
 
@@ -404,6 +555,25 @@ def annotated_turnplot_data(**kwargs: Any) -> Any:
 def plot_marked_strides(
     agent_idx: int = 0, agent_id: Optional[str] = None, slice: Sequence[int] = [20, 40], subfolder: str = "individuals", **kwargs: Any
 ) -> Any:
+    """
+    Plot velocity track with marked stride epochs.
+    
+    Creates time series showing velocity with stride and pause epochs
+    highlighted and extrema marked for individual analysis.
+    
+    Args:
+        agent_idx: Agent index. Defaults to 0
+        agent_id: Specific agent ID. Uses agent_idx if None
+        slice: Time slice [start, end] in seconds. Defaults to [20, 40]
+        subfolder: Subfolder for saving. Defaults to 'individuals'
+        **kwargs: Additional arguments passed to AutoPlot
+        
+    Returns:
+        Plot output (figure object or None based on return_fig setting)
+        
+    Example:
+        >>> fig = plot_marked_strides(datasets=[d1, d2], agent_idx=0, slice=[0, 60])
+    """
     temp = (
         f"marked_strides_{slice[0]}-{slice[1]}"
         if slice is not None
@@ -493,6 +663,26 @@ def plot_sample_tracks(
     subfolder: str = "individuals",
     **kwargs: Any,
 ) -> Any:
+    """
+    Plot sample tracks with stride and/or turn annotations.
+    
+    Creates multi-panel figure showing strides and/or turns for sample
+    individuals across datasets with detailed epoch marking.
+    
+    Args:
+        mode: Plot modes ('strides', 'turns', or both). Defaults to both
+        agent_idx: Agent index. Defaults to 4
+        agent_id: Specific agent ID. Uses agent_idx if None
+        slice: Time slice [start, end] in seconds. Defaults to [0, 160]
+        subfolder: Subfolder for saving. Defaults to 'individuals'
+        **kwargs: Additional arguments passed to AutoPlot
+        
+    Returns:
+        Plot output (figure object or None based on return_fig setting)
+        
+    Example:
+        >>> fig = plot_sample_tracks(datasets=[d1, d2], mode=['strides'], slice=[0, 120])
+    """
     Nrows = len(mode)
     if Nrows == 2:
         suf = "stridesVSturns"
