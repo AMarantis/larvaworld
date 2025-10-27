@@ -141,7 +141,6 @@ addopts = """\
     -Wdefault
     --cov=larvaworld
     --cov-report=xml
-    -n auto
     """
 pythonpath = [ "src" ]
 markers = [

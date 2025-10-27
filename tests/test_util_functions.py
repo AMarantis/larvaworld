@@ -352,15 +352,11 @@ class TestShapelyAux:
             pytest.skip("shapely not available")
 
 
-@pytest.mark.slow
 class TestSlowUtil:
     """Slow utility tests"""
     
     def test_large_file_operations(self, tmp_path):
         """Test operations on large file sets"""
-        # Skip this in fast mode
-        pytest.skip("Slow test - skipped by default")
-        
         # Create many files
         for i in range(100):
             (tmp_path / f"test_{i:03d}.txt").touch()
