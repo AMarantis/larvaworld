@@ -66,7 +66,7 @@ class OptimizationOps(NestedConf):
         """
         if fits.shape[0] >= self.max_Nsims:
             vprint("Maximum number of simulations reached. Halting search", 2)
-        elif self.threshold_reached:
+        elif self.threshold_reached(fits):
             vprint("Best result reached threshold. Halting search", 2)
         else:
             vprint("Not reached threshold. Expanding space search", 2)
@@ -287,7 +287,7 @@ def space_search_sample(space_dict: dict[str, Any], n: int = 1, **kwargs: Any):
     for p, args in space_dict.items():
         if not isinstance(args, dict) or ("values" not in args and "range" not in args):
             D[p] = args
-        elif args["values"] is not None:
+        elif "values" in args and args["values"] is not None:
             D[p] = ap.Values(*args["values"])
         else:
             r0, r1 = args["range"]
