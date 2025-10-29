@@ -194,8 +194,17 @@ class LarvaGroup(NestedConf):
 
     def __init__(self, model: Optional[str | dict] = None, group_id: Optional[str] = None, **kwargs: Any) -> None:
         if group_id is None:
-            group_id = model if model is not None else "LarvaGroup"
-        super().__init__(model=model, group_id=group_id, **kwargs)
+            group_id = model if isinstance(model, str) else "LarvaGroup"
+        
+        # Handle model parameter: if dict, set after init to bypass selector validation
+        if isinstance(model, dict):
+            super().__init__(group_id=group_id, **kwargs)
+            # Bypass parameter validation by setting directly via param API
+            self.param.model.check_on_set = False
+            self.model = model
+            self.param.model.check_on_set = True
+        else:
+            super().__init__(model=model, group_id=group_id, **kwargs)
 
     def entry(self, expand: bool = False, as_entry: bool = True) -> AttrDict:
         C = self.nestedConf

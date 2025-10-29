@@ -220,12 +220,16 @@ def combine_pdfs(
         )
     import pypdf
 
-    merger = pypdf.PdfMerger()
+    # Use PdfWriter instead of deprecated PdfMerger (removed in pypdf 5.0.0)
+    writer = pypdf.PdfWriter()
     for f in files:
-        merger.append(pypdf.PdfReader(open(f, "rb")))
+        reader = pypdf.PdfReader(open(f, "rb"))
+        for page in reader.pages:
+            writer.add_page(page)
 
     if save_to is None:
         save_to = file_dir
     filepath = os.path.join(save_to, save_as)
-    merger.write(filepath)
+    with open(filepath, "wb") as output_file:
+        writer.write(output_file)
     print(f"Concatenated pdfs saved as {filepath}")

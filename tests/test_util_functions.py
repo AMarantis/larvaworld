@@ -60,21 +60,57 @@ class TestCombining:
         files = combining.files_in_dir(str(tmp_path), suf=".txt", pref="test")
         assert len(files) >= 1  # At least test1.txt
     
-    def test_combine_pdfs(self):
-        """Test PDF combination - skip if pypdf incompatible"""
-        try:
-            # Create minimal PDF-like bytes
-            pdf1 = b"%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF"
-            pdf2 = b"%PDF-1.4\n2 0 obj\n<<>>\nendobj\n%%EOF"
-            
-            result = combining.combine_pdfs([pdf1, pdf2])
-            
-            # Should return bytes that start with PDF header
-            assert isinstance(result, bytes)
-            assert result.startswith(b"%PDF")
-        except Exception as e:
-            # Skip test if PDF combination fails due to version issues
-            pytest.skip(f"PDF combination test skipped due to: {e}")
+    def test_combine_pdfs(self, tmp_path):
+        """Test PDF combination with real PDF files"""
+        # Skip if pypdf not available
+        pytest.importorskip("pypdf")
+        
+        # Create two minimal valid PDF files
+        pdf1_path = tmp_path / "test1.pdf"
+        pdf2_path = tmp_path / "test2.pdf"
+        output_path = tmp_path / "combined.pdf"
+        
+        # Minimal valid PDF structure
+        minimal_pdf = b"""%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /MediaBox [0 0 612 792] >>
+endobj
+xref
+0 4
+0000000000 65535 f 
+0000000009 00000 n 
+0000000074 00000 n 
+0000000120 00000 n 
+trailer
+<< /Size 4 /Root 1 0 R >>
+startxref
+328
+%%EOF
+"""
+        
+        pdf1_path.write_bytes(minimal_pdf)
+        pdf2_path.write_bytes(minimal_pdf)
+        
+        # Test combining PDFs
+        combining.combine_pdfs(
+            files=[str(pdf1_path), str(pdf2_path)],
+            save_to=str(tmp_path),
+            save_as="combined.pdf"
+        )
+        
+        # Check output was created
+        assert output_path.exists()
+        assert output_path.stat().st_size > 0
+        
+        # Read and verify it's a PDF
+        content = output_path.read_bytes()
+        assert content.startswith(b"%PDF")
 
 
 class TestColor:
@@ -326,17 +362,14 @@ class TestNanInterpolation:
         np.testing.assert_array_equal(interpolated, data)
     
     def test_interpolate_nans_all_nans(self):
-        """Test interpolation with all NaNs - should handle gracefully"""
+        """Test interpolation with all NaNs - should handle or raise"""
         data = np.array([np.nan, np.nan, np.nan])
         
-        # This may raise or return zeros - either is acceptable
-        try:
-            interpolated = interpolate_nans(data)
-            # If it doesn't raise, check it returns something valid
-            assert len(interpolated) == 3
-        except (ValueError, IndexError):
-            # It's OK to raise on all-NaN input
-            pytest.skip("Function raises on all-NaN input (acceptable behavior)")
+        # With all NaNs, np.interp will have no valid points to interpolate from
+        # This will cause an error - the function should handle this edge case
+        # For now we expect it to raise ValueError
+        with pytest.raises((ValueError, IndexError)):
+            interpolate_nans(data)
 
 
 class TestShapelyAux:
