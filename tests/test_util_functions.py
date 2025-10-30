@@ -103,7 +103,7 @@ startxref
             save_to=str(tmp_path),
             save_as="combined.pdf"
         )
-        
+            
         # Check output was created
         assert output_path.exists()
         assert output_path.stat().st_size > 0
