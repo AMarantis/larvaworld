@@ -22,11 +22,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install system dependencies (Ubuntu)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y liblzo2-dev libblosc-dev libhdf5-dev
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -74,6 +69,9 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew install lzo c-blosc hdf5
+          echo "HDF5_DIR=$(brew --prefix hdf5)" >> $GITHUB_ENV
+          echo "BLOSC_DIR=$(brew --prefix c-blosc)" >> $GITHUB_ENV
+          echo "LZO_DIR=$(brew --prefix lzo)" >> $GITHUB_ENV
 
       - name: Set up Python
         uses: actions/setup-python@v5
