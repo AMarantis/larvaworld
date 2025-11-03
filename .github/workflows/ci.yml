@@ -50,7 +50,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        os: [ ubuntu-latest, windows-latest ]  # TODO: macOS disabled due to PyTables compilation issues
+        # os: [ ubuntu-latest, macos-latest, windows-latest ]
         python-version: [ '3.10', '3.11' ]
         exclude:
           - os: ubuntu-latest
@@ -82,28 +83,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install -U pip
-          # Avoid building heavy C-extensions (e.g., PyTables) on smoke jobs
-          # Install project without deps, then add a minimal runtime stack (no tables)
-          pip install "setuptools<81"
-          pip install -e . --no-deps
+          pip install -e .
           pip install pytest pytest-xdist pytest-cov
-          pip install \
-            "numpy==1.24.*" \
-            "pandas==2.0.*" \
-            "matplotlib==3.7.*" \
-            "seaborn==0.13.*" \
-            "shapely==2.0.*" \
-            "scipy==1.9.*" \
-            "scikit-learn==1.3.*" \
-            "param==2.1.*" \
-            "panel==1.2.*" \
-            "holoviews==1.17.*" \
-            "hvplot==0.10.*" \
-            "imageio==2.35.*" \
-            "pypdf==5.0.*" \
-            "typer==0.9.*" \
-            "rich>=10" \
-            "filelock>=3.12.0"
 
       - name: Run fast + non-slow integration (no data)
         env:
