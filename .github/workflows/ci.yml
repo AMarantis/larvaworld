@@ -59,6 +59,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install HDF5 (macOS only)
+        if: runner.os == 'macOS'
+        run: brew install hdf5
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -69,7 +73,7 @@ jobs:
         run: |
           python -m pip install -U pip
           pip install -e .
-          pip install pytest pytest-xdist
+          pip install pytest pytest-xdist pytest-cov
 
       - name: Run fast + non-slow integration (no data)
         env:
