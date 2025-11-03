@@ -12,8 +12,9 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = [pytest.mark.integration, pytest.mark.fast]
 
-@pytest.mark.requires_data
+
 def test_default_reference_dataset_available(dataset_lock):
     """LarvaDataset refID should load and expose persisted artefacts."""
     import importlib
@@ -30,7 +31,6 @@ def test_default_reference_dataset_available(dataset_lock):
     assert (data_dir / "conf.txt").exists(), "processed conf.txt not found"
 
 
-@pytest.mark.requires_data
 def test_larvagroup_accepts_dict_model(dataset_lock):
     """Regression test for dict-valued model parameter (fixed in PR-3E)."""
     from larvaworld.lib import reg
@@ -46,7 +46,6 @@ def test_larvagroup_accepts_dict_model(dataset_lock):
     assert group.expanded_model == model_conf
 
 
-@pytest.mark.requires_data
 def test_reference_dataset_loads_via_registry(dataset_lock):
     """Reference dataset should load through the registry API and expose files on disk."""
     from larvaworld.lib import reg

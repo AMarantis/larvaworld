@@ -37,45 +37,47 @@ LEGACY_TEST_REL_PATHS = {
     "unit/util/test_util_fft.py",
 }
 
+INTEGRATION_SLOW_PATHS = {
+    "integration/test_analysis.py",
+    "integration/test_evaluation.py",
+    "integration/test_calibration_real.py",
+    "integration/plot/test_plotting_legacy.py",
+    "integration/process/test_import_legacy.py",
+    "integration/process/test_import_schleyer.py",
+    "integration/sim/test_sim_box2d.py",
+    "integration/sim/test_sim_experiments.py",
+    "integration/sim/test_sim_ga.py",
+    "integration/sim/test_sim_replay.py",
+}
 
-def pytest_addoption(parser: pytest.Parser) -> None:
-    """Register CLI flags to toggle optional integration suites."""
-    parser.addoption(
-        "--run-requires-data",
-        action="store_true",
-        default=False,
-        help="run tests marked with @pytest.mark.requires_data",
-    )
-    parser.addoption(
-        "--run-requires-network",
-        action="store_true",
-        default=False,
-        help="run tests marked with @pytest.mark.requires_network",
-    )
+INTEGRATION_FAST_PATHS = {
+    "integration/cli/test_cli_entrypoints.py",
+    "integration/process/test_import_aux.py",
+    "integration/reg/test_registry_bootstrap.py",
+    "integration/stored_confs/test_essay_conf_integration.py",
+}
+
+OPTIONAL_DEP_PATHS = {
+    "integration/sim/test_sim_box2d.py",
+}
 
 
 def pytest_configure(config: pytest.Config) -> None:
     """Register custom markers for marker-aware filtering."""
-    config.addinivalue_line(
-        "markers",
-        "legacy: Legacy Larvaworld test suite (pre-refactor).",
-    )
+    marker_definitions = {
+        "fast": "Fast unit/logic tests without heavy sims or plotting.",
+        "slow": "Heavier tests (simulations, GA runs, or end-to-end plotting).",
+        "integration": "Tests that exercise real Larvaworld subsystems (registry, pipelines, simulations).",
+        "optional_dep": "Tests that rely on optional third-party dependencies.",
+        "legacy": "Legacy Larvaworld test suite (pre-refactor).",
+    }
+    for name, description in marker_definitions.items():
+        config.addinivalue_line("markers", f"{name}: {description}")
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
-    """Skip requires_data / requires_network tests unless explicitly enabled."""
-    run_data = config.getoption("--run-requires-data")
-    run_network = config.getoption("--run-requires-network")
-
-    skip_data = pytest.mark.skip(reason="requires real datasets (use --run-requires-data)")
-    skip_network = pytest.mark.skip(reason="requires network access (use --run-requires-network)")
-
+    """Auto-mark tests based on their location for easier filtering."""
     for item in items:
-        if "requires_data" in item.keywords and not run_data:
-            item.add_marker(skip_data)
-        if "requires_network" in item.keywords and not run_network:
-            item.add_marker(skip_network)
-
         try:
             rel_path = Path(item.fspath).resolve().relative_to(TESTS_ROOT).as_posix()
         except ValueError:
@@ -83,6 +85,20 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
 
         if rel_path in LEGACY_TEST_REL_PATHS:
             item.add_marker("legacy")
+
+        if rel_path.startswith("unit/") and item.get_closest_marker("fast") is None:
+            item.add_marker("fast")
+
+        if rel_path.startswith("integration/"):
+            if item.get_closest_marker("integration") is None:
+                item.add_marker("integration")
+            if rel_path in INTEGRATION_SLOW_PATHS:
+                item.add_marker("slow")
+            elif rel_path in INTEGRATION_FAST_PATHS or item.get_closest_marker("fast") is None:
+                item.add_marker("fast")
+
+        if rel_path in OPTIONAL_DEP_PATHS:
+            item.add_marker("optional_dep")
 
 
 @pytest.fixture(autouse=True, scope="session")

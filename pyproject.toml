@@ -140,15 +140,21 @@ lint.isort.known-first-party = [ "larvaworld", "tests" ]
 addopts = """\
     -v
     -Wdefault
+    --slow
     --cov=larvaworld
     --cov-report=xml
     """
 pythonpath = [ "src" ]
 markers = [
-    "slow: integration tests (>5s)",
-    "unit: fast unit tests (<1s)",
-    "requires_data: tests that need real datasets or processed artefacts",
-    "requires_network: tests that download data from external sources",
+    "fast: Fast unit/logic tests without heavy simulations or plotting.",
+    "slow: Heavier tests (simulations, GA runs, legacy plotting).",
+    "integration: Tests that exercise real Larvaworld subsystems (registry, pipelines, simulations).",
+    "optional_dep: Tests that rely on optional third-party dependencies (e.g. Box2D).",
+    "legacy: Legacy Larvaworld test suite (pre-refactor).",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::UserWarning",
 ]
 
 [tool.coverage.run]

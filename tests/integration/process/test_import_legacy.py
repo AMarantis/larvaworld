@@ -6,7 +6,11 @@ import larvaworld
 import larvaworld.lib.process.dataset
 import larvaworld.lib.reg as reg
 
-pytestmark = pytest.mark.skip(reason="legacy integration tests kept for manual execution")
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.slow,
+    pytest.mark.skip(reason="legacy integration tests kept for manual execution"),
+]
 
 
 def test_import_Schleyer():

@@ -2,6 +2,8 @@ import pytest
 from larvaworld.lib.sim import ExpRun
 from larvaworld.lib.process import LarvaDataset
 
+pytestmark = [pytest.mark.integration, pytest.mark.slow]
+
 expIDs = ["dispersion", "chemorbit"]
 
 

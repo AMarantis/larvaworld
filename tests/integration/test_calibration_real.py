@@ -6,7 +6,7 @@ Requires ensure_datasets_ready fixture.
 """
 import pytest
 
-pytestmark = [pytest.mark.requires_data]
+pytestmark = [pytest.mark.integration, pytest.mark.slow]
 
 
 @pytest.mark.usefixtures("ensure_datasets_ready")

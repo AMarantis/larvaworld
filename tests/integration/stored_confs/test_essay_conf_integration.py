@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import pytest
 
+pytestmark = [pytest.mark.integration, pytest.mark.fast]
+
 
 @pytest.fixture()
 def patched_generators(monkeypatch):
@@ -48,7 +50,6 @@ def patched_generators(monkeypatch):
     monkeypatch.setattr(plot_pkg, "diff_df", dummy_diff)
 
 
-@pytest.mark.requires_data
 def test_essay_dict_contains_expected_types(dataset_lock, monkeypatch, patched_generators):
     """Essay_dict should expose all predefined essay experiment collections."""
     from larvaworld.lib.reg import config as reg_config
@@ -67,7 +68,6 @@ def test_essay_dict_contains_expected_types(dataset_lock, monkeypatch, patched_g
             assert configs, f"{name}/{exp_id} returned empty configuration list"
 
 
-@pytest.mark.requires_data
 def test_doublepatch_exp_dict_structure(dataset_lock, patched_generators):
     """DoublePatch essay should build larva groups referencing default dataset."""
     from larvaworld.lib import reg
@@ -93,7 +93,6 @@ def test_doublepatch_exp_dict_structure(dataset_lock, patched_generators):
     assert samples == {reg.default_refID}
 
 
-@pytest.mark.requires_data
 def test_chemotaxis_models_provide_variants(dataset_lock, patched_generators):
     """Chemotaxis essay should expose multiple model variants with metadata."""
     from larvaworld.lib.reg.stored_confs.essay_conf import Chemotaxis_Essay
