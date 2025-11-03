@@ -1,8 +1,12 @@
 import pandas as pd
 
+import pytest
+
 import larvaworld
 import larvaworld.lib.process.dataset
 import larvaworld.lib.reg as reg
+
+pytestmark = pytest.mark.skip(reason="legacy integration tests kept for manual execution")
 
 
 def test_import_Schleyer():

@@ -8,10 +8,81 @@ This module provides essential fixtures for:
 - Registry isolation (via parallel execution with pytest-xdist)
 """
 
+import functools
 import os
 import random
+from pathlib import Path
+
 import numpy as np
 import pytest
+
+
+TESTS_ROOT = Path(__file__).parent.resolve()
+LEGACY_TEST_REL_PATHS = {
+    # Original integration suite (pre-refactor)
+    "integration/test_analysis.py",
+    "integration/test_evaluation.py",
+    "integration/cli/test_cli_entrypoints.py",
+    "integration/process/test_import_aux.py",
+    "integration/process/test_import_legacy.py",
+    "integration/plot/test_plotting_legacy.py",
+    "integration/sim/test_sim_box2d.py",
+    "integration/sim/test_sim_experiments.py",
+    "integration/sim/test_sim_ga.py",
+    "integration/sim/test_sim_replay.py",
+    # Original unit suite (pre-refactor)
+    "unit/model/test_model_space_dict.py",
+    "unit/param/test_param_classes.py",
+    "unit/util/test_util_ang.py",
+    "unit/util/test_util_fft.py",
+}
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    """Register CLI flags to toggle optional integration suites."""
+    parser.addoption(
+        "--run-requires-data",
+        action="store_true",
+        default=False,
+        help="run tests marked with @pytest.mark.requires_data",
+    )
+    parser.addoption(
+        "--run-requires-network",
+        action="store_true",
+        default=False,
+        help="run tests marked with @pytest.mark.requires_network",
+    )
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """Register custom markers for marker-aware filtering."""
+    config.addinivalue_line(
+        "markers",
+        "legacy: Legacy Larvaworld test suite (pre-refactor).",
+    )
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """Skip requires_data / requires_network tests unless explicitly enabled."""
+    run_data = config.getoption("--run-requires-data")
+    run_network = config.getoption("--run-requires-network")
+
+    skip_data = pytest.mark.skip(reason="requires real datasets (use --run-requires-data)")
+    skip_network = pytest.mark.skip(reason="requires network access (use --run-requires-network)")
+
+    for item in items:
+        if "requires_data" in item.keywords and not run_data:
+            item.add_marker(skip_data)
+        if "requires_network" in item.keywords and not run_network:
+            item.add_marker(skip_network)
+
+        try:
+            rel_path = Path(item.fspath).resolve().relative_to(TESTS_ROOT).as_posix()
+        except ValueError:
+            continue
+
+        if rel_path in LEGACY_TEST_REL_PATHS:
+            item.add_marker("legacy")
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -154,7 +225,6 @@ def real_dataset(ensure_datasets_ready):
 import time
 import subprocess
 import sys
-from pathlib import Path
 
 try:
     from filelock import FileLock
@@ -183,14 +253,54 @@ def build_processed_datasets():
     Build datasets from raw → processed (idempotent).
     
     IMPORTANT: This must be idempotent and safe if called on warm start.
-    Uses CLI to create datasets (5-7 min first run).
+    Delegates to `larvaworld.tests.init_datasets` which handles registry bootstrap
+    and Schleyer dataset imports. Keeps the heavy lifting outside the fixture so
+    it can also be reused in CI preparation steps.
     """
+    script = Path(__file__).with_name("init_datasets.py")
     subprocess.run(
-        [sys.executable, "-m", "larvaworld", "--help"],
+        [sys.executable, str(script)],
         check=True,
         timeout=900,  # 15 min max (generous for CI)
         capture_output=True
     )
+    _patch_dataset_io_lock()
+
+
+def _patch_dataset_io_lock() -> None:
+    """Wrap LarvaDataset HDF5 writes with FileLock to avoid concurrent writers."""
+    if FileLock is None:
+        return
+
+    from larvaworld.lib.process import dataset as _dataset_module
+
+    lock = FileLock(str(LOCK_FILE))
+    patched_attr = "_pytest_dataset_io_patch"
+    if getattr(_dataset_module, patched_attr, False):
+        return
+
+    def wrap_method(method_name: str) -> None:
+        original = getattr(_dataset_module.LarvaDataset, method_name, None)
+        if original is None:
+            return
+
+        @functools.wraps(original)
+        def wrapped(self, *args, **kwargs):
+            with lock:
+                return original(self, *args, **kwargs)
+
+        setattr(_dataset_module.LarvaDataset, method_name, wrapped)
+
+    for name in ["annotate", "save", "_save_step", "_save_end", "store"]:
+        wrap_method(name)
+
+    setattr(_dataset_module, patched_attr, True)
+
+@pytest.fixture()
+def dataset_lock():
+    """Ensure LarvaDataset I/O methods are patched without holding a re-entrant lock."""
+    _patch_dataset_io_lock()
+    yield
 
 
 @pytest.fixture(scope="session")  # ✅ NO autouse=True!
@@ -254,3 +364,70 @@ def ensure_datasets_ready():
     
     # Hint HDF5 for shared read locks (optional but harmless)
     os.environ.setdefault("HDF5_USE_FILE_LOCKING", "TRUE")
+
+
+def _bootstrap_datasets_once() -> None:
+    """Ensure processed datasets (and registry defaults) exist before collection."""
+    if os.getenv("LARVAWORLD_INIT_DATA") == "0":
+        return
+
+    ready = processed_datasets_exist()
+    if READY_FLAG.exists():
+        ready = True
+
+    if ready and not READY_FLAG.exists():
+        READY_FLAG.write_text("ok")
+
+    if ready:
+        _patch_dataset_io_lock()
+        return
+
+    if FileLock is None:
+        build_processed_datasets()
+        READY_FLAG.write_text("ok")
+        return
+
+    lock = FileLock(str(LOCK_FILE))
+    with lock:
+        if not processed_datasets_exist():
+            build_processed_datasets()
+        READY_FLAG.write_text("ok")
+
+    try:
+        from larvaworld.lib import reg
+
+        reg.define_default_refID()
+    except Exception:
+        # Any registry bootstrap issues will surface later in the tests.
+        pass
+
+
+def _wait_for_datasets(timeout: float = 600.0) -> None:
+    """Worker processes wait until READY flag appears."""
+    if os.getenv("LARVAWORLD_INIT_DATA") == "0":
+        return
+
+    if processed_datasets_exist():
+        _patch_dataset_io_lock()
+        return
+
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if READY_FLAG.exists() or processed_datasets_exist():
+            _patch_dataset_io_lock()
+            return
+        time.sleep(0.5)
+
+    pytest.exit("Timeout waiting for dataset initialisation (READY flag missing).")
+
+
+def pytest_sessionstart(session: pytest.Session) -> None:
+    """Bootstrap datasets/registry before pytest collection (supports xdist)."""
+    if os.getenv("LARVAWORLD_INIT_DATA") == "0":
+        return
+
+    if hasattr(session.config, "workerinput"):
+        _wait_for_datasets()
+        _patch_dataset_io_lock()
+    else:
+        _bootstrap_datasets_once()
