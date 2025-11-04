@@ -53,6 +53,8 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+.pytest_datasets_build.lock
+.pytest_datasets_ready
 cover/
 .ruff_cache/
 
@@ -166,4 +168,3 @@ my_work/
 
 # GUI obsolete since pysimplegui v.5
 /src/larvaworld/gui/
-
