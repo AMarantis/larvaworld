@@ -140,6 +140,7 @@ lint.isort.known-first-party = [ "larvaworld", "tests" ]
 addopts = """\
     -v
     -Wdefault
+    --slow
     --cov=larvaworld
     --cov-report=xml
     """

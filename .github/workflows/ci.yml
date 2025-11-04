@@ -45,7 +45,7 @@ jobs:
           path: coverage.xml
 
   smoke-matrix:
-    name: Fast tests (${{ matrix.os }}, Py ${{ matrix.python-version }})
+    name: Full suite (${{ matrix.os }}, Py ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -86,8 +86,12 @@ jobs:
           pip install -e .
           pip install pytest pytest-xdist pytest-cov
 
-      - name: Run fast + non-slow integration (no data)
-        env:
-          LARVAWORLD_INIT_DATA: "0"  # Do not build/require datasets
+      - name: Run full test suite (parallel + coverage)
         run: |
-          pytest -n auto -m "fast or (integration and not slow and not optional_dep)" -q
+          pytest -n auto --cov=larvaworld --cov-report=term --cov-report=xml
+
+      - name: Upload coverage.xml
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: coverage.xml
