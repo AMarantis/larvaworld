@@ -37,6 +37,7 @@ def plot_surface(
     P = plot.AutoBasePlot(name="3d_surface", dim3=True, azim=azim, elev=elev, **kwargs)
     P.conf_ax_3d(vars=vars, target=target, lims=lims, title=title)
     from matplotlib import cm
+
     P.axs[0].plot_surface(x, y, z, cmap=cm.coolwarm, linewidth=0, antialiased=True)
     if z0 is not None:
         P.axs[0].plot_surface(x, y, np.ones(x.shape) * z0, alpha=0.5)
@@ -44,19 +45,21 @@ def plot_surface(
 
 
 @funcs.graph("odorscape", required={"args": ["odor_layers"]})
-def plot_odorscape(odor_layers: dict, scale: float = 1.0, idx: int = 0, **kwargs: Any) -> None:
+def plot_odorscape(
+    odor_layers: dict, scale: float = 1.0, idx: int = 0, **kwargs: Any
+) -> None:
     """
     Plot 3D odorscape surfaces for multiple odor layers.
-    
+
     Creates 3D surface plots showing spatial distribution of odor
     concentrations across the environment arena.
-    
+
     Args:
         odor_layers: Dictionary of odor layer objects with grid and meshgrid
         scale: Spatial scale factor. Defaults to 1.0
         idx: Index for file naming. Defaults to 0
         **kwargs: Additional arguments passed to plot_surface
-        
+
     Example:
         >>> plot_odorscape(odor_layers={'odor1': layer1}, scale=1.0, idx=0)
     """
@@ -76,18 +79,20 @@ def plot_odorscape(odor_layers: dict, scale: float = 1.0, idx: int = 0, **kwargs
         )
 
 
-def odorscape_isocontours(intensity: float = 2, spread: float = 0.0002, radius: float = 0.05) -> None:
+def odorscape_isocontours(
+    intensity: float = 2, spread: float = 0.0002, radius: float = 0.05
+) -> None:
     """
     Plot odorscape as filled contour isocontours.
-    
+
     Creates 2D contour plot showing odor concentration gradients
     from a point source using multivariate normal distribution.
-    
+
     Args:
         intensity: Peak odor intensity. Defaults to 2
         spread: Odor spread parameter. Defaults to 0.0002
         radius: Plot radius in meters. Defaults to 0.05
-        
+
     Example:
         >>> odorscape_isocontours(intensity=2, spread=0.0002, radius=0.05)
     """
@@ -141,6 +146,7 @@ def odorscape_from_config(
 
     if mode == "2D":
         from matplotlib import pyplot as plt
+
         if fig is None and axs is None:
             fig, axs = plt.subplots(1, 1, figsize=(10, 10 * Ydim / Xdim))
         q = grid.flatten() - np.min(grid)
@@ -185,10 +191,10 @@ def odorscape_with_sample_tracks(
 ) -> Any:
     """
     Plot odorscape with sample trajectory tracks overlaid.
-    
+
     Creates 2D odorscape visualization with individual trajectory tracks
     from multiple datasets shown as colored paths.
-    
+
     Args:
         datasets: List of datasets containing trajectory data
         unit: Distance unit ('mm' or 'm'). Defaults to 'mm'
@@ -197,16 +203,17 @@ def odorscape_with_sample_tracks(
         show: Whether to display plot. Defaults to False
         save_to: Directory to save plot. Defaults to None
         **kwargs: Additional arguments passed to odorscape_from_config
-        
+
     Returns:
         Matplotlib figure object
-        
+
     Example:
         >>> fig = odorscape_with_sample_tracks(datasets=[d1, d2], unit='mm', show=True)
     """
     scale = 1000 if unit == "mm" else 1
     if fig is None and axs is None:
         from matplotlib import pyplot as plt
+
         fig, axs = plt.subplots(1, 1, figsize=(20, 20))
     odorscape_from_config(
         datasets[0].config, mode="2D", fig=fig, axs=axs, show=False, **kwargs
@@ -220,23 +227,29 @@ def odorscape_with_sample_tracks(
     return fig
 
 
-def plot_3pars(df: pd.DataFrame, vars: Sequence[str], target: str, z0: Optional[float] = None, **kwargs: Any) -> dict:
+def plot_3pars(
+    df: pd.DataFrame,
+    vars: Sequence[str],
+    target: str,
+    z0: Optional[float] = None,
+    **kwargs: Any,
+) -> dict:
     """
     Create multiple plots for 3-parameter relationships.
-    
+
     Generates 3D plot, heatmap, and surface plot showing relationship
     between two independent variables and a target variable.
-    
+
     Args:
         df: DataFrame containing parameter data
         vars: List of 2 independent variable names
         target: Target variable name
         z0: Reference z-value for horizontal plane. Defaults to None
         **kwargs: Additional arguments passed to plotting functions
-        
+
     Returns:
         Dictionary of figure objects keyed by plot type
-        
+
     Example:
         >>> figs = plot_3pars(df, vars=['param1', 'param2'], target='result')
     """
@@ -330,20 +343,26 @@ def plot_3d(
     return P.get()
 
 
-def plot_3d_multi(dfs: Sequence[pd.DataFrame], dfIDs: Sequence[str], df_colors: Optional[Sequence[str]] = None, show: bool = True, **kwargs: Any) -> None:
+def plot_3d_multi(
+    dfs: Sequence[pd.DataFrame],
+    dfIDs: Sequence[str],
+    df_colors: Optional[Sequence[str]] = None,
+    show: bool = True,
+    **kwargs: Any,
+) -> None:
     """
     Create multi-dataset 3D plot with regression surfaces.
-    
+
     Generates 3D scatter plot with regression hyperplanes for multiple
     datasets shown in different colors.
-    
+
     Args:
         dfs: List of DataFrames with parameter data
         dfIDs: List of dataset identifiers
         df_colors: List of colors for each dataset. Defaults to None
         show: Whether to display plot. Defaults to True
         **kwargs: Additional arguments passed to plot_3d
-        
+
     Example:
         >>> plot_3d_multi(dfs=[df1, df2], dfIDs=['Control', 'Test'], show=True)
     """
@@ -359,7 +378,9 @@ def plot_3d_multi(dfs: Sequence[pd.DataFrame], dfIDs: Sequence[str], df_colors: 
         plt.show()
 
 
-def plot_heatmap(z: Any, heat_kws: dict = {}, ax_kws: dict = {}, cbar_kws: dict = {}, **kwargs: Any) -> Any:
+def plot_heatmap(
+    z: Any, heat_kws: dict = {}, ax_kws: dict = {}, cbar_kws: dict = {}, **kwargs: Any
+) -> Any:
     base_heat_kws = {"annot": True, "cmap": cm.coolwarm, "vmin": None, "vmax": None}
     base_heat_kws.update(heat_kws)
     base_cbar_kws = {"orientation": "vertical"}
@@ -367,6 +388,7 @@ def plot_heatmap(z: Any, heat_kws: dict = {}, ax_kws: dict = {}, cbar_kws: dict 
     P = plot.AutoBasePlot(name="heatmap", **kwargs)
     sns.heatmap(z, ax=P.axs[0], **base_heat_kws, cbar_kws=base_cbar_kws)
     from matplotlib import pyplot as plt
+
     cax = plt.gcf().axes[-1]
     cax.tick_params(length=0)
     P.conf_ax(**ax_kws)
@@ -375,22 +397,27 @@ def plot_heatmap(z: Any, heat_kws: dict = {}, ax_kws: dict = {}, cbar_kws: dict 
 
 
 @funcs.graph("PI heatmap")
-def plot_heatmap_PI(z: Optional[pd.DataFrame] = None, csv_filepath: str = "PIs.csv", save_as: str = "PI_heatmap.pdf", **kwargs: Any) -> Any:
+def plot_heatmap_PI(
+    z: Optional[pd.DataFrame] = None,
+    csv_filepath: str = "PIs.csv",
+    save_as: str = "PI_heatmap.pdf",
+    **kwargs: Any,
+) -> Any:
     """
     Create heatmap of Preference Index (PI) values.
-    
+
     Generates color-coded heatmap showing PI values across left and right
     odor gain combinations, with red-yellow-green colormap.
-    
+
     Args:
         z: DataFrame with PI values. Loads from csv_filepath if None
         csv_filepath: Path to CSV file with PI data. Defaults to 'PIs.csv'
         save_as: Filename for saved plot. Defaults to 'PI_heatmap.pdf'
         **kwargs: Additional arguments passed to plot_heatmap
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_heatmap_PI(z=pi_data, save_as='preference_heatmap.pdf')
     """
@@ -433,18 +460,18 @@ def plot_heatmap_PI(z: Optional[pd.DataFrame] = None, csv_filepath: str = "PIs.c
 def plot_2d(df: pd.DataFrame, labels: Sequence[str], **kwargs: Any) -> Any:
     """
     Create 2D scatter plot of parameter vs result.
-    
+
     Simple scatter plot showing relationship between a parameter
     and a result variable.
-    
+
     Args:
         df: DataFrame containing data
         labels: List of 2 labels [parameter, result]
         **kwargs: Additional arguments passed to AutoBasePlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_2d(df, labels=['temperature', 'velocity'])
     """

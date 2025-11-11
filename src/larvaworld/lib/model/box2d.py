@@ -74,7 +74,9 @@ class SegmentBox2D(ShapeMobile):
 
     __displayname__ = "Box2D body segment"
 
-    def __init__(self, space: world, physics_pars: dict[str, Any], **kwargs: Any) -> None:
+    def __init__(
+        self, space: world, physics_pars: dict[str, Any], **kwargs: Any
+    ) -> None:
         super().__init__(**kwargs)
         self._body: dynamicBody = space.CreateDynamicBody(
             position=self.pos,
@@ -158,7 +160,9 @@ class SegmentBox2D(ShapeMobile):
         pos = np.asarray(self._body.position)
         return tuple((*pos, self._body.angle))
 
-    def set_linearvelocity(self, lin_vel: Tuple[float, float], local: bool = False) -> None:
+    def set_linearvelocity(
+        self, lin_vel: Tuple[float, float], local: bool = False
+    ) -> None:
         """
         Set the linear velocity of the segment.
 
@@ -386,7 +390,12 @@ class LarvaBox2D(LarvaSim):
     #
     #     return seg_starts, seg_stops
 
-    def create_joints(self, Nsegs: int, segs: List[SegmentBox2D], joint_types: dict[str, Any] | None = None) -> None:
+    def create_joints(
+        self,
+        Nsegs: int,
+        segs: List[SegmentBox2D],
+        joint_types: dict[str, Any] | None = None,
+    ) -> None:
         """
         Create joints to connect the segments of the larva.
 

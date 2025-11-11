@@ -6,6 +6,7 @@ import param
 
 from .custom import OptionalPositiveInteger
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from .nested_parameter_group import NestedConf
 else:
@@ -28,21 +29,22 @@ __displayname__ = "2D spatial distributions"
 class Spatial_Distro(NestedConf):
     """
     2D spatial distribution configuration for agent placement.
-    
+
     Defines how agents are distributed in 2D space using various shapes
     (circle, rectangle, oval) and placement modes (uniform, normal, periphery, grid).
-    
+
     Attributes:
         shape: Distribution shape ('circle', 'rect', 'oval', 'rectangular')
         mode: Placement mode ('uniform', 'normal', 'periphery', 'grid')
         N: Number of agents to place
         loc: Center coordinates (x, y) of the distribution
         scale: Spread or radius in (x, y) dimensions
-    
+
     Example:
         >>> distro = Spatial_Distro(shape='circle', mode='uniform', N=50)
         >>> positions = distro()
     """
+
     shape = param.Selector(
         objects=["circle", "rect", "oval", "rectangular"],
         doc="The shape of the spatial distribution",
@@ -84,17 +86,18 @@ class Spatial_Distro(NestedConf):
 class Larva_Distro(Spatial_Distro):
     """
     Spatial distribution with orientation for larva agents.
-    
+
     Extends Spatial_Distro to include random orientation angles for larvae,
     generating both positions and orientations.
-    
+
     Attributes:
         orientation_range: Range of orientations to sample from, in degrees
-    
+
     Example:
         >>> distro = Larva_Distro(N=20, orientation_range=(0, 180))
         >>> positions, orientations = distro()
     """
+
     orientation_range = param.Range(
         default=(0.0, 360.0),
         bounds=(-360.0, 360.0),
@@ -106,7 +109,9 @@ class Larva_Distro(Spatial_Distro):
         return generate_xyNor_distro(self)
 
 
-def single_parametric_interpolate(obj_x_loc: Sequence[float], obj_y_loc: Sequence[float], numPts: int = 50) -> List[Tuple[float, float]]:
+def single_parametric_interpolate(
+    obj_x_loc: Sequence[float], obj_y_loc: Sequence[float], numPts: int = 50
+) -> List[Tuple[float, float]]:
     n = len(obj_x_loc)
     vi = [
         [obj_x_loc[(i + 1) % n] - obj_x_loc[i], obj_y_loc[(i + 1) % n] - obj_y_loc[i]]
@@ -126,15 +131,17 @@ def single_parametric_interpolate(obj_x_loc: Sequence[float], obj_y_loc: Sequenc
     return new_points
 
 
-def xy_along_circle(N: int, loc: Tuple[float, float], radius: Tuple[float, float]) -> List[Tuple[float, float]]:
+def xy_along_circle(
+    N: int, loc: Tuple[float, float], radius: Tuple[float, float]
+) -> List[Tuple[float, float]]:
     """
     Generate N points evenly distributed along a circle/ellipse periphery.
-    
+
     Args:
         N: Number of points to generate
         loc: Center coordinates (x, y)
         radius: Radius in (x, y) dimensions for ellipse
-    
+
     Returns:
         List of (x, y) coordinate tuples along the periphery
     """
@@ -145,15 +152,17 @@ def xy_along_circle(N: int, loc: Tuple[float, float], radius: Tuple[float, float
     return p
 
 
-def xy_along_rect(N: int, loc: Tuple[float, float], scale: Tuple[float, float]) -> List[Tuple[float, float]]:
+def xy_along_rect(
+    N: int, loc: Tuple[float, float], scale: Tuple[float, float]
+) -> List[Tuple[float, float]]:
     """
     Generate N points evenly distributed along rectangle periphery.
-    
+
     Args:
         N: Number of points to generate
         loc: Center coordinates (x, y)
         scale: Half-dimensions (half-width, half-height)
-    
+
     Returns:
         List of (x, y) coordinate tuples along the rectangle edges
     """
@@ -165,15 +174,17 @@ def xy_along_rect(N: int, loc: Tuple[float, float], scale: Tuple[float, float]) 
     return p
 
 
-def xy_uniform_circle(N: int, loc: Tuple[float, float], scale: Tuple[float, float]) -> List[Tuple[float, float]]:
+def xy_uniform_circle(
+    N: int, loc: Tuple[float, float], scale: Tuple[float, float]
+) -> List[Tuple[float, float]]:
     """
     Generate N points uniformly distributed within a circle/ellipse.
-    
+
     Args:
         N: Number of points to generate
         loc: Center coordinates (x, y)
         scale: Radius in (x, y) dimensions
-    
+
     Returns:
         List of (x, y) coordinate tuples within the circle
     """
@@ -186,15 +197,19 @@ def xy_uniform_circle(N: int, loc: Tuple[float, float], scale: Tuple[float, floa
     return p
 
 
-def xy_grid(grid_dims: Tuple[int, int], area: Tuple[float, float], loc: Tuple[float, float] = (0.0, 0.0)) -> List[Tuple[float, float]]:
+def xy_grid(
+    grid_dims: Tuple[int, int],
+    area: Tuple[float, float],
+    loc: Tuple[float, float] = (0.0, 0.0),
+) -> List[Tuple[float, float]]:
     """
     Generate points arranged in a regular grid pattern.
-    
+
     Args:
         grid_dims: Grid dimensions (Nx, Ny)
         area: Total area dimensions (width, height)
         loc: Center coordinates (x, y)
-    
+
     Returns:
         List of (x, y) coordinate tuples in grid arrangement
     """
@@ -222,9 +237,9 @@ def generate_xy_distro(
 ) -> List[Tuple[float, float]]:
     """
     Generate 2D spatial distribution of N points.
-    
+
     Main distribution generator supporting multiple shapes and placement modes.
-    
+
     Args:
         mode: Placement mode ('uniform', 'normal', 'periphery', 'grid')
         shape: Distribution shape ('circle', 'oval', 'rect', 'rectangular')
@@ -232,10 +247,10 @@ def generate_xy_distro(
         loc: Center coordinates (x, y)
         scale: Spread/radius in (x, y) dimensions
         area: Area dimensions for grid mode (defaults to scale)
-    
+
     Returns:
         List of (x, y) coordinate tuples
-    
+
     Example:
         >>> positions = generate_xy_distro('uniform', 'circle', 100, (0,0), (0.05, 0.05))
     """
@@ -270,17 +285,19 @@ def generate_xy_distro(
         raise ValueError(f"XY distribution {mode} not implemented.")
 
 
-def generate_xyNor_distro(d: "Larva_Distro") -> Tuple[List[Tuple[float, float]], List[float]]:
+def generate_xyNor_distro(
+    d: "Larva_Distro",
+) -> Tuple[List[Tuple[float, float]], List[float]]:
     """
     Generate positions and orientations for larva distribution.
-    
+
     Args:
         d: Larva_Distro configuration object
-    
+
     Returns:
         Tuple of (positions, orientations) where positions is list of (x,y)
         tuples and orientations is list of angles in radians
-    
+
     Example:
         >>> distro = Larva_Distro(N=20, orientation_range=(0, 180))
         >>> positions, orientations = generate_xyNor_distro(distro)

@@ -10,14 +10,25 @@ __displayname__ = "Data management"
 # Public API: expose core dataset classes, evaluation helpers, and lab importers.
 __all__: list[str] = [
     # Datasets
-    "DatasetConfig", "ParamLarvaDataset", "BaseLarvaDataset", "LarvaDataset", "LarvaDatasetCollection",
+    "DatasetConfig",
+    "ParamLarvaDataset",
+    "BaseLarvaDataset",
+    "LarvaDataset",
+    "LarvaDatasetCollection",
     # Evaluation
-    "Evaluation", "DataEvaluation",
+    "Evaluation",
+    "DataEvaluation",
     # Lab-specific importers
-    "import_Schleyer", "import_Jovanic", "import_Berni", "import_Arguello",
+    "import_Schleyer",
+    "import_Jovanic",
+    "import_Berni",
+    "import_Arguello",
     "lab_specific_import_functions",
     # Calibration functions
-    "vel_definition", "comp_stride_variation", "fit_metric_definition", "comp_segmentation",
+    "vel_definition",
+    "comp_stride_variation",
+    "fit_metric_definition",
+    "comp_segmentation",
     # Import aux functions
     "read_timeseries_from_raw_files_per_parameter",
 ]
@@ -47,6 +58,7 @@ _NAME_TO_MODULE = {
     "read_timeseries_from_raw_files_per_parameter": "larvaworld.lib.process.import_aux",
 }
 
+
 def __getattr__(name: str):
     module_path = _NAME_TO_MODULE.get(name)
     if module_path is None:
@@ -57,6 +69,7 @@ def __getattr__(name: str):
     obj = getattr(mod, name)
     globals()[name] = obj
     return obj
+
 
 def __dir__() -> list[str]:
     return sorted(list(globals().keys()) + list(__all__))

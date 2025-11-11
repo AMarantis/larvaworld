@@ -17,20 +17,22 @@ __all__: list[str] = [
 ]
 
 
-def plot_segmentation_definition(subfolder: str = "metric_definition", **kwargs: Any) -> Any:
+def plot_segmentation_definition(
+    subfolder: str = "metric_definition", **kwargs: Any
+) -> Any:
     """
     Plot body segmentation definition analysis.
-    
+
     Creates dual-panel plots showing regression scores and correlation analysis
     for different angular velocity combinations used in body segmentation.
-    
+
     Args:
         subfolder: Subfolder for saving. Defaults to 'metric_definition'
         **kwargs: Additional arguments passed to AutoPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_segmentation_definition(datasets=[d1, d2])
     """
@@ -99,18 +101,18 @@ def plot_stride_variability(
 ) -> Any:
     """
     Plot stride spatiotemporal variability analysis.
-    
+
     Creates scatter plots showing coefficient of variation for spatial vs
     temporal stride components across different velocity definitions.
-    
+
     Args:
         component_vels: Include component velocities. Defaults to True
         subfolder: Subfolder for saving. Defaults to 'metric_definition'
         **kwargs: Additional arguments passed to AutoPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_stride_variability(datasets=[d1, d2], component_vels=True)
     """
@@ -164,10 +166,10 @@ def plot_correlated_pars(
 ) -> Any:
     """
     Create pairwise correlation plots for endpoint parameters.
-    
+
     Generates seaborn PairGrid with scatter plots, KDE plots, and confidence
     ellipses showing correlations between three endpoint parameters.
-    
+
     Args:
         pars: List of 3 parameter keys to analyze (currently only 3 supported)
         labels: List of 3 labels for the parameters
@@ -177,10 +179,10 @@ def plot_correlated_pars(
         save_as: Filename for saved plot. Defaults to 'correlated_pars.pdf'
         return_fig: Whether to return figure object. Defaults to False
         show: Whether to display plot. Defaults to False
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_correlated_pars(pars=['cum_sd', 'run_tr', 'pau_tr'], labels=['Distance', 'Run', 'Pause'], refID='ref_01')
     """

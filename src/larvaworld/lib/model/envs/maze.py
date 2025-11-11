@@ -13,17 +13,17 @@ __all__: list[str] = [
 class Cell:
     """
     Single cell in maze grid.
-    
+
     Represents a grid point that may be surrounded by walls in cardinal
     directions (North, East, South, West). Walls can be knocked down
     to create maze passages.
-    
+
     Attributes:
         x: Cell x-coordinate in grid
         y: Cell y-coordinate in grid
         walls: Dict of wall states {"N": bool, "S": bool, "E": bool, "W": bool}
         wall_pairs: Class-level mapping of opposing wall directions
-    
+
     Example:
         >>> cell = Cell(x=5, y=3)
         >>> cell.knock_down_wall(neighbor_cell, "N")
@@ -51,11 +51,11 @@ class Cell:
 class Maze:
     """
     Maze generator and representation as grid of cells.
-    
+
     Creates procedurally generated mazes using depth-first search algorithm.
     Produces maze as grid of Cell objects with wall connectivity, and can
     export to SVG or shapely LineString format for simulation obstacles.
-    
+
     Attributes:
         nx: Number of cells in x-direction
         ny: Number of cells in y-direction
@@ -63,7 +63,7 @@ class Maze:
         iy: Starting cell y-coordinate for generation (default: 0)
         height: Physical height of maze in simulation units (default: 1.0)
         maze_map: 2D array of Cell objects forming the maze
-    
+
     Example:
         >>> maze = Maze(nx=10, ny=10, height=0.5)
         >>> maze.make_maze()  # Generate maze structure
@@ -71,7 +71,9 @@ class Maze:
         >>> maze.write_svg("output.svg")  # Export to SVG
     """
 
-    def __init__(self, nx: int, ny: int, ix: int = 0, iy: int = 0, height: float = 1.0) -> None:
+    def __init__(
+        self, nx: int, ny: int, ix: int = 0, iy: int = 0, height: float = 1.0
+    ) -> None:
         """
         Initialize the maze grid.
         The maze consists of nx x ny cells and will be constructed starting

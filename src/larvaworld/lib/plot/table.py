@@ -26,16 +26,16 @@ __all__: list[str] = [
 def arrange_index_labels(index) -> List[str]:
     """
     Arrange index labels for table display.
-    
+
     Centers group labels by adding empty strings above and below,
     useful for multi-level table indices.
-    
+
     Args:
         index: Pandas index with group labels
-        
+
     Returns:
         List of labels with centering empty strings
-        
+
     Example:
         >>> labels = arrange_index_labels(df.index)
     """
@@ -63,10 +63,10 @@ def conf_table(
 ) -> Any:
     """
     Create configuration table with color-coded rows.
-    
+
     Wrapper around mpl_table that creates a formatted configuration table
     with module-specific row colors and standard layout.
-    
+
     Args:
         df: Configuration data as DataFrame
         row_colors: List of colors for each row
@@ -76,10 +76,10 @@ def conf_table(
         save_as: Filename for saved table. Defaults to None
         build_kws: Figure build keywords. Defaults to standard size
         **kwargs: Additional arguments passed to mpl_table
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = conf_table(df, row_colors=['red', 'blue'], mID='model_01')
     """
@@ -117,20 +117,20 @@ def modelConfTable(
 ) -> Any:
     """
     Create configuration table for a model.
-    
+
     Generates formatted table showing all model parameters including
     brain modules, body, physics, sensorimotor, and energetics configurations.
-    
+
     Args:
         mID: Model identifier
         m: Pre-loaded model object. Loads from mID if None
         columns: Table columns to display. Defaults to parameter info
         colWidths: Column width ratios. Defaults to balanced widths
         **kwargs: Additional arguments passed to conf_table
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = modelConfTable(mID='model_01', columns=['parameter', 'value'])
     """
@@ -214,10 +214,10 @@ def mpl_table(
 ) -> Any:
     """
     Create matplotlib table with customizable formatting.
-    
+
     Generates publication-quality table with customizable colors, highlighting,
     and formatting options. Supports row/column colors and cell highlighting.
-    
+
     Args:
         data: DataFrame to display as table
         cellLoc: Cell text alignment. Defaults to 'center'
@@ -240,13 +240,14 @@ def mpl_table(
         highlight_color: Highlight cell color. Defaults to 'yellow'
         return_table: Return table object instead of figure. Defaults to False
         **kwargs: Additional arguments passed to AutoBasePlot
-        
+
     Returns:
         Table object if return_table=True, else plot output
-        
+
     Example:
         >>> fig = mpl_table(df, highlighted_cells='row_min', font_size=12)
     """
+
     def get_idx(highlighted_cells: str) -> List[Tuple[int, int]]:
         d = data.values
         res = []
@@ -348,13 +349,20 @@ def mpl_table(
 
 
 @funcs.graph("model diff")
-def mdiff_table(mIDs: Sequence[str], dIDs: Sequence[str], show: bool = False, save_to: Optional[str] = None, save_as: Optional[str] = None, **kwargs: Any) -> Any:
+def mdiff_table(
+    mIDs: Sequence[str],
+    dIDs: Sequence[str],
+    show: bool = False,
+    save_to: Optional[str] = None,
+    save_as: Optional[str] = None,
+    **kwargs: Any,
+) -> Any:
     """
     Create table comparing differences between models.
-    
+
     Generates table showing only parameters that differ between models,
     with color-coded rows by module type.
-    
+
     Args:
         mIDs: List of model identifiers to compare
         dIDs: List of display identifiers for models
@@ -362,10 +370,10 @@ def mdiff_table(mIDs: Sequence[str], dIDs: Sequence[str], show: bool = False, sa
         save_to: Directory to save table. Defaults to None
         save_as: Filename for saved table. Defaults to None
         **kwargs: Additional arguments passed to mpl_table
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = mdiff_table(mIDs=['model_A', 'model_B'], dIDs=['A', 'B'])
     """
@@ -403,18 +411,18 @@ def mdiff_table(mIDs: Sequence[str], dIDs: Sequence[str], show: bool = False, sa
 def error_table(data: np.ndarray, k: str = "", **kwargs: Any) -> Any:
     """
     Create table displaying error metrics.
-    
+
     Generates formatted table showing error values (transposed and rounded)
     for model evaluation.
-    
+
     Args:
         data: Error metric array
         k: Metric key/label. Defaults to empty string
         **kwargs: Additional arguments passed to mpl_table
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = error_table(error_array, k='RSS')
     """
@@ -434,13 +442,13 @@ def error_table(data: np.ndarray, k: str = "", **kwargs: Any) -> Any:
 def store_model_graphs(mIDs: Optional[Sequence[str]] = None) -> None:
     """
     Generate and store configuration tables and summary plots for models.
-    
+
     Creates model configuration tables and summary plots for all specified
     models, combining them into master PDFs.
-    
+
     Args:
         mIDs: List of model identifiers. Uses all models if None
-        
+
     Example:
         >>> store_model_graphs(mIDs=['model_01', 'model_02'])
     """
@@ -464,21 +472,25 @@ def store_model_graphs(mIDs: Optional[Sequence[str]] = None) -> None:
     util.combine_pdfs(file_dir=f2, save_as="___ALL_MODEL_SUMMARIES___.pdf")
 
 
-def diff_df(mIDs: Sequence[str], ms: Optional[Sequence[Any]] = None, dIDs: Optional[Sequence[str]] = None) -> Tuple[pd.DataFrame, Sequence[str]]:
+def diff_df(
+    mIDs: Sequence[str],
+    ms: Optional[Sequence[Any]] = None,
+    dIDs: Optional[Sequence[str]] = None,
+) -> Tuple[pd.DataFrame, Sequence[str]]:
     """
     Create difference DataFrame comparing model parameters.
-    
+
     Generates DataFrame showing only parameters that differ between models,
     with row colors for visualization.
-    
+
     Args:
         mIDs: List of model identifiers to compare
         ms: Pre-loaded model objects. Loads from mIDs if None
         dIDs: Display identifiers. Uses mIDs if None
-        
+
     Returns:
         Tuple of (difference DataFrame, list of row colors)
-        
+
     Example:
         >>> df, colors = diff_df(mIDs=['model_A', 'model_B'])
     """

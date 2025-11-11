@@ -13,7 +13,13 @@ __all__: list[str] = [
 
 
 class NengoBrain(Network, Brain):
-    def __init__(self, conf: Any, agent: Any | None = None, dt: float | None = None, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        conf: Any,
+        agent: Any | None = None,
+        dt: float | None = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(**kwargs)
         Brain.__init__(self, conf=conf, agent=agent, dt=dt)
         self.food_feedback = False
@@ -323,7 +329,9 @@ class NengoBrain(Network, Brain):
         for k, p in self.probes.items():
             self.dict[k].append(np.mean(data[p][-self.Nsteps :], axis=0))
 
-    def step(self, pos: Any, length: float, on_food: bool = False) -> tuple[float, float, bool]:
+    def step(
+        self, pos: Any, length: float, on_food: bool = False
+    ) -> tuple[float, float, bool]:
         L = self.locomotor
         N = self.Nsteps
         MS = self.modalities

@@ -38,7 +38,9 @@ class EvalConf(LarvaGroupMutator, DataEvaluation):
 # This should be adjusted in order to remove also the need for the LarvaGroupMutator parent class of EvalConf
 # (note that the args N,modelIDS, groupIDs are common in LarvaGroupMutator and SimConfigurationParams)
 class EvalRun(EvalConf, SimConfiguration):
-    def __init__(self, enrichment: bool = True, screen_kws: dict[str, Any] = {}, **kwargs: Any) -> None:
+    def __init__(
+        self, enrichment: bool = True, screen_kws: dict[str, Any] = {}, **kwargs: Any
+    ) -> None:
         """Model evaluation mode. This mode is used to evaluate a number of larva models
         for similarity with a preexisting reference dataset, most often one retained
         via monitoring real experiments. The evaluation is done by comparing the
@@ -221,7 +223,14 @@ class EvalRun(EvalConf, SimConfiguration):
 
     def plot_results(
         self,
-        plots: list[str] = ["hists", "trajectories", "dispersion", "bouts", "fft", "boxplots"],
+        plots: list[str] = [
+            "hists",
+            "trajectories",
+            "dispersion",
+            "bouts",
+            "fft",
+            "boxplots",
+        ],
         **kwargs: Any,
     ) -> None:
         GD = reg.graphs.dict

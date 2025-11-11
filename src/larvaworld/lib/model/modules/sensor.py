@@ -36,11 +36,11 @@ __all__: list[str] = [
 class Sensor(Effector):
     """
     Base sensor module for agent sensory processing.
-    
+
     Abstract base class providing sensory input processing with gain control,
     temporal dynamics (decay), and optional memory integration. Supports
     multiple perception modes (log, linear, null) for sensory transduction.
-    
+
     Attributes:
         output_range: Valid output range for sensor activation (-1 to 1)
         perception: Sensory transduction mode ('log', 'linear', or 'null')
@@ -51,16 +51,17 @@ class Sensor(Effector):
         X: Current sensory input values per stimulus ID
         dX: Perceived sensory changes per stimulus ID
         gain: Current gain coefficients per stimulus ID
-    
+
     Args:
         brain: Parent brain instance (polymorphic: Brain or subclasses).
                Provides access to locomotor for brute_force modulation
         **kwargs: Additional keyword arguments passed to parent Effector
-    
+
     Example:
         >>> sensor = Sensor(brain=my_brain, decay_coef=0.1, perception='log')
         >>> sensor.step(input={'odor1': 0.5, 'odor2': 0.3})
     """
+
     output_range = RangeRobust((-1.0, 1.0), readonly=True)
     perception = param.Selector(
         objects=["log", "linear", "null"],
@@ -162,20 +163,21 @@ class Sensor(Effector):
 class Olfactor(Sensor):
     """
     Olfactory sensor module for odor detection and chemotaxis.
-    
+
     Extends base Sensor with olfaction-specific locomotor modulation.
     When negative gradients detected and stride completes, probabilistically
     triggers locomotor interruption (reorientation behavior).
-    
+
     Attributes:
         Inherits all Sensor attributes
         Provides odor concentration and change properties for first/second odors
-    
+
     Example:
         >>> olfactor = Olfactor(brain=my_brain, decay_coef=0.15, perception='log')
         >>> olfactor.step(input={'odor_A': 0.6, 'odor_B': 0.2})
         >>> print(f"First odor: {olfactor.first_odor_concentration}")
     """
+
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
@@ -204,19 +206,20 @@ class Olfactor(Sensor):
 class Toucher(Sensor):
     """
     Tactile sensor module for contact detection.
-    
+
     Extends base Sensor with touch-specific locomotor modulation.
     Triggers locomotion on contact detection (+1) and interrupts on
     contact loss (-1). Uses multiple sensor points around body contour.
-    
+
     Attributes:
         initial_gain: Initial tactile sensitivity coefficient (default: 40.0)
         touch_sensors: List of sensor location indices around body contour
-    
+
     Example:
         >>> toucher = Toucher(brain=my_brain, initial_gain=40.0, touch_sensors=[0, 5, 10])
         >>> toucher.step(input={'sensor_0': 1, 'sensor_5': 0})
     """
+
     initial_gain = PositiveNumber(
         40.0,
         label="tactile sensitivity coef",
@@ -244,19 +247,20 @@ class Toucher(Sensor):
 class Windsensor(Sensor):
     """
     Wind sensor module for air flow detection.
-    
+
     Extends base Sensor for wind stimulus processing with fixed gain
     and null perception mode (direct transduction without adaptation).
-    
+
     Attributes:
         gain_dict: Fixed gain for wind sensor (default: 1.0)
         perception: Fixed to 'null' mode (direct input)
         weights: Wind response weight coefficients (polymorphic structure)
-    
+
     Example:
         >>> windsensor = Windsensor(weights=wind_weights, brain=my_brain)
         >>> windsensor.step(input={'windsensor': 0.7})
     """
+
     gain_dict = param.Dict(default=util.AttrDict({"windsensor": 1.0}))
     perception = param.Selector(default="null")
 
@@ -268,20 +272,21 @@ class Windsensor(Sensor):
 class Thermosensor(Sensor):
     """
     Temperature sensor module for thermal gradient detection.
-    
+
     Extends base Sensor for thermotaxis with separate warm/cool
     sensory channels. Provides dual-channel temperature perception
     for thermal navigation behaviors.
-    
+
     Attributes:
         gain_dict: Gains for warm and cool sensors (default: both 1.0)
         Properties for warm/cool sensor inputs, perceptions, and gains
-    
+
     Example:
         >>> thermosensor = Thermosensor(brain=my_brain, decay_coef=0.1)
         >>> thermosensor.step(input={'warm': 0.4, 'cool': 0.6})
         >>> print(f"Warm gain: {thermosensor.warm_gain}")
     """
+
     gain_dict = param.Dict(default=util.AttrDict({"warm": 1.0, "cool": 1.0}))
     # cool_gain = PositiveNumber(0.0, label='cool sensitivity coef', doc='The gain of the cool sensor.')
     # warm_gain = PositiveNumber(0.0, label='warm sensitivity coef', doc='The gain of the warm sensor.')
@@ -317,11 +322,11 @@ class Thermosensor(Sensor):
 class OSNOlfactor(Olfactor):
     """
     Olfactory Sensory Neuron (OSN) olfactor with Brian2 neural simulation.
-    
+
     Extends Olfactor with biologically realistic OSN dynamics via remote
     Brian2 server. Converts odor concentrations to neural spike rates
     through detailed OSN model, then applies sigmoid normalization.
-    
+
     Attributes:
         brianInterface: Remote Brian2 model interface for OSN simulation
         brian_warmup: Warmup steps for neural model initialization
@@ -329,7 +334,7 @@ class OSNOlfactor(Olfactor):
         remote_dt: Time step for remote Brian2 simulation (ms)
         agent_id: Unique agent identifier for Brian2 tracking
         sim_id: Unique simulation identifier for Brian2 tracking
-    
+
     Args:
         response_key: Brian2 response parameter to extract (default: 'OSN_rate')
         server_host: Brian2 server hostname (default: 'localhost')
@@ -337,7 +342,7 @@ class OSNOlfactor(Olfactor):
         remote_dt: Brian2 simulation time step in ms (default: 100)
         remote_warmup: Brian2 warmup steps before data collection (default: 500)
         **kwargs: Additional keyword arguments passed to parent Olfactor
-    
+
     Example:
         >>> osn_olfactor = OSNOlfactor(
         ...     brain=my_brain,
@@ -347,6 +352,7 @@ class OSNOlfactor(Olfactor):
         ... )
         >>> osn_olfactor.step(input={'odor_A': 0.8})
     """
+
     def __init__(
         self,
         response_key: str = "OSN_rate",

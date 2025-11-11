@@ -18,21 +18,21 @@ __displayname__ = "Enrichment configuration"
 class PreprocessConf(NestedConf):
     """
     Preprocessing configuration for raw tracker data.
-    
+
     Defines spatial coordinate transformations, filtering, and
     data cleaning operations applied before analysis.
-    
+
     Attributes:
         rescale_by: Spatial rescaling factor in meters (optional)
         filter_f: Low-pass filter cutoff frequency in Hz (optional)
         transposition: Coordinate transposition mode ('origin', 'arena', 'center', or None)
         interpolate_nans: Interpolate missing values (default: False)
         drop_collisions: Remove collision timepoints (default: False)
-    
+
     Example:
         >>> preproc = PreprocessConf(rescale_by=0.001, filter_f=1.0, transposition='center')
     """
-    
+
     rescale_by = OptionalPositiveNumber(
         softmax=1000.0,
         step=0.001,
@@ -57,20 +57,20 @@ class PreprocessConf(NestedConf):
 class ProcessConf(NestedConf):
     """
     Processing configuration for derived metrics computation.
-    
+
     Defines processing pipelines and parameters for computing spatial,
     angular, source-related, and behavioral metrics from trajectories.
-    
+
     Attributes:
         proc_keys: Active processing pipelines (default: ['angular', 'spatial'])
         dsp_starts: Dispersal computation start times in seconds (default: [0.0])
         dsp_stops: Dispersal computation stop times in seconds (default: [40.0, 60.0])
         tor_durs: Tortuosity time windows in seconds (default: [5, 10, 20])
-    
+
     Example:
         >>> proc = ProcessConf(proc_keys=['spatial', 'angular', 'source'], tor_durs=[10, 30])
     """
-    
+
     proc_keys = param.ListSelector(
         default=["angular", "spatial"],
         objects=["angular", "spatial", "source", "PI", "wind"],
@@ -96,16 +96,16 @@ class ProcessConf(NestedConf):
 class EnrichConf(ProcessConf):
     """
     Complete enrichment configuration for dataset processing.
-    
+
     Extends ProcessConf with preprocessing settings and annotation pipelines,
     providing full dataset enrichment workflow configuration.
-    
+
     Attributes:
         pre_kws: Preprocessing configuration (PreprocessConf instance)
         anot_keys: Active annotation pipelines (default: bout_detection, bout_distribution, interference)
         recompute: Force recomputation of existing results (default: False)
         mode: Processing mode ('minimal' or 'full')
-    
+
     Example:
         >>> enrich = EnrichConf(
         ...     pre_kws={'rescale_by': 0.001},
@@ -115,7 +115,7 @@ class EnrichConf(ProcessConf):
         ... )
         >>> enrich_simple = EnrichConf.spatial_proc()  # Preset config
     """
-    
+
     pre_kws = ClassAttr(PreprocessConf, doc="The preprocessing pipelines")
     anot_keys = param.ListSelector(
         default=["bout_detection", "bout_distribution", "interference"],

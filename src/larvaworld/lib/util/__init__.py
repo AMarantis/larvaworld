@@ -7,6 +7,7 @@ This file used to eagerly star-import many submodules, which made importing
 same symbols on first access to preserve backwards compatibility without the
 eager cost.
 """
+
 from __future__ import annotations
 
 from typing import Any

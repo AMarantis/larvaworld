@@ -79,7 +79,13 @@ class Object(NestedConf):
 
     unique_id = param.String(None, doc="The unique ID of the entity")
 
-    def __init__(self, model: Any | None = None, unique_id: Any | None = None, id: str = "Object", **kwargs: Any) -> None:
+    def __init__(
+        self,
+        model: Any | None = None,
+        unique_id: Any | None = None,
+        id: str = "Object",
+        **kwargs: Any,
+    ) -> None:
         if unique_id is None and id is not None:
             unique_id = id
         # self.unique_id=unique_id

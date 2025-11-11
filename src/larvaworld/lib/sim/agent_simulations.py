@@ -19,13 +19,20 @@ __all__: list[str] = [
 __displayname__ = "Individual agent simulations"
 
 
-def sim_models(modelIDs: list[str], colors: Optional[list[str]] = None, groupIDs: Optional[list[str]] = None, lgs: Optional[list[LarvaGroup | None]] = None, data_dir: Optional[str] = None, **kwargs: Any) -> list:
+def sim_models(
+    modelIDs: list[str],
+    colors: Optional[list[str]] = None,
+    groupIDs: Optional[list[str]] = None,
+    lgs: Optional[list[LarvaGroup | None]] = None,
+    data_dir: Optional[str] = None,
+    **kwargs: Any,
+) -> list:
     """
     Simulate multiple agent models with specified configurations.
-    
+
     Runs simulations for multiple model configurations in parallel,
     returning datasets for each simulation run.
-    
+
     Args:
         modelIDs: List of model configuration IDs to simulate.
         colors: Optional list of colors for visualization.
@@ -33,10 +40,10 @@ def sim_models(modelIDs: list[str], colors: Optional[list[str]] = None, groupIDs
         lgs: Optional list of LarvaGroup instances or None.
         data_dir: Optional directory for saving results.
         **kwargs: Additional simulation parameters.
-    
+
     Returns:
         List of LarvaDataset instances, one for each simulation.
-    
+
     Example:
         >>> datasets = sim_models(['explorer', 'forager'], N=100)
     """
@@ -87,20 +94,20 @@ def sim_model(
 ) -> Any:
     """
     Simulate single agent model with specified configuration.
-    
+
     Runs a single simulation with the specified model configuration
     and returns the resulting dataset.
-    
+
     Args:
         mID: Model configuration ID to simulate.
         Nids: Number of agents.
         lg: Optional LarvaGroup instance for simulation.
         enrichment: Whether to enrich dataset with analysis.
         **kwargs: Simulation parameters and configuration.
-    
+
     Returns:
         LarvaDataset containing simulation results.
-    
+
     Example:
         >>> dataset = sim_model(mID='explorer', duration=100.0)
     """
@@ -146,13 +153,20 @@ def sim_model(
     return d
 
 
-def sim_single_agent(m: Any, Nticks: int = 1000, dt: float = 0.1, df_columns: Optional[list[str]] = None, p0: Optional[tuple[float, float]] = None, fo0: Optional[float] = None) -> np.ndarray:
+def sim_single_agent(
+    m: Any,
+    Nticks: int = 1000,
+    dt: float = 0.1,
+    df_columns: Optional[list[str]] = None,
+    p0: Optional[tuple[float, float]] = None,
+    fo0: Optional[float] = None,
+) -> np.ndarray:
     """
     Simulate single agent kinematic trajectory without environment.
-    
+
     Generates a kinematic trajectory for a single agent using the
     specified model configuration, without environmental interactions.
-    
+
     Args:
         m: Model configuration dict with structure:
            - 'brain': Locomotor configuration dict with keys:
@@ -170,12 +184,12 @@ def sim_single_agent(m: Any, Nticks: int = 1000, dt: float = 0.1, df_columns: Op
         df_columns: Output column names (default: ['b', 'fo', 'ro', ...]).
         p0: Initial position tuple (x, y) in meters.
         fo0: Initial front orientation in radians.
-    
+
     Returns:
         Array of shape (Nticks, n_columns) with trajectory data.
         Columns: ['b', 'fo', 'ro', 'x', 'y'] or custom df_columns.
         Angular values in degrees, velocities in m/s.
-    
+
     Example:
         >>> m = Model.getID('explorer')
         >>> data = sim_single_agent(m, Nticks=1000, dt=0.1)
@@ -240,7 +254,16 @@ def sim_single_agent(m: Any, Nticks: int = 1000, dt: float = 0.1, df_columns: Op
     return AA
 
 
-def sim_multi_agents(Nticks: int, Nids: int, ms: list[Any], group_id: str, dt: float = 0.1, ids: Optional[list[str]] = None, p0s: Optional[list[tuple[float, float]]] = None, fo0s: Optional[list[float]] = None):
+def sim_multi_agents(
+    Nticks: int,
+    Nids: int,
+    ms: list[Any],
+    group_id: str,
+    dt: float = 0.1,
+    ids: Optional[list[str]] = None,
+    p0s: Optional[list[tuple[float, float]]] = None,
+    fo0s: Optional[list[float]] = None,
+):
     df_columns = reg.getPar(
         ["b", "fo", "ro", "fov", "I_T", "x", "y", "d", "v", "A_T", "A_CT"]
     )

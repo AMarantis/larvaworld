@@ -15,17 +15,17 @@ __all__: list[str] = [
 class RotSurface(Object):
     """
     Rotatable surface object for 2D visualization.
-    
+
     Base class for drawable objects with position, direction,
     and pygame surface rendering capabilities.
-    
+
     Attributes:
         x: Object x-coordinate position.
         y: Object y-coordinate position.
         direction: Orientation in radians.
         surf: pygame Surface for rendering.
         speed: Movement speed (default: 0).
-    
+
     Example:
         >>> rot_obj = RotSurface(
         ...     x=100, y=100,
@@ -33,8 +33,10 @@ class RotSurface(Object):
         ...     surf=my_surface
         ... )
     """
-    
-    def __init__(self, x: float, y: float, direction: float, surf: Any, **kwargs: Any) -> None:
+
+    def __init__(
+        self, x: float, y: float, direction: float, surf: Any, **kwargs: Any
+    ) -> None:
         super().__init__(**kwargs)
         self.x = x
         self.y = y
@@ -50,6 +52,7 @@ class RotSurface(Object):
 
     def draw(self, viewer: Any) -> None:
         import pygame
+
         degrees = math.degrees(self.direction)
         rotated_surf = pygame.transform.rotate(self.surf, degrees)
         rot_rect = rotated_surf.get_rect()
@@ -60,15 +63,15 @@ class RotSurface(Object):
 class RotTriangle(RotSurface):
     """
     Rotatable triangle visualization object.
-    
+
     Renders a triangle shape with specified size and colors,
     commonly used for representing robots or agents in simulation.
-    
+
     Attributes:
         size: Triangle size in pixels.
         color_fg: Foreground RGB color tuple.
         color_bg: Background RGB color tuple (transparent).
-    
+
     Example:
         >>> triangle = RotTriangle(
         ...     x=50, y=50, size=20,
@@ -77,12 +80,21 @@ class RotTriangle(RotSurface):
         ...     direction=1.57
         ... )
     """
-    
-    def __init__(self, x: float, y: float, size: int, color_fg: Tuple[int, int, int], color_bg: Tuple[int, int, int], direction: float) -> None:
+
+    def __init__(
+        self,
+        x: float,
+        y: float,
+        size: int,
+        color_fg: Tuple[int, int, int],
+        color_bg: Tuple[int, int, int],
+        direction: float,
+    ) -> None:
         self.size = size
         self.color_fg = color_fg
         self.color_bg = color_bg
         import pygame
+
         self.surf = pygame.Surface((size, size))
         self.surf.fill(color_bg)
         self.surf.set_colorkey(color_bg)
@@ -102,6 +114,7 @@ class RotTriangle(RotSurface):
         # print([v1, v2, v3])
 
         import pygame
+
         pygame.draw.polygon(self.surf, self.color_fg, [v1, v2, v3])
 
         super().__init__(x, y, direction, self.surf)
@@ -110,16 +123,16 @@ class RotTriangle(RotSurface):
 class LightSource(RotSurface):
     """
     Light source object for sensor detection.
-    
+
     Visualizes light sources in simulation environment,
     detected by LightSensor instances with intensity based on distance.
-    
+
     Attributes:
         emitting_power: Light intensity/size.
         color_fg: Foreground color (default: YELLOW).
         color_bg: Background color (default: BLACK).
         size: Visual size (equals emitting_power).
-    
+
     Example:
         >>> light = LightSource(
         ...     x=200, y=200,
@@ -127,7 +140,7 @@ class LightSource(RotSurface):
         ...     color_fg=(255, 255, 0)
         ... )
     """
-    
+
     def __init__(
         self,
         x: float,
@@ -143,6 +156,7 @@ class LightSource(RotSurface):
         self.size = emitting_power
         self.label = None
         import pygame
+
         self.surf = pygame.Surface((self.size, self.size))
         self.surf.fill(color_bg)
         self.surf.set_colorkey(color_bg)

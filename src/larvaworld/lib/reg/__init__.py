@@ -94,7 +94,12 @@ from . import stored_confs
 vprint("Configuration registry complete", 1)
 
 
-def getPar(k: Any | None = None, p: Any | None = None, d: Any | None = None, to_return: str = "d") -> Any:
+def getPar(
+    k: Any | None = None,
+    p: Any | None = None,
+    d: Any | None = None,
+    to_return: str = "d",
+) -> Any:
     """
     Shortcut function for easy use directly via the registry.
     See 'par.getPar' for more information.
@@ -140,7 +145,7 @@ class _ProcSpinner:
         import shutil
 
         # Check if spinner is disabled via environment variable
-        if os.getenv('LARVAWORLD_SHOW_PROGRESS', '1') == '0':
+        if os.getenv("LARVAWORLD_SHOW_PROGRESS", "1") == "0":
             return  # Silent mode - no spinner
 
         # Create a temp directory with a sentinel file that the child polls
@@ -302,6 +307,7 @@ def define_default_refID(id="exploration.30controls"):
 # Lazily compute default_refID to avoid heavy work at import time
 _CACHED_DEFAULT_REFID = None
 
+
 def __getattr__(name):
     global _CACHED_DEFAULT_REFID
     global _GRAPHS
@@ -314,18 +320,35 @@ def __getattr__(name):
             # Ensure plot modules are loaded before creating GraphRegistry
             # This loads all @funcs.graph decorators
             from .. import plot
+
             # Force loading of all plot submodules to register @funcs.graph decorators
-            for submodule in ['bar', 'bearing', 'box', 'deb', 'epochs', 'freq', 'grid', 'hist', 'metric', 'scape', 'stridecycle', 'table', 'time', 'traj']:
+            for submodule in [
+                "bar",
+                "bearing",
+                "box",
+                "deb",
+                "epochs",
+                "freq",
+                "grid",
+                "hist",
+                "metric",
+                "scape",
+                "stridecycle",
+                "table",
+                "time",
+                "traj",
+            ]:
                 getattr(plot, submodule)
             _GRAPHS = graph.GraphRegistry()
         return _GRAPHS
     if name == "funcs":
         # Lazy import of funcs from data_aux and distro modules
         from . import data_aux, distro
+
         # Import all symbols from data_aux and distro
         for module in [data_aux, distro]:
             for attr_name in dir(module):
-                if not attr_name.startswith('_'):
+                if not attr_name.startswith("_"):
                     globals()[attr_name] = getattr(module, attr_name)
         # funcs should now be available in globals
         return globals().get("funcs")
@@ -333,6 +356,7 @@ def __getattr__(name):
     # This replaces the previous `from .data_aux import *` and `from .distro import *`
     try:
         from importlib import import_module
+
         for module_path in (
             "larvaworld.lib.reg.data_aux",
             "larvaworld.lib.reg.distro",
@@ -371,6 +395,7 @@ def default_model() -> Any:
 # This is needed because resetConfs accesses funcs.stored_confs["Model"]
 try:
     from importlib import import_module
+
     import_module("larvaworld.lib.model.modules.module_modes")
 except Exception:
     pass

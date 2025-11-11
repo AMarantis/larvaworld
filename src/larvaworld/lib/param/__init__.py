@@ -50,6 +50,7 @@ def __getattr__(name: str) -> Any:
         return globals()[name]
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
+
 def __dir__() -> list[str]:
     if not _LOADED:
         _load_all()

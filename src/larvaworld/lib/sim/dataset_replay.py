@@ -15,7 +15,13 @@ __all__: list[str] = [
 
 
 class ReplayRun(BaseRun):
-    def __init__(self, parameters: Any, dataset: Any | None = None, screen_kws: dict = {}, **kwargs: Any):
+    def __init__(
+        self,
+        parameters: Any,
+        dataset: Any | None = None,
+        screen_kws: dict = {},
+        **kwargs: Any,
+    ):
         """
         Simulation mode 'Replay' reconstructs a real or simulated experiment from stored data.
 

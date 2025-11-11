@@ -32,14 +32,19 @@ __all__: list[str] = [
 
 @funcs.graph("module hists")
 def module_endpoint_hists(
-    e: Any, mkey: str = "crawler", mode: str = "realistic", Nbins: Optional[int] = None, show_median: bool = True, **kwargs: Any
+    e: Any,
+    mkey: str = "crawler",
+    mode: str = "realistic",
+    Nbins: Optional[int] = None,
+    show_median: bool = True,
+    **kwargs: Any,
 ) -> Any:
     """
     Create histograms of module endpoint parameters.
-    
+
     Generates multi-panel histogram figure showing distribution of module
     parameters at experiment endpoints, useful for model configuration analysis.
-    
+
     Args:
         e: Endpoint data containing parameter values
         mkey: Module key identifier. Defaults to 'crawler'
@@ -47,10 +52,10 @@ def module_endpoint_hists(
         Nbins: Number of histogram bins. Auto-calculated if None
         show_median: Whether to show median line. Defaults to True
         **kwargs: Additional arguments passed to AutoBasePlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = module_endpoint_hists(endpoint_data, mkey='crawler', Nbins=20)
     """
@@ -115,10 +120,10 @@ def plot_ang_pars(
 ) -> Any:
     """
     Create histograms of angular parameters.
-    
+
     Generates multi-panel histograms showing distributions of bend, angular
     velocity, angular acceleration, and optionally rear body angles.
-    
+
     Args:
         absolute: Use absolute values. Defaults to False
         rad2deg: Convert radians to degrees. Defaults to True
@@ -129,10 +134,10 @@ def plot_ang_pars(
         Npars: Number of parameters (3 or 5). Defaults to 5
         Nbins: Number of histogram bins. Defaults to 100
         **kwargs: Additional arguments passed to plot_step_params
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_ang_pars(datasets=[d1, d2], include_rear=True, Npars=5)
     """
@@ -181,10 +186,10 @@ def plot_distros(
 ) -> Any:
     """
     Create distribution plots for kinematic parameters.
-    
+
     Generates multi-panel histograms or boxplots showing distributions of
     velocity, acceleration, and angular parameters across datasets.
-    
+
     Args:
         name: Plot name for saving. Auto-generated if None
         ks: Parameter keys to plot. Defaults to velocity and angular parameters
@@ -196,10 +201,10 @@ def plot_distros(
         subfolder: Subfolder for saving. Defaults to 'distro'
         Nbins: Number of histogram bins. Defaults to 100
         **kwargs: Additional arguments passed to AutoPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_distros(datasets=[d1, d2], mode='hist', ks=['v', 'a', 'fov'])
     """
@@ -303,17 +308,17 @@ def plot_distros(
 def plot_crawl_pars(kde: bool = True, **kwargs: Any) -> Any:
     """
     Create histograms of crawling parameters.
-    
+
     Generates histograms for stride count, run duration, and cumulative
     distance - key metrics for crawling locomotion analysis.
-    
+
     Args:
         kde: Include kernel density estimate. Defaults to True
         **kwargs: Additional arguments passed to plot_endpoint_params
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_crawl_pars(datasets=[d1, d2], kde=True)
     """
@@ -330,16 +335,16 @@ def plot_crawl_pars(kde: bool = True, **kwargs: Any) -> Any:
 def plot_turn_amp_VS_Ypos(**kwargs: Any) -> Any:
     """
     Plot turn amplitude as function of Y position.
-    
+
     Creates histogram showing distribution of body Y-position during turns,
     useful for analyzing body curvature patterns.
-    
+
     Args:
         **kwargs: Additional arguments passed to plot_turn_amp
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_turn_amp_VS_Ypos(datasets=[d1, d2])
     """
@@ -350,16 +355,16 @@ def plot_turn_amp_VS_Ypos(**kwargs: Any) -> Any:
 def plot_turn_duration(absolute: bool = True, **kwargs: Any) -> Any:
     """
     Plot turn duration distribution.
-    
+
     Creates histogram showing distribution of turn durations across datasets.
-    
+
     Args:
         absolute: Use absolute durations. Defaults to True
         **kwargs: Additional arguments passed to plot_turn_amp
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_turn_duration(datasets=[d1, d2], absolute=True)
     """
@@ -367,7 +372,12 @@ def plot_turn_duration(absolute: bool = True, **kwargs: Any) -> Any:
 
 
 def plot_turn_amp(
-    name: Optional[str] = None, k: str = "tur_t", ref_angle: Optional[float] = None, subfolder: str = "turn", absolute: bool = True, **kwargs: Any
+    name: Optional[str] = None,
+    k: str = "tur_t",
+    ref_angle: Optional[float] = None,
+    subfolder: str = "turn",
+    absolute: bool = True,
+    **kwargs: Any,
 ) -> Any:
     if name is None:
         nn = "turn_amp" if ref_angle is None else "rel_turn_angle"
@@ -412,24 +422,28 @@ def plot_turn_amp(
 
 @funcs.graph("angular/epoch", required={"ks": ["bv", "fov", "rov", "ba", "foa", "roa"]})
 def plot_bout_ang_pars(
-    name: str = "bout_ang_pars", absolute: bool = True, include_rear: bool = True, subfolder: str = "turn", **kwargs: Any
+    name: str = "bout_ang_pars",
+    absolute: bool = True,
+    include_rear: bool = True,
+    subfolder: str = "turn",
+    **kwargs: Any,
 ) -> Any:
     """
     Plot angular parameters during behavioral bouts.
-    
+
     Creates histograms of angular velocity and acceleration for front and
     optionally rear body segments during runs vs pauses.
-    
+
     Args:
         name: Plot name for saving. Defaults to 'bout_ang_pars'
         absolute: Use absolute values. Defaults to True
         include_rear: Include rear body parameters. Defaults to True
         subfolder: Subfolder for saving. Defaults to 'turn'
         **kwargs: Additional arguments passed to AutoPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_bout_ang_pars(datasets=[d1, d2], include_rear=True)
     """
@@ -477,21 +491,23 @@ def plot_bout_ang_pars(
 
 
 @funcs.graph("endpoint pars (scatter)", required={"ks": []})
-def plot_endpoint_scatter(subfolder: str = "endpoint", ks: Sequence[str] | None = None, **kwargs: Any) -> Any:
+def plot_endpoint_scatter(
+    subfolder: str = "endpoint", ks: Sequence[str] | None = None, **kwargs: Any
+) -> Any:
     """
     Create scatter plots of endpoint parameter pairs.
-    
+
     Generates pairwise scatter plots showing correlations between endpoint
     parameters across datasets.
-    
+
     Args:
         subfolder: Subfolder for saving. Defaults to 'endpoint'
         ks: Parameter keys to plot. Required
         **kwargs: Additional arguments passed to AutoPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_endpoint_scatter(datasets=[d1, d2], ks=['cum_sd', 'run_tr', 'pau_tr'])
     """
@@ -541,22 +557,27 @@ def plot_endpoint_scatter(subfolder: str = "endpoint", ks: Sequence[str] | None 
 
 
 @funcs.graph("turn amplitude", required={"ks": ["tur_fou"]})
-def plot_turns(name: str = "turn_amplitude", absolute: bool = False, subfolder: str = "turn", **kwargs: Any) -> Any:
+def plot_turns(
+    name: str = "turn_amplitude",
+    absolute: bool = False,
+    subfolder: str = "turn",
+    **kwargs: Any,
+) -> Any:
     """
     Plot turn amplitude distribution.
-    
+
     Creates violin plots showing distribution of turn amplitudes (bearing changes)
     during turns across datasets.
-    
+
     Args:
         name: Plot name for saving. Defaults to 'turn_amplitude'
         absolute: Use absolute amplitudes. Defaults to False
         subfolder: Subfolder for saving. Defaults to 'turn'
         **kwargs: Additional arguments passed to AutoPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_turns(datasets=[d1, d2], absolute=False)
     """
@@ -578,16 +599,16 @@ def plot_turns(name: str = "turn_amplitude", absolute: bool = False, subfolder: 
 def plot_endpoint_hist(**kwargs: Any) -> Any:
     """
     Create histograms of endpoint parameters.
-    
+
     Wrapper function that generates histogram plots for experiment endpoint
     metrics across datasets.
-    
+
     Args:
         **kwargs: Arguments passed to plot_endpoint_params
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_endpoint_hist(datasets=[d1, d2], ks=['cum_sd', 'run_tr'])
     """
@@ -598,16 +619,16 @@ def plot_endpoint_hist(**kwargs: Any) -> Any:
 def plot_endpoint_box(**kwargs: Any) -> Any:
     """
     Create boxplots of endpoint parameters.
-    
+
     Wrapper function that generates boxplot comparisons for experiment endpoint
     metrics across datasets.
-    
+
     Args:
         **kwargs: Arguments passed to plot_endpoint_params
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_endpoint_box(datasets=[d1, d2], ks=['cum_sd', 'run_tr'])
     """
@@ -617,18 +638,18 @@ def plot_endpoint_box(**kwargs: Any) -> Any:
 def plot_endpoint_params(type: str, mode: str = "basic", **kwargs: Any) -> Any:
     """
     Create plots of endpoint parameters with specified type.
-    
+
     General function for plotting endpoint parameters using different
     visualization types (histogram, boxplot, etc.).
-    
+
     Args:
         type: Plot type ('hist', 'box', etc.)
         mode: Parameter mode. Defaults to 'basic'
         **kwargs: Additional arguments passed to plot_params
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_endpoint_params(type='hist', datasets=[d1, d2], ks=['cum_sd'])
     """
@@ -646,13 +667,22 @@ def plot_step_box(**kwargs: Any) -> Any:
 
 
 def plot_step_params(
-    type: str, ks: Sequence[str] = ("v", "a", "sv", "sa", "b", "bv", "ba", "fov", "foa"), **kwargs: Any
+    type: str,
+    ks: Sequence[str] = ("v", "a", "sv", "sa", "b", "bv", "ba", "fov", "foa"),
+    **kwargs: Any,
 ) -> Any:
     return plot_params(key="step", type=type, ks=ks, **kwargs)
 
 
 def plot_params(
-    key: str, type: str, name: Optional[str] = None, mode: Optional[str] = None, ks: Optional[Sequence[str]] = None, Ncols: Optional[int] = None, plot_kws: dict = {}, **kwargs: Any
+    key: str,
+    type: str,
+    name: Optional[str] = None,
+    mode: Optional[str] = None,
+    ks: Optional[Sequence[str]] = None,
+    Ncols: Optional[int] = None,
+    plot_kws: dict = {},
+    **kwargs: Any,
 ) -> Any:
     if name is None:
         name = f"{key}_{type}_{mode}"

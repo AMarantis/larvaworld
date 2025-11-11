@@ -32,16 +32,16 @@ body_plans = util.AttrDict(
 class BodyContour(LineClosed):
     """
     Body contour defined by guide points and symmetry.
-    
+
     Generates body vertices from guide points using bilateral or radial
     symmetry. Supports predefined body plans (drosophila/zebrafish larvae).
-    
+
     Attributes:
         symmetry: Body symmetry type ('bilateral' or 'radial')
         guide_points: List of 2D points outside midline to generate vertices
         base_vertices: Generated list of vertices forming the contour
         body_plan: Predefined body plan ('drosophila_larva' or 'zebrafish_larva')
-    
+
     Example:
         >>> contour = BodyContour(body_plan='drosophila_larva', symmetry='bilateral')
         >>> ratio = contour.width_to_length_ratio
@@ -80,18 +80,19 @@ class BodyContour(LineClosed):
 class ShapeMobile(LineClosed, MobileVector):
     """
     Mobile shape with dynamic vertex updates based on position and orientation.
-    
+
     Combines closed line shape with mobile vector capabilities, automatically
     updating vertices when position, orientation, or length changes.
-    
+
     Attributes:
         length: Physical length of the shape in meters
         base_vertices: Template vertices scaled and transformed to actual position
-    
+
     Example:
         >>> shape = ShapeMobile(length=0.005, base_vertices=[(1,0), (0,0.1), (0,-0.1)])
         >>> shape.set_position((0.01, 0.01))
     """
+
     length = PositiveNumber(0.005)
     base_vertices = XYLine(doc="The list of 2d points")
 
@@ -116,14 +117,15 @@ class ShapeMobile(LineClosed, MobileVector):
 class ShapeViewable(ShapeMobile, Viewable):
     """
     Mobile shape with rendering capabilities.
-    
+
     Extends ShapeMobile with visualization methods for drawing the shape
     as a filled polygon using a viewer object.
-    
+
     Example:
         >>> shape = ShapeViewable(length=0.005, color=(255, 0, 0))
         >>> shape.draw(viewer)
     """
+
     def draw(self, v, **kwargs) -> None:
         # self.update_vertices()
         v.draw_polygon(self.vertices, filled=True, color=self.color)
@@ -158,21 +160,22 @@ class BodyMobile(ShapeMobile, BodyContour):
 class SegmentedBody(BodyMobile):
     """
     Multi-segment body with articulation and mass distribution.
-    
+
     Divides body into configurable number of segments with independent
     positions and orientations. Supports custom segment length ratios
     and provides utilities for shape manipulation and rendering.
-    
+
     Attributes:
         Nsegs: Number of segments comprising the body
         segment_ratio: Ratio of each segment's length to total body length
         segs: List of body segment shape objects
-    
+
     Example:
         >>> body = SegmentedBody(Nsegs=12, length=0.005)
         >>> body.compute_body_bend()
         >>> head_pos = body.head.get_position()
     """
+
     Nsegs = PositiveInteger(
         2, softmax=20, doc="The number of segments comprising the segmented larva body."
     )
@@ -369,18 +372,19 @@ class SegmentedBody(BodyMobile):
 class SegmentedBodySensored(SegmentedBody):
     """
     Segmented body with configurable sensory organs.
-    
+
     Extends SegmentedBody with support for positioning sensors (olfactory,
     touch, etc.) on specific body segments with local coordinates.
-    
+
     Attributes:
         sensors: Dictionary of sensor definitions with positions and modalities
-    
+
     Example:
         >>> body = SegmentedBodySensored(Nsegs=12)
         >>> body.add_touch_sensors([5, 10])
         >>> olf_pos = body.olfactor_pos
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.sensors = util.AttrDict()

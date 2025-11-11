@@ -21,41 +21,46 @@ class TestSimplex:
 
     def test_simplex_simple_quadratic(self):
         """Test optimization of simple quadratic function."""
+
         def cost(x):
             return (x - 3.0) ** 2
-        
+
         result = simplex(cost, x0=0.0)
         assert result == pytest.approx(3.0, abs=1e-6)
 
     def test_simplex_with_offset(self):
         """Test optimization with different initial guess."""
+
         def cost(x):
             return (x - 5.0) ** 2 + 2.0
-        
+
         result = simplex(cost, x0=10.0)
         assert result == pytest.approx(5.0, abs=1e-6)
 
     def test_simplex_with_args(self):
         """Test optimization with additional arguments."""
+
         def cost(x, target):
             return (x - target) ** 2
-        
+
         result = simplex(cost, x0=0.0, args=(7.0,))
         assert result == pytest.approx(7.0, abs=1e-6)
 
     def test_simplex_negative_minimum(self):
         """Test optimization finding negative minimum."""
+
         def cost(x):
             return (x + 4.0) ** 2
-        
+
         result = simplex(cost, x0=0.0)
         assert result == pytest.approx(-4.0, abs=1e-6)
 
     def test_simplex_returns_float(self):
         """Test that simplex always returns a float."""
+
         def cost(x):
-            return x ** 2
-        
+            return x**2
+
         result = simplex(cost, x0=1.0)
         assert isinstance(result, (float, np.floating))
 
@@ -122,7 +127,9 @@ class TestCriticalBout:
     def test_critical_bout_respects_tmin(self):
         """Test that bout duration respects minimum threshold."""
         # Run multiple times due to stochastic nature
-        results = [critical_bout(c=0.9, sigma=1.0, N=100, tmax=100, tmin=5) for _ in range(10)]
+        results = [
+            critical_bout(c=0.9, sigma=1.0, N=100, tmax=100, tmin=5) for _ in range(10)
+        ]
         assert all(r >= 5 for r in results)
 
     def test_critical_bout_respects_tmax(self):
@@ -213,4 +220,3 @@ class TestExpBout:
         np.random.seed(123)
         result2 = exp_bout(beta=0.1, tmax=100)
         assert result1 == result2
-

@@ -18,19 +18,19 @@ __all__: list[str] = [
 class NestedConf(param.Parameterized):
     """
     Base class for managing nested configuration parameters.
-    
+
     Extends param.Parameterized with automatic nested object initialization
     from dict configs, supporting ClassAttr and ClassDict automatic instantiation.
     Provides methods for config export, validation, and parameter introspection.
-    
+
     Attributes:
         nestedConf: Nested configuration dict (property)
         param_keys: List of parameter keys excluding 'name' (property)
-    
+
     Args:
         **kwargs: Configuration keyword arguments. ClassAttr and ClassDict
                   parameters are auto-instantiated from dict configs.
-    
+
     Example:
         >>> class MyConfig(NestedConf):
         ...     value = param.Number(default=1.0)
@@ -123,20 +123,21 @@ class NestedConf(param.Parameterized):
 def class_generator(A0: Any, mode: str = "Unit"):
     """
     Generate parameterized class with distribution and shortcut support.
-    
+
     Factory function creating NestedConf subclass with automatic
     distribution initialization, keyword shortcuts, and entry generation.
-    
+
     Args:
         A0: Base class to extend
         mode: Generation mode (default: 'Unit')
-    
+
     Returns:
         Generated class with enhanced initialization
-    
+
     Example:
         >>> MyClass = class_generator(BaseClass, mode='Group')
     """
+
     class A(NestedConf):
         def __init__(self, **kwargs: Any):
             if hasattr(A, "distribution"):
@@ -173,7 +174,9 @@ def class_generator(A0: Any, mode: str = "Unit"):
 
             super().__init__(**kwargs)
 
-        def shortcut(self, kdict: Dict[str, str], kws: Dict[str, Any]) -> Dict[str, Any]:
+        def shortcut(
+            self, kdict: Dict[str, str], kws: Dict[str, Any]
+        ) -> Dict[str, Any]:
             for k, key in kdict.items():
                 if k in kws:
                     assert key not in kws
@@ -182,7 +185,9 @@ def class_generator(A0: Any, mode: str = "Unit"):
             return kws
 
         @classmethod
-        def from_entries(cls, entries: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
+        def from_entries(
+            cls, entries: Dict[str, Dict[str, Any]]
+        ) -> List[Dict[str, Any]]:
             all_confs = []
             for gid, dic in entries.items():
                 Ainst = cls(**dic)
@@ -222,6 +227,7 @@ def class_generator(A0: Any, mode: str = "Unit"):
     invalid = ["name", "closed", "visible", "selected", "centered"]
     if mode == "Group":
         from importlib import import_module
+
         _xy = import_module("larvaworld.lib.param.xy_distro")
         Larva_Distro = getattr(_xy, "Larva_Distro")
         Spatial_Distro = getattr(_xy, "Spatial_Distro")
@@ -247,18 +253,18 @@ def class_generator(A0: Any, mode: str = "Unit"):
 def expand_kws_shortcuts(kwargs: Dict[str, Any]) -> Dict[str, Any]:
     """
     Expand keyword argument shortcuts to full parameter names.
-    
+
     Converts abbreviated configuration keys to full names:
     - 'life' → 'life_history' (age, epochs)
     - 'o' → 'odor' (id, intensity, spread)
     - 'sub' → 'substrate' (quality, type)
-    
+
     Args:
         kwargs: Configuration dict with potential shortcuts
-    
+
     Returns:
         Expanded configuration dict with full parameter names
-    
+
     Example:
         >>> kws = {'life': [0, 10], 'o': ['odorA', 0.5, 2.0]}
         >>> expand_kws_shortcuts(kws)
@@ -282,22 +288,24 @@ def expand_kws_shortcuts(kwargs: Dict[str, Any]) -> Dict[str, Any]:
     return kwargs
 
 
-def class_defaults(A: Any, excluded: Sequence[Any] = [], included: Dict[str, Any] = {}, **kwargs: Any) -> util.AttrDict:
+def class_defaults(
+    A: Any, excluded: Sequence[Any] = [], included: Dict[str, Any] = {}, **kwargs: Any
+) -> util.AttrDict:
     """
     Generate default configuration for class with exclusions/inclusions.
-    
+
     Creates nested config dict from class, optionally excluding parameters
     from other classes and including/overriding specific values.
-    
+
     Args:
         A: Target class to generate defaults for
         excluded: Classes/keys whose parameters to exclude (default: [])
         included: Dict of parameters to include/override (default: {})
         **kwargs: Additional parameters to update in existing keys
-    
+
     Returns:
         AttrDict with filtered and merged default configuration
-    
+
     Example:
         >>> defaults = class_defaults(MyClass, excluded=[BaseClass], value=10)
     """
@@ -320,17 +328,17 @@ def class_defaults(A: Any, excluded: Sequence[Any] = [], included: Dict[str, Any
 def class_objs(A: Any, excluded: Sequence[Any] = []) -> util.AttrDict:
     """
     Get parameter objects from class with optional exclusions.
-    
+
     Retrieves param objects dict from class, optionally filtering out
     parameters from excluded classes or by explicit key names.
-    
+
     Args:
         A: Target class to get parameter objects from
         excluded: Classes or parameter keys to exclude (default: [])
-    
+
     Returns:
         AttrDict of parameter name → parameter object mappings
-    
+
     Example:
         >>> objs = class_objs(MyClass, excluded=[BaseClass, 'internal_param'])
         >>> objs.keys()  # Only MyClass-specific params

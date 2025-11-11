@@ -1,3 +1,7 @@
+"""
+Larvaworld parameter class and associated methods
+"""
+
 from __future__ import annotations
 from typing import Any, Optional
 
@@ -15,9 +19,6 @@ else:
         DeprecationWarning,
         stacklevel=2,
     )
-"""
-Larvaworld parameter class and associated methods
-"""
 
 import random
 import sys
@@ -348,7 +349,9 @@ class LarvaworldParam(param.Parameterized):
                 self.v = (vv0, vv1)
 
 
-def get_LarvaworldParam(vparfunc: Any, v0: Any = None, dv: Any = None, **kws: Any) -> LarvaworldParam:
+def get_LarvaworldParam(
+    vparfunc: Any, v0: Any = None, dv: Any = None, **kws: Any
+) -> LarvaworldParam:
     """
     Create a LarvaworldParam instance with custom parameter function.
 
@@ -367,6 +370,7 @@ def get_LarvaworldParam(vparfunc: Any, v0: Any = None, dv: Any = None, **kws: An
     Example:
         >>> par = get_LarvaworldParam(param.Number, v0=0.5, doc="Speed parameter")
     """
+
     class _LarvaworldParam(LarvaworldParam):
         v = vparfunc
         u = param.Parameter(

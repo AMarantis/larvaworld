@@ -24,23 +24,24 @@ class ViewableBoundedArea(SpatialEntity, BoundedArea):
 class Arena(ViewableBoundedArea, agentpy.Space):
     """
     Simulation arena providing spatial environment for agents.
-    
+
     Combines bounded area geometry with agentpy.Space functionality to create
     a simulation environment where agents can be placed, moved, and interact
     with sources. Supports both stable and displaceable source management.
-    
+
     Attributes:
         boundary_margin: Margin from arena boundaries (default: 0.96)
         edges: List of boundary edge segments as Point pairs
         stable_sources: List of non-movable sources
         displacable_sources: List of movable sources
         accessible_sources: Cached accessible sources for agents
-        
+
     Example:
         >>> arena = Arena(model=sim_model, dims=(1.0, 1.0))
         >>> arena.place_agent(agent, (0.5, 0.5))
         >>> arena.add_sources([food1, food2], [(0.2, 0.3), (0.8, 0.7)])
     """
+
     boundary_margin = param.Magnitude(0.96)
 
     def __init__(self, model: Any | None = None, **kwargs: Any) -> None:

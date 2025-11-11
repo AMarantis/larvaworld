@@ -1,6 +1,7 @@
 """
 Methods for detecting and combining files
 """
+
 from __future__ import annotations
 
 import os
@@ -19,7 +20,13 @@ def select_filenames(filenames: list[str], suf: str = "", pref: str = "") -> lis
     return [f for f in filenames if (f.endswith(suf) and f.startswith(pref))]
 
 
-def files_in_dir(dir: str, sort: bool = True, include_subdirs: bool = False, suf: str = "", pref: str = "") -> list[str]:
+def files_in_dir(
+    dir: str,
+    sort: bool = True,
+    include_subdirs: bool = False,
+    suf: str = "",
+    pref: str = "",
+) -> list[str]:
     """
     Select files from directory matching filename conditions.
 
@@ -128,7 +135,10 @@ def combine_images(
 
 
 def combine_videos(
-    files: list[str] | None = None, file_dir: str = ".", save_to: str | None = None, save_as: str = "combined_videos.mp4"
+    files: list[str] | None = None,
+    file_dir: str = ".",
+    save_to: str | None = None,
+    save_as: str = "combined_videos.mp4",
 ) -> None:
     """
     Merge multiple video files into a single side-by-side video.

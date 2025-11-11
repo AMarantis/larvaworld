@@ -64,7 +64,9 @@ class GraphRegistry:
         else:
             return False
 
-    def eval_graphgroups(self, graphgroups: list[str] | dict, save_to: str | None = None, **kws: Any) -> util.AttrDict:
+    def eval_graphgroups(
+        self, graphgroups: list[str] | dict, save_to: str | None = None, **kws: Any
+    ) -> util.AttrDict:
         """
         Evaluates a list of graphgroups.
 
@@ -178,7 +180,13 @@ class GraphRegistry:
             key = ID
         return {"key": key, "plotID": ID, "args": args}
 
-    def model_tables(self, mIDs: list[str], dIDs: list[str] | None = None, save_to: str | None = None, **kwargs: Any) -> util.AttrDict:
+    def model_tables(
+        self,
+        mIDs: list[str],
+        dIDs: list[str] | None = None,
+        save_to: str | None = None,
+        **kwargs: Any,
+    ) -> util.AttrDict:
         """
         Creates tables for the given model IDs.
 
@@ -207,7 +215,9 @@ class GraphRegistry:
             )
         return util.AttrDict(ds)
 
-    def model_summaries(self, mIDs: list[str], save_to: str | None = None, **kwargs: Any) -> dict:
+    def model_summaries(
+        self, mIDs: list[str], save_to: str | None = None, **kwargs: Any
+    ) -> dict:
         """
         Creates summary plots for the given model IDs.
 
@@ -260,7 +270,9 @@ class GraphRegistry:
         )
         return graphs
 
-    def source_graphgroup(self, source_ID: str, pos: tuple[float, float] | None = None, **kwargs: Any) -> util.AttrDict:
+    def source_graphgroup(
+        self, source_ID: str, pos: tuple[float, float] | None = None, **kwargs: Any
+    ) -> util.AttrDict:
         """
         Creates a graphgroup consisting of plots related to a given food/odor source.
 
@@ -294,7 +306,9 @@ class GraphRegistry:
         #                              min_dur=dur, chunk=chunk, source_ID=ID, **kwargs))
         return util.AttrDict({gID: d0})
 
-    def get_analysis_graphgroups(self, exp: str, sources: dict[str, Any], **kwargs: Any) -> util.AttrDict | dict:
+    def get_analysis_graphgroups(
+        self, exp: str, sources: dict[str, Any], **kwargs: Any
+    ) -> util.AttrDict | dict:
         """
         Determines the plots to be created during the analysis of a given experiment/simulation.
 

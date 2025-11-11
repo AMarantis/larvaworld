@@ -19,7 +19,7 @@ except:
 __displayname__ = "larvaworld"
 __name__ = "larvaworld"
 
-__all__ : list[str] = [
+__all__: list[str] = [
     # Lazy-loaded subpackages (via __getattr__)
     "lib",
     "cli",
@@ -65,8 +65,18 @@ os.makedirs(CONF_DIR, exist_ok=True)
 
 
 SIMTYPES: list[str] = ["Exp", "Batch", "Ga", "Eval", "Replay"]
-CONFTYPES: list[str] = ["Env", "LabFormat", "Ref", "Model", "Trial", "Exp", "Batch", "Ga"]
+CONFTYPES: list[str] = [
+    "Env",
+    "LabFormat",
+    "Ref",
+    "Model",
+    "Trial",
+    "Exp",
+    "Batch",
+    "Ga",
+]
 # GROUPTYPES = ['LarvaGroup', 'FoodGroup', 'epoch']
+
 
 def __getattr__(name):
     """

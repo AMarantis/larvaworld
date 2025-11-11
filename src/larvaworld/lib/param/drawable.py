@@ -21,15 +21,15 @@ __displayname__ = "Viewable elements"
 class Viewable(NestedConf):
     """
     Base class for all visible objects in simulation.
-    
+
     Provides color management, visibility toggling, and drawing infrastructure
     for visual entities. Subclasses implement specific drawing methods.
-    
+
     Attributes:
         color: Color of the entity (string name or RGB tuple)
         visible: Whether the entity is currently visible
         selected: Whether the entity is selected for highlighting
-    
+
     Example:
         >>> obj = Viewable(color='red', visible=True)
         >>> obj.set_color('blue')
@@ -88,19 +88,20 @@ class Viewable(NestedConf):
 class ViewableToggleable(Viewable):
     """
     Viewable object with active/inactive state and color switching.
-    
+
     Extends Viewable with an active state that automatically switches
     between active and inactive colors.
-    
+
     Attributes:
         active: Whether the entity is currently active
         active_color: Color when entity is active
         inactive_color: Color when entity is inactive
-    
+
     Example:
         >>> obj = ViewableToggleable(active_color='red', inactive_color='blue')
         >>> obj.toggle()  # Switches active state and color
     """
+
     active = param.Boolean(False, doc="Whether entity is active")
     active_color = param.Color("lightblue", doc="The color of the entity when active")
     inactive_color = param.Color(
@@ -126,14 +127,15 @@ class ViewableToggleable(Viewable):
 class ViewableLine(Viewable, LineExtended):
     """
     Viewable line or polyline with rendering capabilities.
-    
+
     Combines Viewable and LineExtended to create drawable lines/polylines
     with configurable width, color, and closure.
-    
+
     Example:
         >>> line = ViewableLine(vertices=[(0,0), (1,0), (1,1)], color='red')
         >>> line.draw(viewer)
     """
+
     def draw(self, v, **kwargs) -> None:
         try:
             v.draw_polyline(
@@ -152,13 +154,14 @@ class ViewableLine(Viewable, LineExtended):
 class Contour(Viewable, LineClosed):
     """
     Viewable closed contour (filled polygon).
-    
+
     Combines Viewable and LineClosed to create drawable filled polygons
     with configurable color.
-    
+
     Example:
         >>> contour = Contour(vertices=[(0,0), (1,0), (1,1), (0,1)], color='green')
         >>> contour.draw(viewer)
     """
+
     def draw(self, v, **kwargs) -> None:
         v.draw_polygon(self.vertices, filled=True, color=self.color)

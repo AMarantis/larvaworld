@@ -134,7 +134,9 @@ class ConfType(param.Parameterized):
         self.param.params("dict").item_type = self.dict_entry_type
         self.load()
 
-    def getID(self, id: int | str | list[int | str]) -> util.AttrDict | list[util.AttrDict]:
+    def getID(
+        self, id: int | str | list[int | str]
+    ) -> util.AttrDict | list[util.AttrDict]:
         """
         Retrieve the configuration stored under an id from the dictionary.
         If the provided id is a list, the method will recursively retrieve the configuration under each id in the list.
@@ -301,7 +303,10 @@ class ConfType(param.Parameterized):
         if self.conftype == "Model":
             # Lazy import to avoid sim/reg cycles
             from importlib import import_module
-            GAselector = getattr(import_module("larvaworld.lib.sim.genetic_algorithm"), "GAselector")
+
+            GAselector = getattr(
+                import_module("larvaworld.lib.sim.genetic_algorithm"), "GAselector"
+            )
             GAselector.param.objects()["base_model"].objects = self.confIDs
             reg.larvagroup.LarvaGroupMutator.param.objects()[
                 "modelIDs"
@@ -361,7 +366,9 @@ class ConfType(param.Parameterized):
         return conf
 
     @param.depends("dict", watch=True)
-    def confID_selector(self, default: Optional[str] = None, single: bool = True) -> OptionalSelector | param.ListSelector:
+    def confID_selector(
+        self, default: Optional[str] = None, single: bool = True
+    ) -> OptionalSelector | param.ListSelector:
         """
         A configuration selector object.
 
@@ -516,7 +523,9 @@ class RefType(ConfType):
         vprint(f"Loaded existing conf {c.id}", 1)
         return c
 
-    def setRef(self, c: dict, id: Optional[str] = None, dir: Optional[str] = None) -> None:
+    def setRef(
+        self, c: dict, id: Optional[str] = None, dir: Optional[str] = None
+    ) -> None:
         """
         Save the reference dataset's configuration.
 
@@ -556,7 +565,13 @@ class RefType(ConfType):
             refDir = f"{DATA_DIR}/{dir}"
         return f"{refDir}/data/conf.txt"
 
-    def loadRef(self, id: Optional[str] = None, dir: Optional[str] = None, load: bool = False, **kwargs: Any):
+    def loadRef(
+        self,
+        id: Optional[str] = None,
+        dir: Optional[str] = None,
+        load: bool = False,
+        **kwargs: Any,
+    ):
         """
         Load a reference dataset.
 
@@ -582,7 +597,12 @@ class RefType(ConfType):
         vprint(f"Loaded stored reference dataset : {id}", 1)
         return d
 
-    def loadRefs(self, ids: Optional[list[str]] = None, dirs: Optional[list[str]] = None, **kwargs: Any):
+    def loadRefs(
+        self,
+        ids: Optional[list[str]] = None,
+        dirs: Optional[list[str]] = None,
+        **kwargs: Any,
+    ):
         """
         Load multiple reference datasets.
 
@@ -742,7 +762,9 @@ class RefType(ConfType):
             )
 
 
-conf: util.AttrDict = util.AttrDict({k: ConfType(conftype=k) for k in CONFTYPES if k != "Ref"})
+conf: util.AttrDict = util.AttrDict(
+    {k: ConfType(conftype=k) for k in CONFTYPES if k != "Ref"}
+)
 
 conf.Ref = RefType()
 

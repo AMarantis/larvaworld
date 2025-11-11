@@ -1,6 +1,7 @@
 """
 Classes and methods for managing nested dictionaries and lists
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -269,6 +270,7 @@ class bidict(dict):
         >>> bd['a']
         1
     """
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super(bidict, self).__init__(*args, **kwargs)
         self.inverse = {}
@@ -311,6 +313,7 @@ class SuperList(list):
         >>> SuperList([[1, 2], [3, 4]]).flatten
         [1, 2, 3, 4]
     """
+
     @property
     def N(self) -> int:
         return len(self)
@@ -387,6 +390,7 @@ class ItemList(agentpy.sequences.AgentSequence, list):
         >>> items = ItemList([agent1, agent2, agent3])
         >>> items.speed = 5.0  # Sets speed=5.0 on all agents
     """
+
     def __init__(self, objs=(), cls=None, *args: Any, **kwargs: Any) -> None:
         if isinstance(objs, int):
             objs = self._obj_gen(objs, cls, *args, **kwargs)

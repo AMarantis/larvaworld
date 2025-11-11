@@ -1,6 +1,7 @@
 """
 Methods for managing context and attributes
 """
+
 from __future__ import annotations
 
 import functools
@@ -109,7 +110,13 @@ def try_except(success, failure, *exceptions):
         return failure() if callable(failure) else failure
 
 
-def storeH5(df, path: str | None = None, key: str | None = None, mode: str | None = None, **kwargs):
+def storeH5(
+    df,
+    path: str | None = None,
+    key: str | None = None,
+    mode: str | None = None,
+    **kwargs,
+):
     if path is not None:
         if mode is None:
             if os.path.isfile(path):

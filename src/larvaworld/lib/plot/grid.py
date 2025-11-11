@@ -28,20 +28,22 @@ __all__: list[str] = [
 ]
 
 
-def calibration_plot(save_to: Optional[str] = None, files: Optional[Sequence[str]] = None) -> Any:
+def calibration_plot(
+    save_to: Optional[str] = None, files: Optional[Sequence[str]] = None
+) -> Any:
     """
     Create calibration summary figure from existing plots.
-    
+
     Combines multiple calibration plots (interference, bouts, orientation,
     angular parameters, bend) into a single composite figure.
-    
+
     Args:
         save_to: Directory to save plot. Defaults to current directory
         files: List of image file paths to combine. Auto-generated if None
-        
+
     Returns:
         Matplotlib figure object
-        
+
     Example:
         >>> fig = calibration_plot(save_to='./calibration', files=['plot1.png', 'plot2.png'])
     """
@@ -104,14 +106,19 @@ def calibration_plot(save_to: Optional[str] = None, files: Optional[Sequence[str
     },
 )
 def model_summary(
-    mID: str, refID: Optional[str] = None, refDataset: Any = None, Nids: int = 1, model_table: bool = False, **kwargs: Any
+    mID: str,
+    refID: Optional[str] = None,
+    refDataset: Any = None,
+    Nids: int = 1,
+    model_table: bool = False,
+    **kwargs: Any,
 ) -> Any:
     """
     Create comprehensive model summary grid figure.
-    
+
     Generates multi-panel figure showing model configuration, parameter histograms,
     stride cycles, behavioral epochs, and sample tracks compared to reference data.
-    
+
     Args:
         mID: Model ID to summarize
         refID: Reference dataset ID. Defaults to None
@@ -119,10 +126,10 @@ def model_summary(
         Nids: Number of sample individuals to plot. Defaults to 1
         model_table: Whether to include parameter table. Defaults to False
         **kwargs: Additional arguments passed to GridPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = model_summary(mID='model_01', refID='reference', Nids=3)
     """
@@ -220,25 +227,30 @@ def model_summary(
 
 @funcs.graph("velocity definition")
 def velocity_definition(
-    dataset: Any, save_to: Optional[str] = None, save_as: str = "vel_definition.pdf", component_vels: bool = True, **kwargs: Any
+    dataset: Any,
+    save_to: Optional[str] = None,
+    save_as: str = "vel_definition.pdf",
+    component_vels: bool = True,
+    **kwargs: Any,
 ) -> None:
     """
     Create velocity definition comparison figure.
-    
+
     Generates panel showing different velocity calculation methods with
     visual comparison of component velocities and their definitions.
-    
+
     Args:
         dataset: Dataset containing velocity data
         save_to: Directory to save plot. Uses dataset plot dir if None
         save_as: Filename for saved plot. Defaults to 'vel_definition.pdf'
         component_vels: Whether to show component velocities. Defaults to True
         **kwargs: Additional plotting arguments
-        
+
     Example:
         >>> velocity_definition(dataset, save_to='./figures', component_vels=True)
     """
     from matplotlib import pyplot as plt
+
     if save_to is None:
         save_to = dataset.plot_dir
 
@@ -277,22 +289,27 @@ def velocity_definition(
     "exploration summary",
     required={"graphIDs": ["trajectories", "dispersal", "crawl pars"]},
 )
-def exploration_summary(datasets: Sequence[Any], target: Any = None, range: Tuple[int, int] = (0, 40), **kwargs: Any) -> Any:
+def exploration_summary(
+    datasets: Sequence[Any],
+    target: Any = None,
+    range: Tuple[int, int] = (0, 40),
+    **kwargs: Any,
+) -> Any:
     """
     Create exploration behavior summary grid figure.
-    
+
     Generates comprehensive grid showing exploration metrics, spatial
     distributions, and trajectories over specified time range.
-    
+
     Args:
         datasets: List of datasets to compare
         target: Target dataset for comparison. Defaults to None
         range: Time range (start, end) in minutes. Defaults to (0, 40)
         **kwargs: Additional arguments passed to GridPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = exploration_summary(datasets=[d1, d2], range=(0, 60))
     """
@@ -339,22 +356,27 @@ def exploration_summary(datasets: Sequence[Any], target: Any = None, range: Tupl
     "dispersal summary",
     required={"graphIDs": ["trajectories", "dispersal", "endpoint box"]},
 )
-def dsp_summary(datasets: Sequence[Any], target: Any = None, range: Tuple[int, int] = (0, 40), **kwargs: Any) -> Any:
+def dsp_summary(
+    datasets: Sequence[Any],
+    target: Any = None,
+    range: Tuple[int, int] = (0, 40),
+    **kwargs: Any,
+) -> Any:
     """
     Create dispersal behavior summary grid figure.
-    
+
     Generates comprehensive grid showing dispersal metrics, spatial spread,
     and movement patterns over specified time range.
-    
+
     Args:
         datasets: List of datasets to compare
         target: Target dataset for comparison. Defaults to None
         range: Time range (start, end) in minutes. Defaults to (0, 40)
         **kwargs: Additional arguments passed to GridPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = dsp_summary(datasets=[d1, d2], range=(0, 60))
     """
@@ -460,22 +482,24 @@ def kinematic_analysis(datasets: Sequence[Any], **kwargs: Any) -> Any:
 
 
 @funcs.graph("RvsS summary")
-def RvsS_summary(entrylist: Sequence[Dict[str, Any]], title: str, mdiff_df: Any, **kwargs: Any) -> Any:
+def RvsS_summary(
+    entrylist: Sequence[Dict[str, Any]], title: str, mdiff_df: Any, **kwargs: Any
+) -> Any:
     """
     Create Rover vs Sitter comparison summary grid figure.
-    
+
     Generates multi-panel figure comparing rover and sitter behavioral phenotypes
     with statistical comparison table and multiple plot types.
-    
+
     Args:
         entrylist: List of plot entry dictionaries with plotID, args, and name keys
         title: Main figure title
         mdiff_df: DataFrame with statistical comparison metrics
         **kwargs: Additional arguments passed to GridPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = RvsS_summary(entrylist=[...], title='Phenotype Comparison', mdiff_df=df)
     """
@@ -523,13 +547,20 @@ def RvsS_summary(entrylist: Sequence[Dict[str, Any]], title: str, mdiff_df: Any,
 @funcs.graph(
     "double-patch summary", required={"graphIDs": ["trajectories", "double patch"]}
 )
-def DoublePatch_summary(datasets: Dict[str, Sequence[Any]], title: str, mdiff_df: Any, ks: Optional[Sequence[str]] = None, name: Optional[str] = None, **kwargs: Any) -> Any:
+def DoublePatch_summary(
+    datasets: Dict[str, Sequence[Any]],
+    title: str,
+    mdiff_df: Any,
+    ks: Optional[Sequence[str]] = None,
+    name: Optional[str] = None,
+    **kwargs: Any,
+) -> Any:
     """
     Create double-patch assay summary grid figure.
-    
+
     Generates comprehensive figure showing trajectories and behavioral metrics
     for double-patch food choice experiments across conditions.
-    
+
     Args:
         datasets: Dictionary mapping condition names to dataset lists
         title: Main figure title
@@ -537,10 +568,10 @@ def DoublePatch_summary(datasets: Dict[str, Sequence[Any]], title: str, mdiff_df
         ks: Parameter keys to plot. Uses default set if None
         name: Plot name for saving. Auto-generated if None
         **kwargs: Additional arguments passed to GridPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = DoublePatch_summary(datasets={'control': [d1], 'test': [d2]}, title='Food Choice', mdiff_df=df)
     """
@@ -626,22 +657,24 @@ def DoublePatch_summary(datasets: Dict[str, Sequence[Any]], title: str, mdiff_df
     "chemotaxis summary",
     required={"graphIDs": ["trajectories"], "ks": ["c_odor1", "dc_odor1"]},
 )
-def chemo_summary(datasets: Dict[str, Sequence[Any]], mdiff_df: Any, title: str, **kwargs: Any) -> Any:
+def chemo_summary(
+    datasets: Dict[str, Sequence[Any]], mdiff_df: Any, title: str, **kwargs: Any
+) -> Any:
     """
     Create chemotaxis assay summary grid figure.
-    
+
     Generates comprehensive figure showing chemotaxis behavior including
     trajectories, orientation metrics, and statistical comparisons.
-    
+
     Args:
         datasets: Dictionary mapping condition names to dataset lists
         mdiff_df: DataFrame with statistical comparison metrics
         title: Main figure title
         **kwargs: Additional arguments passed to GridPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = chemo_summary(datasets={'control': [d1], 'odor': [d2]}, mdiff_df=df, title='Chemotaxis')
     """
@@ -709,18 +742,18 @@ def chemo_summary(datasets: Dict[str, Sequence[Any]], mdiff_df: Any, title: str,
 def result_summary(datasets: Sequence[Any], target: Any, **kwargs: Any) -> Any:
     """
     Create experiment result summary grid figure.
-    
+
     Generates comprehensive grid showing experiment results with multiple
     panels for trajectories, metrics, and comparisons to target data.
-    
+
     Args:
         datasets: List of datasets to summarize
         target: Target dataset for comparison
         **kwargs: Additional arguments passed to GridPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = result_summary(datasets=[d1, d2], target=ref_dataset)
     """
@@ -782,14 +815,21 @@ def result_summary(datasets: Sequence[Any], target: Any, **kwargs: Any) -> Any:
 
 @funcs.graph("sample track")
 def model_sample_track(
-    mID: Optional[str] = None, m: Any = None, dur: float = 2 / 3, dt: float = 1 / 16, Nids: int = 1, min_turn_amp: float = 20, d: Any = None, **kwargs: Any
+    mID: Optional[str] = None,
+    m: Any = None,
+    dur: float = 2 / 3,
+    dt: float = 1 / 16,
+    Nids: int = 1,
+    min_turn_amp: float = 20,
+    d: Any = None,
+    **kwargs: Any,
 ) -> Any:
     """
     Create sample trajectory tracks from model simulation.
-    
+
     Simulates and plots sample individual tracks showing trajectory, turns,
     and behavioral details for model validation.
-    
+
     Args:
         mID: Model ID to simulate. Required if m is None
         m: Pre-loaded model object. Loads from mID if None
@@ -799,10 +839,10 @@ def model_sample_track(
         min_turn_amp: Minimum turn amplitude to highlight. Defaults to 20 degrees
         d: Pre-loaded dataset for comparison. Defaults to None
         **kwargs: Additional arguments passed to GridPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = model_sample_track(mID='model_01', dur=1.0, Nids=3)
     """
@@ -868,23 +908,29 @@ def model_sample_track(
 
 
 @funcs.graph("error summary", required={"graphIDs": ["error barplot", "error table"]})
-def eval_summary(error_dict: Dict[str, Any], evaluation: Any, norm_mode: str = "raw", eval_mode: str = "pooled", **kwargs: Any) -> Any:
+def eval_summary(
+    error_dict: Dict[str, Any],
+    evaluation: Any,
+    norm_mode: str = "raw",
+    eval_mode: str = "pooled",
+    **kwargs: Any,
+) -> Any:
     """
     Create model evaluation summary grid figure.
-    
+
     Generates comprehensive evaluation figure with error bar plots, statistical
     tables, and comparison metrics for model-data fit assessment.
-    
+
     Args:
         error_dict: Dictionary containing error metrics by type
         evaluation: Evaluation metadata with model labels and colors
         norm_mode: Normalization mode ('raw', 'normalized'). Defaults to 'raw'
         eval_mode: Evaluation mode ('pooled', '1:1'). Defaults to 'pooled'
         **kwargs: Additional arguments passed to GridPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = eval_summary(error_dict=errors, evaluation=eval_meta, eval_mode='pooled')
     """

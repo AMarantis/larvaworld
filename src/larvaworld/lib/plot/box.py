@@ -37,10 +37,10 @@ def boxplot(
 ) -> Any:
     """
     Create grouped boxplots comparing parameters across datasets.
-    
+
     Generates boxplots using seaborn for specified parameters, with support
     for coupled group comparisons (e.g., experimental pairs).
-    
+
     Args:
         ks: Parameter keys to plot
         sort_labels: Whether to sort group labels alphabetically. Defaults to False
@@ -50,10 +50,10 @@ def boxplot(
         common_ids: Common identifiers across pairs. Auto-extracted if None
         coupled_labels: Whether labels are coupled. Auto-detected if None
         **kwargs: Additional arguments passed to AutoPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = boxplot(ks=['v', 'a'], datasets=[d1, d2], coupled_labels=True)
     """
@@ -143,18 +143,18 @@ def boxplot(
 def boxplot_PI(sort_labels: bool = False, xlabel: str = "Trials", **kwargs: Any) -> Any:
     """
     Create boxplot of preference indices across conditions.
-    
+
     Generates boxplots showing preference index (PI) distributions for
     different experimental conditions with automatic color-coding.
-    
+
     Args:
         sort_labels: Whether to sort labels alphabetically. Defaults to False
         xlabel: X-axis label. Defaults to 'Trials'
         **kwargs: Additional arguments passed to AutoPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = boxplot_PI(datasets=[d1, d2, d3], sort_labels=True)
     """
@@ -232,13 +232,21 @@ def boxplot_PI(sort_labels: bool = False, xlabel: str = "Trials", **kwargs: Any)
 
 
 @funcs.graph("PI (simple)")
-def PIboxplot(df: Any, exp: str, save_to: str, ylabel: str, ylim: Optional[Sequence[float]] = None, show: bool = False, suf: str = "") -> None:
+def PIboxplot(
+    df: Any,
+    exp: str,
+    save_to: str,
+    ylabel: str,
+    ylim: Optional[Sequence[float]] = None,
+    show: bool = False,
+    suf: str = "",
+) -> None:
     """
     Create simple boxplot and save to file.
-    
+
     Generates a basic matplotlib boxplot without AutoPlot infrastructure,
     useful for quick standalone visualizations.
-    
+
     Args:
         df: Data to plot (array-like or DataFrame)
         exp: Experiment name for title
@@ -247,11 +255,12 @@ def PIboxplot(df: Any, exp: str, save_to: str, ylabel: str, ylim: Optional[Seque
         ylim: Y-axis limits. Defaults to None
         show: Whether to display plot. Defaults to False
         suf: Filename suffix. Defaults to empty string
-        
+
     Example:
         >>> PIboxplot(data, 'Exp1', './plots', 'Preference Index', ylim=[-1, 1])
     """
     from matplotlib import pyplot as plt
+
     f = f"{save_to}/{exp}{suf}.pdf"
     box = plt.boxplot(
         df,
@@ -283,23 +292,23 @@ def boxplot_double_patch(
 ) -> Any:
     """
     Create boxplots for rover/sitter comparison in double-patch assay.
-    
+
     Generates multi-panel boxplots comparing behavioral parameters between
     rover and sitter phenotypes across different substrate conditions,
     with on-food vs off-food comparisons.
-    
+
     Args:
-        ks: Parameter keys to plot. Defaults to ['v_mu', 'tur_N_mu', 'pau_tr', 
+        ks: Parameter keys to plot. Defaults to ['v_mu', 'tur_N_mu', 'pau_tr',
             'tur_H', 'cum_d', 'on_food_tr']
         xlabel: X-axis label. Defaults to 'substrate'
         show_ns: Whether to show non-significant comparisons. Defaults to False
         stripplot: Whether to overlay strip plot. Defaults to False
         title: Whether to show plot title. Defaults to True
         **kwargs: Additional arguments passed to AutoPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = boxplot_double_patch(datasets=[d1, d2], stripplot=True)
     """
@@ -433,16 +442,16 @@ def boxplot_double_patch(
 def plot_foraging(**kwargs: Any) -> Any:
     """
     Create boxplots of foraging metrics by food type.
-    
+
     Generates boxplots showing time on food and food amount consumed
     across different food types for each dataset group.
-    
+
     Args:
         **kwargs: Arguments passed to AutoPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_foraging(datasets=[d1, d2])
     """
@@ -493,10 +502,10 @@ def lineplot(
 ) -> Any:
     """
     Create line plots with error bars for parameter comparisons.
-    
+
     Generates line plots showing parameter means with error bars across
     conditions, with support for statistical comparisons and custom markers.
-    
+
     Args:
         markers: Marker styles for different groups
         ks: Parameter keys to plot. Defaults to ['f_am']
@@ -508,10 +517,10 @@ def lineplot(
         leg_cols: Legend colors. Auto-generated if None
         scale: Scaling factor for y-values. Defaults to 1.0
         **kwargs: Additional arguments passed to AutoPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = lineplot(markers=['o', 's'], ks=['v', 'a'], datasets=[d1, d2])
     """

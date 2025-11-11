@@ -248,7 +248,13 @@ def generate_distro_database():
 distroDB: util.AttrDict = generate_distro_database()
 
 
-def get_dist(k: str, k0: str = "intermitter", v: Any = None, return_tabrows: bool = False, return_all: bool = False) -> dict | tuple:
+def get_dist(
+    k: str,
+    k0: str = "intermitter",
+    v: Any = None,
+    return_tabrows: bool = False,
+    return_all: bool = False,
+) -> dict | tuple:
     """
     Retrieve a distribution from the database.
 
@@ -733,7 +739,9 @@ class BoutGenerator:
         >>> durations = gen.sample(size=100)  # 100 bout durations
     """
 
-    def __init__(self, name: str, range: tuple[float, float], dt: float, **kwargs: Any) -> None:
+    def __init__(
+        self, name: str, range: tuple[float, float], dt: float, **kwargs: Any
+    ) -> None:
         self.name = name
         self.dt = dt
         self.range = range

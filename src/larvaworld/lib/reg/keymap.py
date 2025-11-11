@@ -148,6 +148,7 @@ class ControlRegistry:
         >>> controls.save()  # Save current configuration
         >>> loaded = controls.load()  # Load from file
     """
+
     def __init__(self) -> None:
         self.path = f"{CONF_DIR}/controls.txt"
         self.conf = init_controls()

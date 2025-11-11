@@ -32,10 +32,10 @@ def plot_single_bout(
 ) -> None:
     """
     Plot single behavioral bout duration distribution with fitted curves.
-    
+
     Creates log-log plot of bout duration probability distribution with
     optional fitted distribution curves (powerlaw, exponential, etc.).
-    
+
     Args:
         x0: Bout duration data
         bout: Bout type label ('pauses', 'runs', etc.)
@@ -49,7 +49,7 @@ def plot_single_bout(
         xlabel: X-axis label. Defaults to 'time (sec)'
         xlim: X-axis limits. Defaults to None
         **kwargs: Additional arguments passed to fit_bout_distros
-        
+
     Example:
         >>> plot_single_bout(pause_data, 'pauses', 'red', 'Control', ax)
     """
@@ -133,10 +133,10 @@ def plot_bouts(
 ) -> Any:
     """
     Plot behavioral bout distributions across datasets.
-    
+
     Creates two-panel plots showing distributions of bout durations (runs/pauses
     or turn durations/amplitudes) with fitted distribution curves.
-    
+
     Args:
         name: Plot name for saving. Auto-generated if None
         plot_fits: Which distribution fits to display ('best', 'all', or list). Defaults to ''
@@ -145,10 +145,10 @@ def plot_bouts(
         stridechain_duration: Use run duration instead of stride count. Defaults to False
         legend_outside: Place legend outside plots. Defaults to False
         **kwargs: Additional arguments passed to AutoPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_bouts(datasets=[d1, d2], plot_fits='best', turns=False)
     """

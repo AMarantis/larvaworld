@@ -39,10 +39,14 @@ def test_import_jovanic_with_match_ids(monkeypatch, tracker, filesystem):
         calls["finalize_flags"] = (complete_ticks, interpolate_ticks)
         return "step"
 
-    monkeypatch.setattr(importing, "read_timeseries_from_raw_files_per_parameter", fake_read)
+    monkeypatch.setattr(
+        importing, "read_timeseries_from_raw_files_per_parameter", fake_read
+    )
     monkeypatch.setattr(importing, "match_larva_ids", fake_match)
     monkeypatch.setattr(importing, "constrain_selected_tracks", fake_constrain)
-    monkeypatch.setattr(importing, "init_endpoint_dataframe_from_timeseries", fake_endpoint)
+    monkeypatch.setattr(
+        importing, "init_endpoint_dataframe_from_timeseries", fake_endpoint
+    )
     monkeypatch.setattr(importing, "finalize_timeseries_dataframe", fake_finalize)
 
     step, end = importing.import_Jovanic(
@@ -72,11 +76,19 @@ def test_import_jovanic_without_match_ids(monkeypatch, tracker, filesystem):
     def fake_match(*args, **kwargs):  # should not be called
         raise AssertionError("match_larva_ids should be skipped when match_ids=False")
 
-    monkeypatch.setattr(importing, "read_timeseries_from_raw_files_per_parameter", fake_read)
+    monkeypatch.setattr(
+        importing, "read_timeseries_from_raw_files_per_parameter", fake_read
+    )
     monkeypatch.setattr(importing, "match_larva_ids", fake_match)
     monkeypatch.setattr(importing, "constrain_selected_tracks", lambda df, **kw: df)
-    monkeypatch.setattr(importing, "init_endpoint_dataframe_from_timeseries", lambda df, dt: "endpoint")
-    monkeypatch.setattr(importing, "finalize_timeseries_dataframe", lambda df, complete_ticks, interpolate_ticks: "step")
+    monkeypatch.setattr(
+        importing, "init_endpoint_dataframe_from_timeseries", lambda df, dt: "endpoint"
+    )
+    monkeypatch.setattr(
+        importing,
+        "finalize_timeseries_dataframe",
+        lambda df, complete_ticks, interpolate_ticks: "step",
+    )
 
     step, end = importing.import_Jovanic(
         source_id="dataset",
@@ -93,7 +105,9 @@ def test_import_jovanic_without_match_ids(monkeypatch, tracker, filesystem):
 def test_import_schleyer_collects_csvs(monkeypatch, tracker, filesystem):
     captured = {"files": []}
 
-    monkeypatch.setattr(importing, "get_Schleyer_metadata_inv_x", lambda dir: f"inv:{dir}")
+    monkeypatch.setattr(
+        importing, "get_Schleyer_metadata_inv_x", lambda dir: f"inv:{dir}"
+    )
 
     def fake_read(files, inv_x, read_sequence, save_mode, tracker):
         captured["files"].append((tuple(files), inv_x, save_mode, tuple(read_sequence)))
@@ -103,9 +117,13 @@ def test_import_schleyer_collects_csvs(monkeypatch, tracker, filesystem):
         captured["generate"] = {"dt": dt, "dfs": dfs, "kwargs": kwargs}
         return ("step", "endpoint")
 
-    monkeypatch.setattr(importing, "read_timeseries_from_raw_files_per_larva", fake_read)
+    monkeypatch.setattr(
+        importing, "read_timeseries_from_raw_files_per_larva", fake_read
+    )
     monkeypatch.setattr(importing, "generate_dataframes", fake_generate)
-    monkeypatch.setattr(importing.os, "listdir", lambda d: ["track1.csv", "notes.txt", "track2.csv"])
+    monkeypatch.setattr(
+        importing.os, "listdir", lambda d: ["track1.csv", "notes.txt", "track2.csv"]
+    )
 
     step, end = importing.import_Schleyer(
         source_dir="/schleyer",
@@ -117,7 +135,7 @@ def test_import_schleyer_collects_csvs(monkeypatch, tracker, filesystem):
 
     assert step == "step"
     assert end == "endpoint"
-    (files_tuple, inv_flag, save_mode, read_seq), = captured["files"]
+    ((files_tuple, inv_flag, save_mode, read_seq),) = captured["files"]
     assert files_tuple == ("/schleyer/track1.csv", "/schleyer/track2.csv")
     assert inv_flag == "inv:/schleyer"
     assert save_mode == "full"
@@ -140,7 +158,9 @@ def test_import_single_track_variants(monkeypatch, tracker, filesystem, func_nam
         captured["dt"] = dt
         return ("step", "endpoint")
 
-    monkeypatch.setattr(importing, "read_timeseries_from_raw_files_per_larva", fake_read)
+    monkeypatch.setattr(
+        importing, "read_timeseries_from_raw_files_per_larva", fake_read
+    )
     monkeypatch.setattr(importing, "generate_dataframes", fake_generate)
 
     func = getattr(importing, func_name)

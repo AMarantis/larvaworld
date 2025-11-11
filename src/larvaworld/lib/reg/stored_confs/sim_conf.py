@@ -174,6 +174,7 @@ def Exp_dict():
     def d():
         from ...param import Odor
         from ...reg import gen
+
         # GTRvsS import - deep import required due to circular dependency
         from ...reg.larvagroup import GTRvsS
 
@@ -601,7 +602,9 @@ def Ga_dict():
     )
     dID = reg.default_refID
     # Lazy import to avoid reg<->sim cycles
-    OptimizationOps = getattr(import_module("larvaworld.lib.sim.batch_run"), "OptimizationOps")
+    OptimizationOps = getattr(
+        import_module("larvaworld.lib.sim.batch_run"), "OptimizationOps"
+    )
 
     l = [
         _ga_conf("interference", refID=dID, cyc=["fov", "foa", "rov"]),
@@ -636,8 +639,10 @@ def Ga_dict():
 @funcs.stored_conf("Batch")
 def Batch_dict():
     # Lazy import to avoid reg<->sim cycles
-    OptimizationOps = getattr(import_module("larvaworld.lib.sim.batch_run"), "OptimizationOps")
-    
+    OptimizationOps = getattr(
+        import_module("larvaworld.lib.sim.batch_run"), "OptimizationOps"
+    )
+
     def bb(exp, proc=[], ss={}, o=None, N=5, abs=False, min=True, thr=0.001, **kwargs):
         return AttrDict(
             exp=exp,

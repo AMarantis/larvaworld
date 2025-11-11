@@ -4,6 +4,7 @@ Integration tests for calibration.py using REAL LarvaDataset.
 Uses real dataset from registry (exploration.30controls) with full preprocessing.
 Requires ensure_datasets_ready fixture.
 """
+
 import pytest
 
 pytestmark = [pytest.mark.integration, pytest.mark.slow]

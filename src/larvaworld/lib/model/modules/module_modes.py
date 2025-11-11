@@ -100,7 +100,9 @@ class BrainModule(NestedConf):
                 return C(**{k: conf[k] for k in conf if k != "mode"}, **kwargs)
         return None
 
-    def module_conf(self, mode: str | None = None, include_mode: bool = True, **kwargs: Any):
+    def module_conf(
+        self, mode: str | None = None, include_mode: bool = True, **kwargs: Any
+    ):
         if mode in self.short_modes:
             mode = [k for k in self.modes if self.ModeShortNames[k] == mode][0]
         if mode in self.default_dict:
@@ -112,7 +114,9 @@ class BrainModule(NestedConf):
         else:
             return None
 
-    def module_objects(self, mode: str | None = None, excluded: list[Any] | None = None):
+    def module_objects(
+        self, mode: str | None = None, excluded: list[Any] | None = None
+    ):
         if excluded is None:
             excluded = self.excluded
         C = self.get_class(mode=mode)
@@ -230,7 +234,9 @@ class BrainModuleDB(NestedConf):
             else:
                 return self.brainDB[k].modes
 
-    def build_module(self, mID: str | None = None, conf: Any | None = None, **kwargs: Any):
+    def build_module(
+        self, mID: str | None = None, conf: Any | None = None, **kwargs: Any
+    ):
         return (
             self.brainDB[mID].build_module(conf=conf, **kwargs)
             if mID in self.BrainMods
@@ -253,12 +259,24 @@ class BrainModuleDB(NestedConf):
     def build_sensormodules(self, conf: AttrDict, **kwargs: Any):
         return self.build_modules(mIDs=self.SensorMods, conf=conf, **kwargs)
 
-    def module_conf(self, mID: str | None = None, mode: str | None = None, as_entry: bool = True, **kwargs: Any):
+    def module_conf(
+        self,
+        mID: str | None = None,
+        mode: str | None = None,
+        as_entry: bool = True,
+        **kwargs: Any,
+    ):
         M = self.brainDB[mID]
         conf = M.module_conf(mode=mode, **kwargs) if mID in self.BrainMods else None
         return M.as_entry(conf) if as_entry else conf
 
-    def module_objects(self, mID: str | None = None, mode: str | None = None, as_entry: bool = True, **kwargs: Any):
+    def module_objects(
+        self,
+        mID: str | None = None,
+        mode: str | None = None,
+        as_entry: bool = True,
+        **kwargs: Any,
+    ):
         M = self.brainDB[mID]
         objs = (
             M.module_objects(mode=mode, **kwargs)
@@ -267,7 +285,9 @@ class BrainModuleDB(NestedConf):
         )
         return M.as_entry(objs) if as_entry else objs
 
-    def modules_objects(self, mIDs: list[str], conf: AttrDict, as_entry: bool = True, **kwargs: Any):
+    def modules_objects(
+        self, mIDs: list[str], conf: AttrDict, as_entry: bool = True, **kwargs: Any
+    ):
         C = AttrDict(
             {
                 mID: self.module_objects(
@@ -318,7 +338,13 @@ class BrainModuleDB(NestedConf):
         except:
             return None
 
-    def memory_kws(self, mode: str = "RL", modality: str = "olfaction", as_entry: bool = True, **kwargs: Any):
+    def memory_kws(
+        self,
+        mode: str = "RL",
+        modality: str = "olfaction",
+        as_entry: bool = True,
+        **kwargs: Any,
+    ):
         A = self.get_memory_class(mode, modality)
         if A is not None:
             c = class_defaults(
@@ -390,7 +416,9 @@ class LarvaModuleDB(BrainModuleDB):
             agents.ObstacleLarvaRobot, excluded=[agents.LarvaRobot], **kwargs
         )
 
-    def energetics_kws(self, gut_kws: AttrDict = AttrDict(), DEB_kws: AttrDict = AttrDict()):
+    def energetics_kws(
+        self, gut_kws: AttrDict = AttrDict(), DEB_kws: AttrDict = AttrDict()
+    ):
         return AttrDict(
             {
                 "DEB": class_defaults(

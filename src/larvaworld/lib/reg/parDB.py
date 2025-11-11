@@ -312,7 +312,9 @@ class ParamClass:
             }
             self.add(**kws, **kws0)
 
-    def add_chunk(self, pc: str, kc: str, func: Any = None, required_ks: list[str] = []) -> None:
+    def add_chunk(
+        self, pc: str, kc: str, func: Any = None, required_ks: list[str] = []
+    ) -> None:
         f_kws = {"func": func, "required_ks": required_ks}
 
         ptr = nam.dur_ratio(pc)
@@ -1172,7 +1174,13 @@ class ParamRegistry(ParamClass):
                 self.compute(k0, d)
             p.compute(d)
 
-    def getPar(self, k: Optional[str] = None, p: Optional[str | list[str]] = None, d: Optional[str | list[str]] = None, to_return: str | list[str] = "d"):
+    def getPar(
+        self,
+        k: Optional[str] = None,
+        p: Optional[str | list[str]] = None,
+        d: Optional[str | list[str]] = None,
+        to_return: str | list[str] = "d",
+    ):
         """
         Retrieve the values of specific keys from a given parameter entry.
         Takes as argument the key by which to look up the parameter entry in the parameter database.
@@ -1262,7 +1270,9 @@ class ParamRegistry(ParamClass):
                     pass
         return AttrDict(dic)
 
-    def get_reporters(self, agents: list[Any], cs: Optional[list[str]] = None) -> AttrDict:
+    def get_reporters(
+        self, agents: list[Any], cs: Optional[list[str]] = None
+    ) -> AttrDict:
         O = output_dict
         if cs is None:
             cs = ["pose"]

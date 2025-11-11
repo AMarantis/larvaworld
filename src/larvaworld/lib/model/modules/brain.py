@@ -35,11 +35,11 @@ __all__: list[str] = [
 class Brain(NestedConf):
     """
     Base brain class for agent behavioral control.
-    
+
     Orchestrates sensory processing and locomotor control for autonomous
     agents in simulation. Integrates multiple sensory modalities (olfaction,
     touch, thermosensation, wind) with memory and locomotor modules.
-    
+
     Attributes:
         olfactor: Olfactory sensor module for odor detection
         toucher: Tactile sensor module for contact sensing
@@ -49,12 +49,13 @@ class Brain(NestedConf):
         agent: Parent agent instance (polymorphic: LarvaRobot, LarvaSim, etc.)
         dt: Simulation time step (seconds)
         modalities: Dict of sensory modalities with sensors and processing functions
-    
+
     Example:
         >>> brain = Brain(conf=brain_conf, agent=my_agent, dt=0.1)
         >>> brain.sense(pos=agent.pos, reward=False)
         >>> print(f"Total sensory input: {brain.A_in}")
     """
+
     olfactor = ClassAttr(
         class_=MD.parent_class("olfactor"), default=None, doc="The olfactory sensor"
     )
@@ -70,7 +71,13 @@ class Brain(NestedConf):
         doc="The temperature sensor",
     )
 
-    def __init__(self, conf: Any, agent: Any | None = None, dt: float | None = None, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        conf: Any,
+        agent: Any | None = None,
+        dt: float | None = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(**kwargs)
         self.agent = agent
         if dt is None:
@@ -200,11 +207,11 @@ class Brain(NestedConf):
 class DefaultBrain(Brain):
     """
     Default larva brain implementation with full sensory integration.
-    
+
     Extends base Brain with automatic sensor module construction
     and integrated locomotor stepping. Provides complete sensorimotor
     loop for autonomous larva agents.
-    
+
     Args:
         conf: Brain configuration dict with keys:
               - 'olfactor': Olfactory sensor config (or None)
@@ -217,21 +224,30 @@ class DefaultBrain(Brain):
                Must have attributes: model, radius, pos, touch_sensorIDs
         dt: Simulation time step (seconds). Defaults to agent.model.dt
         **kwargs: Additional keyword arguments passed to parent Brain
-    
+
     Returns:
         Tuple of (linear_velocity, angular_velocity, crawl_flag)
-    
+
     Example:
         >>> brain = DefaultBrain(conf=brain_config, agent=my_larva, dt=0.1)
         >>> lin_vel, ang_vel, crawling = brain.step(pos=larva.pos, on_food=False)
     """
-    def __init__(self, conf: Any, agent: Any | None = None, dt: float | None = None, **kwargs: Any) -> None:
+
+    def __init__(
+        self,
+        conf: Any,
+        agent: Any | None = None,
+        dt: float | None = None,
+        **kwargs: Any,
+    ) -> None:
         if dt is None:
             dt = agent.model.dt
         kws = {"dt": dt, "brain": self}
         kwargs.update(MD.build_sensormodules(conf=conf, **kws))
         super().__init__(agent=agent, dt=dt, conf=conf, **kwargs)
 
-    def step(self, pos: Any, on_food: bool = False, **kwargs: Any) -> tuple[float, float, bool]:
+    def step(
+        self, pos: Any, on_food: bool = False, **kwargs: Any
+    ) -> tuple[float, float, bool]:
         self.sense(pos=pos, reward=on_food)
         return self.locomotor.step(A_in=self.A_in, on_food=on_food, **kwargs)

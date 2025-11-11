@@ -35,11 +35,11 @@ __displayname__ = "Simulation larva"
 class BaseController(param.Parameterized):
     """
     Physics controller for larva kinematic simulation.
-    
+
     Provides motion generation modes (velocity/force/torque), damping
     coefficients, and body mechanics (torsional spring, bend correction)
     for realistic larva movement simulation.
-    
+
     Attributes:
         lin_vel_coef: Translational velocity scaling coefficient (default: 1.0)
         ang_vel_coef: Angular velocity scaling coefficient (default: 1.0)
@@ -51,7 +51,7 @@ class BaseController(param.Parameterized):
         ang_damping: Angular damping coefficient (default: 1.0)
         lin_mode: Motion mode ('velocity', 'force', or 'impulse')
         ang_mode: Rotation mode ('torque' or 'velocity')
-        
+
     Example:
         >>> controller = BaseController(torque_coef=0.8, body_spring_k=1.5)
         >>> delta_angle = controller.compute_delta_rear_angle(0.2, 0.001, 0.003)
@@ -106,11 +106,11 @@ class BaseController(param.Parameterized):
 class LarvaSim(LarvaMotile, BaseController):
     """
     Physically-simulated larva agent with realistic biomechanics.
-    
+
     Combines LarvaMotile behavioral capabilities with BaseController
     physics to provide realistic simulation including body mechanics,
     collision detection, and arena boundary handling.
-    
+
     Attributes:
         collision_with_object: Whether currently colliding with obstacle
         body_bend: Current body bend angle (radians)
@@ -118,13 +118,13 @@ class LarvaSim(LarvaMotile, BaseController):
         cum_dst: Cumulative distance traveled
         border_collision: Border collision detection (property)
         larva_collision: Inter-larva collision detection (property)
-        
+
     Args:
         physics: Physics parameters dict (velocities, damping, spring constants)
         Box2D: Box2D physics engine parameters (optional)
         sensorimotor: Sensorimotor coupling parameters (optional)
         **kwargs: Additional larva configuration
-        
+
     Example:
         >>> larva = LarvaSim(
         ...     physics={'torque_coef': 0.5, 'body_spring_k': 1.0},
@@ -136,7 +136,13 @@ class LarvaSim(LarvaMotile, BaseController):
 
     __displayname__ = "Simulated larva"
 
-    def __init__(self, physics: dict[str, Any] = {}, Box2D: dict[str, Any] = {}, sensorimotor: Any = None, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        physics: dict[str, Any] = {},
+        Box2D: dict[str, Any] = {},
+        sensorimotor: Any = None,
+        **kwargs: Any,
+    ) -> None:
         BaseController.__init__(self, **physics)
         LarvaMotile.__init__(self, **kwargs)
 
@@ -241,7 +247,16 @@ class LarvaSim(LarvaMotile, BaseController):
         else:
             return False
 
-    def position_head_in_tank(self, hr0: Tuple[float, float], ho0: float, l0: float, fov0: float, fov1: float, ang_vel: float, lin_vel: float) -> tuple[float, float]:
+    def position_head_in_tank(
+        self,
+        hr0: Tuple[float, float],
+        ho0: float,
+        l0: float,
+        fov0: float,
+        fov1: float,
+        ang_vel: float,
+        lin_vel: float,
+    ) -> tuple[float, float]:
         """
         Position the larva's head in the simulated tank.
 
@@ -363,7 +378,13 @@ class LarvaSim(LarvaMotile, BaseController):
         pos = tuple(self.global_midspine_of_body)
         self.update_larva_pose(pos, ho1, lin_vel, ang_vel)
 
-    def update_larva_pose(self, position: tuple[float, float], orientation: float, lin_vel: float = 0, ang_vel: float = 0) -> None:
+    def update_larva_pose(
+        self,
+        position: tuple[float, float],
+        orientation: float,
+        lin_vel: float = 0,
+        ang_vel: float = 0,
+    ) -> None:
         """
         Update the larva's pose and trajectories' log.
 

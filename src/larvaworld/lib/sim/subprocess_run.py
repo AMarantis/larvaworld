@@ -17,7 +17,7 @@ __all__: list[str] = [
 class Exec:
     """
     Subprocess execution wrapper for simulations.
-    
+
     Manages simulation execution either synchronously (in-process) or
     asynchronously (as external subprocess) for non-blocking operation.
     """
@@ -34,10 +34,10 @@ class Exec:
     ) -> None:
         """
         Initialize subprocess execution wrapper for simulations.
-        
+
         Creates an execution wrapper that can run simulations either
         synchronously or as external subprocess for non-blocking operation.
-        
+
         Args:
             mode: Execution mode ('sim' for single run or 'batch' for batch execution).
             conf: Configuration dict (structure depends on mode).
@@ -49,7 +49,7 @@ class Exec:
             progressbar: Optional progress bar widget for GUI integration.
             w_progressbar: Optional secondary progress bar widget.
             **kwargs: Additional args passed to subprocess.Popen.
-        
+
         Example:
             >>> exec = Exec('sim', sim_conf, 'chemorbit', run_externally=True)
             >>> exec.run()
@@ -99,16 +99,16 @@ class Exec:
     ) -> pd.DataFrame | tuple[dict[str, dict[str, Any]], dict[str, Any]] | None:
         """
         Retrieve and process results from subprocess execution.
-        
+
         Collects simulation results from subprocess execution and
         processes them according to experiment type and mode.
-        
+
         Args:
             res: Results from subprocess - can be:
                  - pd.DataFrame: Single batch endpoint data (batch mode).
                  - list[LarvaDataset]: Multiple dataset results (sim mode).
                  - None: Load from disk based on self.conf (default for external runs).
-        
+
         Returns:
             Processed results, type depends on self.mode:
             - For 'batch' mode: DataFrame with batch results or None if load fails.
@@ -116,13 +116,13 @@ class Exec:
               * entry_dict: {id: {'dataset': list[LarvaDataset], 'figs': dict}}
               * fig_dict: Figure dictionary (currently None - TODO)
             - None: If results cannot be retrieved.
-        
+
         Example:
             >>> # After external batch run completes:
             >>> results = exec.retrieve()  # Loads from disk
             >>> if isinstance(results, pd.DataFrame):
             >>>     print(f"Batch results: {len(results)} rows")
-            >>> 
+            >>>
             >>> # For sim mode with manual results:
             >>> datasets = [LarvaDataset(dir=path) for path in paths]
             >>> entry, figs = exec.retrieve(res=datasets)

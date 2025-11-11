@@ -1,6 +1,7 @@
 """
 Screen side-panel for pygame-based simulation visualization
 """
+
 from __future__ import annotations
 
 import math
@@ -44,6 +45,7 @@ class SidePanel:
         )
         try:
             import pygame
+
             if pygame.font:
                 self.font = pygame.font.Font(None, self.FONT_SIZE)
             else:
@@ -52,6 +54,7 @@ class SidePanel:
             self.font = None
         try:
             import pygame
+
             self.panel_rect = pygame.Rect(
                 self.viewer.w, 0, self.viewer.panel_width, self.viewer.h
             )
@@ -123,6 +126,7 @@ class SidePanel:
         x = self.viewer.w + self.DEFAULT_MARGIN + extra_margin
         y = self.line_num * self.line_spacing
         import pygame
+
         lint_pos = pygame.Rect(x, y, 20, 20)
         self.viewer.draw_text_box(line, lint_pos)
         self.line_num += 1
@@ -136,6 +140,7 @@ class SidePanel:
         """
         # Draw a black background for the side panel
         import pygame
+
         if self.panel_rect is not None:
             pygame.draw.rect(v.v, v.sidepanel_color, self.panel_rect)
         v.draw_line((v.w, 0), (v.w, v.h), color=util.Color.RED)

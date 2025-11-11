@@ -1,6 +1,7 @@
 """
 Methods for managing angular metrics
 """
+
 from __future__ import annotations
 
 import math
@@ -149,7 +150,9 @@ def rotationMatrix(a: float) -> np.ndarray:
     return np.array([[np.cos(a), -np.sin(a)], [np.sin(a), np.cos(a)]])
 
 
-def rotate_points_around_point(points: np.ndarray, radians: float, origin: tuple[float, float] | None = None) -> np.ndarray:
+def rotate_points_around_point(
+    points: np.ndarray, radians: float, origin: tuple[float, float] | None = None
+) -> np.ndarray:
     """
     Rotate multiple points around a given origin point.
 

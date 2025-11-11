@@ -53,6 +53,7 @@ def track_par_func(chunk: str, par: str) -> Callable[[Any], None]:
         >>> tracker = track_par_func('str', 'velocity')
         >>> tracker(dataset)  # Tracks velocity in stride chunks
     """
+
     def func(d):
         d.track_par_in_chunk(chunk, par)
 
@@ -144,6 +145,7 @@ def tor_func(dur: int) -> Callable[[Any], None]:
         >>> tortuosity_fn = tor_func(10)
         >>> tortuosity_fn(dataset)  # Computes tortuosity over 10-step windows
     """
+
     def func(d):
         d.comp_tortuosity(dur)
 
@@ -168,6 +170,7 @@ def mean_func(par: str) -> Callable[[Any], None]:
         >>> mean_vel = mean_func('velocity')
         >>> mean_vel(dataset)  # Adds 'velocity_mean' to endpoint data
     """
+
     def func(d):
         d.e[nam.mean(par)] = d.s[par].dropna().groupby("AgentID").mean()
 
@@ -192,6 +195,7 @@ def std_func(par: str) -> Callable[[Any], None]:
         >>> std_vel = std_func('velocity')
         >>> std_vel(dataset)  # Adds 'velocity_std' to endpoint data
     """
+
     def func(d):
         d.e[nam.std(par)] = d.s[par].dropna().groupby("AgentID").std()
 
@@ -216,6 +220,7 @@ def var_func(par: str) -> Callable[[Any], None]:
         >>> var_vel = var_func('velocity')
         >>> var_vel(dataset)  # Adds 'velocity_var' to endpoint data
     """
+
     def func(d):
         d.e[nam.var(par)] = (
             d.s[par].dropna().groupby("AgentID").mean()
@@ -243,6 +248,7 @@ def min_func(par: str) -> Callable[[Any], None]:
         >>> min_vel = min_func('velocity')
         >>> min_vel(dataset)  # Adds 'velocity_min' to endpoint data
     """
+
     def func(d):
         d.e[nam.min(par)] = d.s[par].dropna().groupby("AgentID").min()
 
@@ -267,6 +273,7 @@ def max_func(par: str) -> Callable[[Any], None]:
         >>> max_vel = max_func('velocity')
         >>> max_vel(dataset)  # Adds 'velocity_max' to endpoint data
     """
+
     def func(d):
         d.e[nam.max(par)] = d.s[par].dropna().groupby("AgentID").max()
 
@@ -291,6 +298,7 @@ def fin_func(par: str) -> Callable[[Any], None]:
         >>> final_pos = fin_func('position')
         >>> final_pos(dataset)  # Adds 'position_final' to endpoint data
     """
+
     def func(d):
         d.e[nam.final(par)] = d.s[par].dropna().groupby("AgentID").last()
 
@@ -315,6 +323,7 @@ def init_func(par: str) -> Callable[[Any], None]:
         >>> initial_pos = init_func('position')
         >>> initial_pos(dataset)  # Adds 'position_initial' to endpoint data
     """
+
     def func(d):
         d.e[nam.initial(par)] = d.s[par].dropna().groupby("AgentID").first()
 
@@ -339,6 +348,7 @@ def cum_func(par: str) -> Callable[[Any], None]:
         >>> cum_dist = cum_func('distance')
         >>> cum_dist(dataset)  # Adds 'distance_cum' to endpoint data
     """
+
     def func(d):
         d.e[nam.cum(par)] = d.s[par].dropna().groupby("AgentID").sum()
 
@@ -363,6 +373,7 @@ def freq_func(par: str) -> Callable[[Any], None]:
         >>> freq_vel = freq_func('velocity')
         >>> freq_vel(dataset)  # Computes FFT of velocity time series
     """
+
     def func(d):
         d.comp_freq(par=par, fr_range=(0.0, +np.inf))
 
@@ -387,6 +398,7 @@ def tr_func(pc: str) -> Callable[[Any], None]:
         >>> pause_ratio = tr_func('pau')
         >>> pause_ratio(dataset)  # Adds 'pau_dur_ratio' to endpoint data
     """
+
     def func(d):
         d.e[nam.dur_ratio(pc)] = d.e[nam.cum(nam.dur(pc))] / d.e[nam.cum(nam.dur(""))]
 
@@ -412,6 +424,7 @@ def unwrap_func(par: str, in_deg: bool) -> Callable[[Any], None]:
         >>> unwrap_orient = unwrap_func('orientation', in_deg=True)
         >>> unwrap_orient(dataset)  # Adds 'orientation_unwrap' column
     """
+
     def func(d):
         s = copy.deepcopy(d.s[par])
         d.s[nam.unwrap(par)] = util.apply_per_level(s, util.unwrap_deg).flatten()
@@ -428,7 +441,7 @@ def dst_func(point: str = "") -> Callable[[Any], None]:
     agents to a specified reference point or body segment.
 
     Args:
-        point: Reference point name (e.g., 'centroid', 'head'). 
+        point: Reference point name (e.g., 'centroid', 'head').
                Empty string uses default reference point.
 
     Returns:
@@ -438,6 +451,7 @@ def dst_func(point: str = "") -> Callable[[Any], None]:
         >>> dist_to_head = dst_func('head')
         >>> dist_to_head(dataset)  # Computes distances from head point
     """
+
     def func(d):
         util.compute_dst(d.s, point)
 
@@ -463,6 +477,7 @@ def func_v_spatial(p_d: str, p_v: str) -> Callable[[Any], None]:
         >>> vel_calc = func_v_spatial('linear_displacement', 'lin_velocity')
         >>> vel_calc(dataset)  # Adds 'lin_velocity' column
     """
+
     def func(d):
         d.s[p_v] = d.s[p_d] / d.c.dt
 

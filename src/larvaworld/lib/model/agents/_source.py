@@ -18,6 +18,7 @@ import numpy as np
 import param
 
 from ...param import ClassAttr, PositiveNumber, Substrate, xy_uniform_circle
+
 # ScreenManager import deferred due to circular dependency - will be imported when needed
 from . import PointAgent
 
@@ -32,18 +33,18 @@ __displayname__ = "Food source"
 class Source(PointAgent):
     """
     Base class for environmental resource sources.
-    
+
     Represents sources of food, odor, or other resources in the environment.
     Supports carrying by larvae, displacement by wind, and regeneration
     after depletion or removal from arena.
-    
+
     Attributes:
         can_be_carried: Whether larvae can carry this source (default: False)
         can_be_displaced: Whether wind/water can move this source (default: False)
         regeneration: Whether source regenerates after removal (default: False)
         regeneration_pos: Position parameters for regeneration (optional)
         is_carried_by: Reference to larva carrying this source (or None)
-        
+
     Example:
         >>> source = Source(
         ...     pos=(0.5, 0.5),
@@ -93,17 +94,17 @@ class Source(PointAgent):
 class Food(Source):
     """
     Food source agent with nutritional substrate and depletion dynamics.
-    
+
     Extends Source to represent consumable food patches with substrate
     quality, amount tracking, and visual depletion indication (color fading).
     Automatically removed from simulation when fully consumed.
-    
+
     Attributes:
         amount: Current food amount available (0 to initial_amount)
         substrate: Nutritional substrate composition (Substrate instance)
         initial_amount: Original food amount at creation
         color: Visual color (fades from default to white as depleted)
-        
+
     Example:
         >>> food = Food(
         ...     pos=(0.5, 0.5),

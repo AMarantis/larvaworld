@@ -31,21 +31,21 @@ __displayname__ = "Experimental replay larva"
 class LarvaReplay(Larva):
     """
     Larva agent for replaying experimental trajectory data.
-    
+
     Extends Larva to replay pre-recorded positional and orientation data
     from real experiments, enabling visualization and analysis of
     experimental trajectories within the simulation environment.
-    
+
     Attributes:
         data: ReplayData instance with recorded trajectories
         midline_xy: Midline points at current timestep (property)
         front_orientation: Front orientation at current timestep (property)
         rear_orientation: Rear orientation at current timestep (property)
-        
+
     Args:
         data: Recorded experimental data (positions, orientations, midlines)
         **kwargs: Additional larva configuration
-        
+
     Example:
         >>> replay_data = load_experiment_data('SchleyerGroup')
         >>> larva = LarvaReplay(data=replay_data['larva_0'])
@@ -121,14 +121,14 @@ class LarvaReplay(Larva):
 class LarvaReplayContoured(LarvaReplay, LarvaContoured):
     """
     Replay larva with contour body representation from experimental data.
-    
+
     Combines LarvaReplay trajectory playback with LarvaContoured geometry,
     displaying recorded contour vertices at each timestep for realistic
     body shape visualization from experimental recordings.
-    
+
     Attributes:
         contour_xy: Contour vertices at current timestep (property)
-        
+
     Example:
         >>> replay_data = load_experiment_data('SchleyerGroup')
         >>> larva = LarvaReplayContoured(data=replay_data['larva_0'])
@@ -169,14 +169,14 @@ class LarvaReplayContoured(LarvaReplay, LarvaContoured):
 class LarvaReplaySegmented(LarvaReplay, LarvaSegmented):
     """
     Replay larva with segmented body from experimental data.
-    
+
     Combines LarvaReplay trajectory playback with LarvaSegmented multi-segment
     body, positioning and orienting each segment based on recorded midline
     data for high-fidelity biomechanical visualization.
-    
+
     Attributes:
         segs: Body segments positioned from recorded midline data
-        
+
     Example:
         >>> replay_data = load_experiment_data('SchleyerGroup')
         >>> larva = LarvaReplaySegmented(data=replay_data['larva_0'], Nsegs=11)

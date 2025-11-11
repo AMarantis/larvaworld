@@ -1,6 +1,7 @@
 """
 Methods for managing shapely-based metrics
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -13,7 +14,10 @@ __all__: list[str] = [
 ]
 
 
-def segments_intersection(segment_1: tuple[geometry.Point, geometry.Point], segment_2: tuple[geometry.Point, geometry.Point]) -> geometry.Point | None:
+def segments_intersection(
+    segment_1: tuple[geometry.Point, geometry.Point],
+    segment_2: tuple[geometry.Point, geometry.Point],
+) -> geometry.Point | None:
     """
     Compute intersection point of two line segments.
 
@@ -46,7 +50,16 @@ def segments_intersection(segment_1: tuple[geometry.Point, geometry.Point], segm
     )
 
 
-def segments_intersection_p(p0_x: float, p0_y: float, p1_x: float, p1_y: float, p2_x: float, p2_y: float, p3_x: float, p3_y: float):
+def segments_intersection_p(
+    p0_x: float,
+    p0_y: float,
+    p1_x: float,
+    p1_y: float,
+    p2_x: float,
+    p2_y: float,
+    p3_x: float,
+    p3_y: float,
+):
     EPSILON = 0.000001
     s1_x = p1_x - p0_x
     s1_y = p1_y - p0_y
@@ -72,7 +85,11 @@ def segments_intersection_p(p0_x: float, p0_y: float, p1_x: float, p1_y: float, 
         return None
 
 
-def detect_nearest_obstacle(obstacles: list[Any], sensor_ray: tuple[geometry.Point, geometry.Point], p0: geometry.Point) -> tuple[float | None, Any]:
+def detect_nearest_obstacle(
+    obstacles: list[Any],
+    sensor_ray: tuple[geometry.Point, geometry.Point],
+    p0: geometry.Point,
+) -> tuple[float | None, Any]:
     """
     Find nearest obstacle intersected by a sensor ray.
 

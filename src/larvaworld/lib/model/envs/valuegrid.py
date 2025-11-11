@@ -38,18 +38,19 @@ __all__: list[str] = [
 class SpatialEntity(Viewable, Object):
     """
     Base class for spatial entities in simulation environment.
-    
+
     Combines visualization and object properties for entities that exist
     in spatial coordinates and can be rendered on screen.
-    
+
     Attributes:
         color: Display color (default: white)
         visible: Whether entity is visible on screen
-    
+
     Example:
         >>> entity = SpatialEntity(color="blue", visible=True)
         >>> entity.record_positions(label="pos")
     """
+
     color = param.Color(default="white")
     visible = param.Boolean(default=False)
 
@@ -71,19 +72,20 @@ class SpatialEntity(Viewable, Object):
 class Grid(SpatialEntity):
     """
     Base grid class with spatial resolution configuration.
-    
+
     Provides grid dimensionality and resolution for spatial discretization
     of continuous environments.
-    
+
     Attributes:
         grid_dims: Grid resolution tuple (X, Y), default (51, 51)
         X: Grid width (number of cells in X dimension)
         Y: Grid height (number of cells in Y dimension)
-    
+
     Example:
         >>> grid = Grid(grid_dims=(100, 100))
         >>> print(grid.X, grid.Y)  # 100 100
     """
+
     grid_dims = PositiveIntegerRange(
         (51, 51), softmax=500, doc="The spatial resolution of the food grid."
     )
@@ -100,21 +102,22 @@ class Grid(SpatialEntity):
 class GridOverSpace(Grid, agentpy.Grid):
     """
     Grid mapped over agentpy simulation space.
-    
+
     Extends Grid and agentpy.Grid to create a discretized grid overlay
     on top of continuous simulation space, enabling spatial indexing
     and cell-based computations.
-    
+
     Attributes:
         unique_id: Identifier for grid instance (default: "GridOverArena")
         space: Reference to model's agentpy.Space
         meshgrid: Numpy meshgrid for grid coordinates
         grid_vertices: Vertex positions for each grid cell
-    
+
     Example:
         >>> grid = GridOverSpace(model=sim_model, grid_dims=(50, 50))
         >>> cell = grid.get_grid_cell((0.1, 0.2))
     """
+
     unique_id = param.String("GridOverArena")
     color = param.Color(default="white")
     visible = param.Boolean(default=False)
@@ -167,11 +170,11 @@ class GridOverSpace(Grid, agentpy.Grid):
 class ValueGrid(Grid):
     """
     Grid storing scalar values at each cell position.
-    
+
     Base class for value-based grids (food, odor, temperature) that maintain
     a 2D array of scalar values with methods for adding, retrieving, and
     visualizing spatial distributions.
-    
+
     Attributes:
         initial_value: Default value for all grid cells (default: 0.0)
         fixed_max: Whether maximum value is kept constant (default: False)
@@ -179,19 +182,26 @@ class ValueGrid(Grid):
         max_value: Maximum value in grid (for normalization)
         min_value: Minimum value in grid (for clipping)
         sources: List of source objects contributing to grid values
-    
+
     Example:
         >>> vgrid = ValueGrid(sources=[food1, food2], max_value=100.0)
         >>> value = vgrid.get_value((0.5, 0.5))
         >>> vgrid.add_value((0.1, 0.2), 10.0)
     """
+
     initial_value = param.Number(0.0, doc="initial value over the grid")
 
     fixed_max = param.Boolean(False, doc="whether the max is kept constant")
 
     # grid_dims = PositiveIntegerRange((51, 51),softmax=500, doc='The spatial resolution of the food grid.')
 
-    def __init__(self, sources: list[Any] | None = None, max_value: float | None = None, min_value: float = 0.0, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        sources: list[Any] | None = None,
+        max_value: float | None = None,
+        min_value: float = 0.0,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(**kwargs)
 
         if sources is None:
@@ -341,22 +351,23 @@ class ValueGrid(Grid):
 class FoodGrid(ValueGrid):
     """
     Food distribution grid for agent feeding behavior.
-    
+
     Specialized ValueGrid for food resources with substrate properties,
     green color visualization, and fixed maximum value behavior. Agents
     can consume food from grid cells during simulation.
-    
+
     Attributes:
         unique_id: Grid identifier (default: "FoodGrid")
         color: Visualization color (default: green)
         fixed_max: Maximum value kept constant (default: True)
         initial_value: Starting food amount per cell (default: 10^-6)
         substrate: Substrate configuration for feeding interactions
-    
+
     Example:
         >>> food_grid = FoodGrid(initial_value=0.001, max_value=1.0)
         >>> color = food_grid.get_color(0.5)
     """
+
     unique_id = param.String("FoodGrid")
     color = param.Color(default="green")
     fixed_max = param.Boolean(default=True)
@@ -391,19 +402,20 @@ class FoodGrid(ValueGrid):
 class OdorScape(ValueGrid):
     """
     Odor landscape grid for chemotaxis simulations.
-    
+
     Factory class that dispatches to specific odor diffusion algorithms
     (Gaussian, Diffusion, or Analytical). Provides base infrastructure
     for modeling chemical gradients from odor sources.
-    
+
     Attributes:
         unique_id: Grid identifier (default: "Odorscape")
         odorscape: Algorithm type ("Gaussian", "Diffusion", or "Analytical")
-    
+
     Example:
         >>> odor = OdorScape(odorscape="Gaussian", sources=[source1, source2])
         >>> # Automatically creates GaussianValueLayer instance
     """
+
     unique_id = param.String("Odorscape")
     odorscape = param.Selector(
         objects=["Gaussian", "Diffusion"], doc="The odorscape algorithm"
@@ -429,21 +441,22 @@ class OdorScape(ValueGrid):
 class AnalyticalValueLayer(OdorScape):
     """
     Analytical odor gradient computation layer.
-    
+
     Computes odor values analytically using customizable value functions
     for each source. Default uses Gaussian distribution but supports
     arbitrary analytical formulations via value_function callback.
-    
+
     Attributes:
         odorscape: Algorithm type (default: "Analytical")
         value_function: Callable for computing grid values from sources
                        Signature: (source, value, pos, rel_pos) -> float
-    
+
     Example:
         >>> layer = AnalyticalValueLayer(sources=[odor_source])
         >>> value = layer.get_value((0.5, 0.5))
         >>> grid = layer.get_grid()
     """
+
     odorscape = param.Selector(default="Analytical")
 
     # function reference used to compute a grid value
@@ -506,17 +519,18 @@ class AnalyticalValueLayer(OdorScape):
 class GaussianValueLayer(AnalyticalValueLayer):
     """
     Gaussian odor diffusion model.
-    
+
     Implements odor gradients using Gaussian distributions centered
     at each source. Standard choice for analytical odor modeling.
-    
+
     Attributes:
         odorscape: Algorithm type (default: "Gaussian")
-    
+
     Example:
         >>> gaussian = GaussianValueLayer(sources=[source1, source2])
         >>> odor_value = gaussian.get_value((0.5, 0.5))
     """
+
     odorscape = param.Selector(default="Gaussian")
 
     def __init__(self, **kwargs: Any) -> None:
@@ -534,26 +548,27 @@ class GaussianValueLayer(AnalyticalValueLayer):
 class DiffusionValueLayer(OdorScape):
     """
     Physical odor diffusion model with evaporation and wind.
-    
+
     Implements realistic odor plume dynamics using Gaussian filtering
     for diffusion, evaporation decay, and optional wind-driven advection.
     Computationally intensive but physically accurate.
-    
+
     Attributes:
         odorscape: Algorithm type (default: "Diffusion")
         evap_const: Evaporation decay factor per timestep (default: 0.9)
         gaussian_sigma: Gaussian filter sigma for diffusion (default: (0.95, 0.95))
-    
+
     Note:
         Diffusion coefficients for gas-phase molecules: 10^-6 to 10^-5 m²/s.
         Sigma is automatically scaled based on grid resolution.
-    
+
     Example:
         >>> diffusion = DiffusionValueLayer(
         ...     sources=[source], evap_const=0.95, gaussian_sigma=(1.0, 1.0)
         ... )
         >>> diffusion.update_values()  # Called each simulation step
     """
+
     odorscape = param.Selector(default="Diffusion")
     evap_const = param.Magnitude(
         0.9, doc="The evaporation constant of the diffusion algorithm."
@@ -609,11 +624,11 @@ class DiffusionValueLayer(OdorScape):
 class WindScape(SpatialEntity):
     """
     Wind and air-puff simulation layer.
-    
+
     Models constant wind or pulsed air-puff stimuli affecting agent navigation.
     Supports wind direction, speed, temporal puffs, and obstacle occlusion.
     Visualized with animated arrow lines.
-    
+
     Attributes:
         unique_id: Grid identifier (default: "WindScape")
         color: Visualization color (default: red)
@@ -621,12 +636,13 @@ class WindScape(SpatialEntity):
         wind_speed: Wind velocity magnitude (default soft-max: 100)
         puffs: Dict of scheduled air-puff events with timing parameters
         scapelines: Arrow line positions for visualization
-    
+
     Example:
         >>> wind = WindScape(wind_direction=0.0, wind_speed=10.0)
         >>> wind.add_puff(duration=5.0, speed=20.0, start_time=10.0)
         >>> value = wind.get_value(agent)
     """
+
     unique_id = param.String("WindScape")
     color = param.Color(default="red")
     wind_direction = Phase(
@@ -706,7 +722,13 @@ class WindScape(SpatialEntity):
         )
 
     def add_puff(
-        self, duration: float, speed: float, direction: float | None = None, start_time: float | None = None, N: int | None = 1, interval: float = 10.0
+        self,
+        duration: float,
+        speed: float,
+        direction: float | None = None,
+        start_time: float | None = None,
+        N: int | None = 1,
+        interval: float = 10.0,
     ) -> None:
         m = self.model
 
@@ -738,11 +760,11 @@ class WindScape(SpatialEntity):
 class ThermoScape(ValueGrid):
     """
     Temperature gradient grid for thermotaxis simulations.
-    
+
     Models spatial temperature distributions with multiple hot/cold sources
     using multivariate Gaussian spreads. Returns thermal gains (warming/cooling)
     at each position for agent thermosensation.
-    
+
     Attributes:
         unique_id: Grid identifier (default: "ThermoScape")
         plate_temp: Baseline plate temperature in °C (default: 22)
@@ -750,7 +772,7 @@ class ThermoScape(ValueGrid):
         thermo_sources: List of [x, y] positions for temperature sources
         thermo_source_dTemps: Temperature delta for each source (°C)
         thermoscape_layers: Multivariate normal distributions per source
-    
+
     Example:
         >>> thermo = ThermoScape(
         ...     plate_temp=22,
@@ -759,6 +781,7 @@ class ThermoScape(ValueGrid):
         ... )
         >>> gain = thermo.get_value((0.5, 0.5))  # {'warm': ..., 'cool': ...}
     """
+
     unique_id = param.String("ThermoScape")
 
     def __init__(
@@ -845,7 +868,9 @@ class ThermoScape(ValueGrid):
         self.max_value = np.max(V.flatten())
         return V
 
-    def draw_isocontours(self, v: Any):  # @todo need to make a draw function for thermogrid.
+    def draw_isocontours(
+        self, v: Any
+    ):  # @todo need to make a draw function for thermogrid.
         for k in self.thermo_sources:
             p = self.thermo_sources.k
             for r in np.arange(0, 0.050, 0.01):

@@ -63,6 +63,7 @@ __all__: list[str] = [
     "ReplayConf",
 ]
 
+
 class _GenProxy(AttrDict):
     """Lazy-resolving registry for generator classes.
 
@@ -82,7 +83,9 @@ class _GenProxy(AttrDict):
                 import_module(module_path)
                 if name in self:
                     return self[name]
-            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+            raise AttributeError(
+                f"'{type(self).__name__}' object has no attribute '{name}'"
+            )
 
 
 gen = _GenProxy(
@@ -117,35 +120,39 @@ _LAZY_GEN_REGISTRATIONS = {
     "Ga": "larvaworld.lib.sim.genetic_algorithm",
 }
 
+
 def __getattr__(name: str):
     module_path = _LAZY_GEN_REGISTRATIONS.get(name)
     if module_path is not None:
         from importlib import import_module
+
         import_module(module_path)
         if name in gen:
             return gen[name]
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
+
 gen.LarvaGroup = class_generator(LarvaGroup)
 
 # Import GTRvsS from larvagroup and add to gen proxy
 from .larvagroup import GTRvsS
+
 gen.GTRvsS = GTRvsS  # GTRvsS is a function, not a class
 
 
 class SimConfiguration(RuntimeOps, SimMetricOps, SimOps):
     """
     Base configuration for simulation runs.
-    
+
     Combines runtime, metrics, and simulation operations with automatic
     ID generation and directory management for different simulation types.
-    
+
     Attributes:
         runtype: Simulation mode (Exp, Batch, Ga, Eval, Replay)
         experiment: Name of the experiment configuration
         id: Unique identifier for the simulation run
         dir: Directory path for simulation output
-    
+
     Example:
         >>> config = SimConfiguration(runtype='Exp', experiment='dish')
         >>> run_id = config.generate_id('Exp', 'dish')
@@ -192,13 +199,13 @@ class SimConfiguration(RuntimeOps, SimMetricOps, SimOps):
 class SimConfigurationParams(SimConfiguration):
     """
     Simulation configuration with parameter loading and larva group management.
-    
+
     Extends SimConfiguration with support for loading experiment parameters
     from configuration dictionaries and updating larva group compositions.
-    
+
     Attributes:
         parameters: Experiment parameter dictionary (loaded or provided)
-    
+
     Example:
         >>> config = SimConfigurationParams(runtype='Exp', experiment='dish', N=20)
         >>> params = config.parameters
@@ -311,6 +318,7 @@ def source_generator(
         qs = np.linspace(0.1, 1, Ngs)
     if cs is None:
         from matplotlib import colors as mpl_colors
+
         cs = [
             mpl_colors.rgb2hex(
                 tuple(util.col_range(q, low=(255, 0, 0), high=(0, 128, 0)))
@@ -337,15 +345,15 @@ def source_generator(
 class FoodConf(NestedConf):
     """
     Configuration for food sources and odor landscapes in the arena.
-    
+
     Manages food source groups, individual sources, and optional food grids.
     Provides factory methods for common arena layouts (patches, corners, etc.).
-    
+
     Attributes:
         source_groups: Dictionary of food/odor source groups
         source_units: Dictionary of individual food/odor sources
         food_grid: Optional uniform food grid covering the arena
-    
+
     Example:
         >>> food = FoodConf.double_patch(x=0.06, r=0.025)
         >>> food = FoodConf.foodNodor_4corners(d=0.05)
@@ -362,7 +370,14 @@ class FoodConf(NestedConf):
 
     @classmethod
     def CS_UCS(
-        cls, grid=None, sg={}, N: int = 1, x: float = 0.04, colors: list[str] = ["red", "blue"], o: str = "G", **kwargs: Any
+        cls,
+        grid=None,
+        sg={},
+        N: int = 1,
+        x: float = 0.04,
+        colors: list[str] = ["red", "blue"],
+        o: str = "G",
+        **kwargs: Any,
     ):
         F = gen.Food
         CS_kws = {"odor": Odor.oO(o=o, id="CS"), "c": colors[0], **kwargs}
@@ -487,10 +502,10 @@ gen.EnrichConf = EnrichConf
 class EnvConf(NestedConf):
     """
     Configuration for the simulation's virtual environment.
-    
+
     Defines arena geometry, food sources, obstacles, and sensory landscapes
     (odor, wind, thermal) for the simulated world.
-    
+
     Attributes:
         arena: Arena configuration (shape, dimensions, torus)
         food_params: Food and odor source configuration
@@ -498,7 +513,7 @@ class EnvConf(NestedConf):
         odorscape: Optional odor landscape (Gaussian/Analytical/Diffusion)
         windscape: Optional wind landscape
         thermoscape: Optional thermal landscape
-    
+
     Example:
         >>> env = EnvConf.dish(xy=0.1)
         >>> env = EnvConf.maze(n=15, h=0.1)
@@ -539,6 +554,7 @@ class EnvConf(NestedConf):
         Visualize the environment by launching a simulation without agents
         """
         from importlib import import_module
+
         BaseRun = getattr(import_module("larvaworld.lib.sim.base_run"), "BaseRun")
         BaseRun.visualize_Env(envConf=self.nestedConf, envID=self.name, **kwargs)
 
@@ -585,7 +601,14 @@ class EnvConf(NestedConf):
         )
 
     @classmethod
-    def game(cls, dim: float = 0.1, x: float = 0.4, y: float = 0.0, o: str = "G", **kwargs: Any):
+    def game(
+        cls,
+        dim: float = 0.1,
+        x: float = 0.4,
+        y: float = 0.0,
+        o: str = "G",
+        **kwargs: Any,
+    ):
         x = np.round(x * dim, 3)
         y = np.round(y * dim, 3)
         F = gen.Food
@@ -629,7 +652,13 @@ class EnvConf(NestedConf):
         )
 
     @classmethod
-    def odor_gradient(cls, dim: tuple[float, float] = (0.1, 0.06), o: str = "G", c: int = 1, **kwargs: Any):
+    def odor_gradient(
+        cls,
+        dim: tuple[float, float] = (0.1, 0.06),
+        o: str = "G",
+        c: int = 1,
+        **kwargs: Any,
+    ):
         return cls.rect(
             dim, f=cls.food_params_class().su(odor=Odor.oO(o=o, c=c), **kwargs), o=o
         )
@@ -654,7 +683,15 @@ class EnvConf(NestedConf):
         )
 
     @classmethod
-    def scapes(cls, o: Optional[str] = None, w: Optional[dict] = None, th: Optional[dict] = None, f=None, bl: dict = {}, **kwargs: Any):
+    def scapes(
+        cls,
+        o: Optional[str] = None,
+        w: Optional[dict] = None,
+        th: Optional[dict] = None,
+        f=None,
+        bl: dict = {},
+        **kwargs: Any,
+    ):
         if f is None:
             f = cls.food_params_class()()
         if o == "D":
@@ -687,17 +724,17 @@ gen.Env = EnvConf
 class LabFormat(NestedConf):
     """
     Configuration for lab-specific data import formats.
-    
+
     Defines how experimental data from different labs is structured,
     tracked, and imported into the larvaworld system.
-    
+
     Attributes:
         labID: Identifier of the laboratory
         tracker: Dataset tracking metadata
         filesystem: Lab-specific file structure and naming conventions
         env_params: Environment configuration for imported data
         preprocess: Preprocessing steps for raw data
-    
+
     Example:
         >>> lab = LabFormat(labID='SchleyerGroup')
         >>> raw_path = lab.raw_folder
@@ -1018,10 +1055,10 @@ class LabFormat(NestedConf):
 class ExpConf(SimOps):
     """
     Configuration for experiment simulations.
-    
+
     Defines complete experiment setup including environment, larva groups,
     temporal epochs, data collection, and post-processing enrichment.
-    
+
     Attributes:
         env_params: Virtual environment configuration
         experiment: Experiment ID selector
@@ -1030,7 +1067,7 @@ class ExpConf(SimOps):
         larva_groups: Dictionary of larva group configurations
         parameter_dict: Parameters passed to all agents
         enrichment: Post-simulation data enrichment configuration
-    
+
     Example:
         >>> exp = ExpConf.imitation_exp(refID='SchleyerGroup_dish_0')
         >>> agents = exp.agent_confs
@@ -1090,16 +1127,16 @@ gen.Exp = ExpConf
 class ReplayConfGroup(NestedConf):
     """
     Population-level configuration for dataset replay.
-    
+
     Controls group-wide replay settings including agent selection,
     spatial transposition, and environment configuration.
-    
+
     Attributes:
         agent_ids: List of agent indices to display (empty = all agents)
         transposition: Coordinate transformation ('origin', 'arena', 'center')
         track_point: Midline point index for position tracking
         env_params: Environment configuration selector
-    
+
     Example:
         >>> replay = ReplayConfGroup(agent_ids=[0,1,2], transposition='center')
     """
@@ -1123,15 +1160,15 @@ class ReplayConfGroup(NestedConf):
 class ReplayConfUnit(NestedConf):
     """
     Individual-level configuration for dataset replay visualization.
-    
+
     Controls single-larva view settings including camera fixation
     and close-up visualization modes.
-    
+
     Attributes:
         close_view: Whether to show close-range zoomed view
         fix_segment: Optional body segment to fixate (rear/front)
         fix_point: Optional midline point to fixate at screen center
-    
+
     Example:
         >>> replay = ReplayConfUnit(close_view=True, fix_point=6)
     """
@@ -1153,17 +1190,17 @@ class ReplayConfUnit(NestedConf):
 class ReplayConf(ReplayConfGroup, ReplayConfUnit):
     """
     Complete configuration for replaying experimental datasets.
-    
+
     Combines group and individual replay settings with reference dataset
     selection and temporal/spatial filtering options.
-    
+
     Attributes:
         refID: Reference dataset ID selector
         refDir: Optional direct path to dataset directory
         time_range: Optional temporal slice to replay (start, end) in seconds
         overlap_mode: Whether to draw trajectory overlap image
         draw_Nsegs: Optional number of body segments to simplify to
-    
+
     Example:
         >>> replay = ReplayConf(refID='dish_0', time_range=(0, 60))
         >>> replay = ReplayConf(refDir='path/to/data', overlap_mode=True)

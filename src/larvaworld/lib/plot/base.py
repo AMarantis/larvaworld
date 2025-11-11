@@ -34,6 +34,7 @@ __displayname__ = "Plotting template classes"
 
 _MPL_CONFIGURED = False
 
+
 def _ensure_matplotlib_config():
     global _MPL_CONFIGURED
     if not _MPL_CONFIGURED:
@@ -58,11 +59,11 @@ def _ensure_matplotlib_config():
 class BasePlot:
     """
     Base class for creating customizable matplotlib plots.
-    
+
     Provides common functionality for plot generation, styling, and output
     management. Handles figure/axes creation, saving, and display options.
     Subclasses implement specific plot types by overriding plot methods.
-    
+
     Attributes:
         filename: Output filename with extension
         fit_filename: Filename for fit data CSV
@@ -70,13 +71,14 @@ class BasePlot:
         return_fig: Whether to return figure object
         show: Whether to display plot immediately
         build_kws: Keyword arguments for figure building
-        
+
     Example:
         >>> plotter = BasePlot(name='myplot', save_to='./plots', suf='png')
         >>> plotter.build(nrows=2, ncols=2)
         >>> # ... add plot content ...
         >>> plotter.save()
     """
+
     def __init__(
         self,
         name: str = "larvaworld_plot",
@@ -144,12 +146,14 @@ class BasePlot:
             if dim3:
                 from mpl_toolkits.mplot3d import Axes3D
                 from matplotlib import pyplot as plt
+
                 _ensure_matplotlib_config()
                 self.fig = plt.figure(figsize=(15, 10))
                 ax = Axes3D(self.fig, azim=azim, elev=elev)
                 self.axs = [ax]
             else:
                 from matplotlib import pyplot as plt
+
                 _ensure_matplotlib_config()
                 self.fig, axs = plt.subplots(
                     **plot.configure_subplot_grid(**self.build_kws)
@@ -422,21 +426,22 @@ class BasePlot:
 class AutoBasePlot(BasePlot):
     """
     Automatic plot generation with immediate figure building.
-    
+
     Extends BasePlot by automatically calling build() during initialization,
     creating the matplotlib figure and axes immediately. Supports both 2D
     and 3D plots with customizable viewing angles.
-    
+
     Attributes:
         fig: Matplotlib Figure object
         ax: Matplotlib Axes object (or array of Axes for subplots)
         dim3: Whether plot is 3D
-        
+
     Example:
         >>> plot = AutoBasePlot(nrows=2, ncols=2, dim3=False)
         >>> plot.ax[0, 0].plot(x, y)  # Use axes directly
         >>> plot.save()
     """
+
     def __init__(
         self,
         fig: Optional["Figure"] = None,
@@ -454,11 +459,11 @@ class AutoBasePlot(BasePlot):
 class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
     """
     Automatic plot generation with larvaworld dataset integration.
-    
+
     Combines AutoBasePlot functionality with LarvaDatasetCollection to
     enable direct plotting from larvaworld LarvaDataset objects. Handles
     multiple datasets with automatic labeling, coloring, and unit conversion.
-    
+
     Attributes:
         datasets: Collection of LarvaDataset objects
         labels: Dataset labels for legend
@@ -468,12 +473,13 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
         klabels: Custom labels for parameters
         Ndatasets: Number of datasets
         Nks: Number of parameters
-        
+
     Example:
         >>> plot = AutoPlot(datasets=[d1, d2], labels=['Control', 'Test'])
         >>> plot.plot(ks=['v', 'a'])  # Plot velocity and acceleration
         >>> plot.save()
     """
+
     def __init__(
         self,
         ks: Sequence[str] = [],
@@ -671,6 +677,7 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
         }
         if idx is None:
             from matplotlib import pyplot as plt
+
             leg = plt.legend(**kws)
         else:
             ax = self.axs[idx]
@@ -869,11 +876,11 @@ class AutoPlot(AutoBasePlot, LarvaDatasetCollection):
 class GridPlot(BasePlot):
     """
     Multi-panel grid layout for composite plots.
-    
+
     Creates a grid-based figure layout using matplotlib GridSpec for
     organizing multiple subplots. Supports automatic subplot placement
     with optional lettering (A, B, C, ...) and flexible sizing.
-    
+
     Attributes:
         width: Number of columns in grid
         height: Number of rows in grid
@@ -883,13 +890,14 @@ class GridPlot(BasePlot):
         cur_h: Current row position
         letters: List of panel labels
         letter_dict: Mapping of panel positions to letters
-        
+
     Example:
         >>> grid = GridPlot(name='composite', width=3, height=2)
         >>> ax1 = grid.add()  # Add first panel
         >>> ax2 = grid.add(N=2)  # Add panel spanning 2 columns
         >>> grid.save()
     """
+
     def __init__(
         self,
         name: str,
@@ -903,6 +911,7 @@ class GridPlot(BasePlot):
         self.width, self.height = width, height
         figsize = (int(width * ws), int(height * hs))
         from matplotlib import pyplot as plt
+
         _ensure_matplotlib_config()
         self.fig = plt.figure(constrained_layout=False, figsize=figsize)
         self.grid = GridSpec(height, width, figure=self.fig)
@@ -1002,7 +1011,9 @@ class GridPlot(BasePlot):
             # ax_letter = axs[0]
         return axs
 
-    def add_letter(self, ax: "Axes", letter: bool = True, x0: bool = False, y0: bool = False) -> None:
+    def add_letter(
+        self, ax: "Axes", letter: bool = True, x0: bool = False, y0: bool = False
+    ) -> None:
         if letter:
             self.letter_dict[ax] = self.letters[self.cur_idx]
             self.cur_idx += 1
@@ -1011,7 +1022,9 @@ class GridPlot(BasePlot):
             if y0:
                 self.y0s.append(ax)
 
-    def annotate(self, dx: float = -0.05, dy: float = 0.005, full_dict: bool = False) -> None:
+    def annotate(
+        self, dx: float = -0.05, dy: float = 0.005, full_dict: bool = False
+    ) -> None:
         text_x0, text_y0 = 0.05, 0.98
 
         if full_dict:
@@ -1022,7 +1035,13 @@ class GridPlot(BasePlot):
             Y = text_y0 if ax in self.y0s else ax.get_position().y1 + dy
             self.fig.text(X, Y, text, size=30, weight="bold")
 
-    def plot(self, func: str, kws: Dict[str, Any], axs: Optional[Sequence["Axes"]] = None, **kwargs: Any) -> Any:
+    def plot(
+        self,
+        func: str,
+        kws: Dict[str, Any],
+        axs: Optional[Sequence["Axes"]] = None,
+        **kwargs: Any,
+    ) -> Any:
         if axs is None:
             axs = self.add(**kwargs)
         _ = reg.graphs.run(ID=func, fig=self.fig, axs=axs, **kws)

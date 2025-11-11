@@ -75,7 +75,9 @@ def pytest_configure(config: pytest.Config) -> None:
         config.addinivalue_line("markers", f"{name}: {description}")
 
 
-def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+def pytest_collection_modifyitems(
+    config: pytest.Config, items: list[pytest.Item]
+) -> None:
     """Auto-mark tests based on their location for easier filtering."""
     for item in items:
         try:
@@ -94,7 +96,10 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
                 item.add_marker("integration")
             if rel_path in INTEGRATION_SLOW_PATHS:
                 item.add_marker("slow")
-            elif rel_path in INTEGRATION_FAST_PATHS or item.get_closest_marker("fast") is None:
+            elif (
+                rel_path in INTEGRATION_FAST_PATHS
+                or item.get_closest_marker("fast") is None
+            ):
                 item.add_marker("fast")
 
         if rel_path in OPTIONAL_DEP_PATHS:
@@ -122,8 +127,8 @@ def test_data_dir(tmp_path_factory):
 
 
 # Registry isolation strategy:
-# 
-# With parallel execution (pytest -n auto), each worker runs in a separate process 
+#
+# With parallel execution (pytest -n auto), each worker runs in a separate process
 # with its own registry. This automatically solves the test pollution problem.
 #
 # Benefits:
@@ -148,46 +153,48 @@ def test_data_dir(tmp_path_factory):
 import pandas as pd
 from types import SimpleNamespace
 
+
 class LarvaDatasetStub:
     """
     Minimal LarvaDataset stand-in for unit testing.
-    
+
     Provides synthetic trajectory data with NO I/O dependency.
     For simple cases only (sim tests, geo helpers).
-    
+
     For complex orchestrators (calibration.py), use surgical monkeypatching instead!
-    
+
     Args:
         n: Number of timesteps
         fps: Frames per second
         seed: Random seed for determinism
     """
+
     def __init__(self, n=30, fps=10.0, seed=42):
         rng = np.random.default_rng(seed)
-        
+
         # Time array
         self.timestamps = np.arange(n) / fps
-        
+
         # Random walk trajectory
         x = np.cumsum(rng.normal(0, 0.05, n))
         y = np.cumsum(rng.normal(0, 0.05, n))
         self.xy = np.column_stack([x, y])
-        
+
         # Mimic d.data structure
         self.data = (
             SimpleNamespace(),  # step_data
             SimpleNamespace(),  # endpoint_data
-            {"fps": fps, "dt": 1.0/fps}  # config
+            {"fps": fps, "dt": 1.0 / fps},  # config
         )
-        
-        self.config = {"fps": fps, "dt": 1.0/fps}
+
+        self.config = {"fps": fps, "dt": 1.0 / fps}
         self.step_data = SimpleNamespace()
         self.endpoint_data = SimpleNamespace()
-    
+
     def load_traj(self):
         """Return trajectory array."""
         return self.xy
-    
+
     def comp_spatial(self):
         """Compute basic spatial metrics."""
         dt = self.timestamps[1] - self.timestamps[0]
@@ -212,24 +219,24 @@ def ds_stub():
 def real_dataset(ensure_datasets_ready):
     """
     Provide a REAL LarvaDataset from registry for tests that need it.
-    
+
     Requires ensure_datasets_ready fixture (datasets must exist).
     Uses exploration.30controls as minimal real dataset.
-    
+
     Returns:
         LarvaDataset with full preprocessing applied.
     """
     from larvaworld.lib.process import LarvaDataset
-    
+
     # Load real dataset from registry (datasets guaranteed ready via fixture)
     d = LarvaDataset(refID="exploration.30controls")
-    
+
     # Full preprocessing pipeline
     d.comp_spatial()
     d.comp_orientations()
     d.comp_bend(mode="full")  # mode="full" computes spine angles
     d.comp_ang_moments()  # Computes angular velocities for spine angles
-    
+
     return d
 
 
@@ -256,7 +263,7 @@ LOCK_FILE = Path(".pytest_datasets_build.lock")  # Build synchronization
 def processed_datasets_exist() -> bool:
     """
     Check if minimal processed artifacts exist.
-    
+
     Stable predicates: checks representative files (data.h5, conf.txt).
     Keep this cheap & deterministic.
     """
@@ -267,7 +274,7 @@ def processed_datasets_exist() -> bool:
 def build_processed_datasets():
     """
     Build datasets from raw → processed (idempotent).
-    
+
     IMPORTANT: This must be idempotent and safe if called on warm start.
     Delegates to `larvaworld.tests.init_datasets` which handles registry bootstrap
     and Schleyer dataset imports. Keeps the heavy lifting outside the fixture so
@@ -278,7 +285,7 @@ def build_processed_datasets():
         [sys.executable, str(script)],
         check=True,
         timeout=900,  # 15 min max (generous for CI)
-        capture_output=True
+        capture_output=True,
     )
     _patch_dataset_io_lock()
 
@@ -312,6 +319,7 @@ def _patch_dataset_io_lock() -> None:
 
     setattr(_dataset_module, patched_attr, True)
 
+
 @pytest.fixture()
 def dataset_lock():
     """Ensure LarvaDataset I/O methods are patched without holding a re-entrant lock."""
@@ -323,48 +331,48 @@ def dataset_lock():
 def ensure_datasets_ready():
     """
     Session-level gate: create processed datasets ONCE.
-    
+
     Solves HDF5 race condition on cold starts:
     - If datasets exist: instant return (warm start)
     - If cold start: ONE worker builds, others wait for READY_FLAG
     - After build: ALL workers read existing HDF5 (no write locks)
-    
+
     Usage:
         @pytest.mark.usefixtures("ensure_datasets_ready")
         def test_analysis():
             # Test will wait until datasets ready
-    
+
     Enable integration tests with: LARVAWORLD_INIT_DATA=1 pytest
     Disable explicitly with: LARVAWORLD_INIT_DATA=0 pytest
     """
     # Opt-in/opt-out via env flag
     if os.getenv("LARVAWORLD_INIT_DATA") == "0":
         pytest.skip("Datasets init disabled (LARVAWORLD_INIT_DATA=0)")
-    
+
     # Warm start: instant bypass
     if processed_datasets_exist() or READY_FLAG.exists():
         return
-    
+
     # Check FileLock availability
     if FileLock is None:
         pytest.skip("filelock not installed; cannot safely create datasets in parallel")
-    
+
     lock = FileLock(str(LOCK_FILE))
     got_lock = False
-    
+
     try:
         # Non-blocking acquire (timeout=0) - GPT-5 pattern
         got_lock = lock.acquire(timeout=0)
     except Exception:
         got_lock = False
-    
+
     if got_lock:
         # This worker will BUILD datasets
         try:
             # Double-check after acquiring lock (race condition safety)
             if not processed_datasets_exist():
                 build_processed_datasets()
-            
+
             # Signal other workers that datasets are ready
             READY_FLAG.write_text("ok")
         finally:
@@ -377,7 +385,7 @@ def ensure_datasets_ready():
             time.sleep(0.5)
         else:
             pytest.fail("Timeout waiting for processed datasets ready flag")
-    
+
     # Hint HDF5 for shared read locks (optional but harmless)
     os.environ.setdefault("HDF5_USE_FILE_LOCKING", "TRUE")
 

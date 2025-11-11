@@ -9,12 +9,24 @@ from typing import Any
 __displayname__ = "Agents"
 
 __all__: list[str] = [
-    "NonSpatialAgent", "PointAgent", "OrientedAgent", "MobilePointAgent", "MobileAgent",
-    "Source", "Food",
-    "Larva", "LarvaContoured", "LarvaSegmented", "LarvaMotile",
-    "LarvaReplay", "LarvaReplayContoured", "LarvaReplaySegmented",
-    "BaseController", "LarvaSim",
-    "LarvaRobot", "ObstacleLarvaRobot",
+    "NonSpatialAgent",
+    "PointAgent",
+    "OrientedAgent",
+    "MobilePointAgent",
+    "MobileAgent",
+    "Source",
+    "Food",
+    "Larva",
+    "LarvaContoured",
+    "LarvaSegmented",
+    "LarvaMotile",
+    "LarvaReplay",
+    "LarvaReplayContoured",
+    "LarvaReplaySegmented",
+    "BaseController",
+    "LarvaSim",
+    "LarvaRobot",
+    "ObstacleLarvaRobot",
     "LarvaOffline",
 ]
 
@@ -46,6 +58,7 @@ _NAME_TO_MODULE: dict[str, str] = {
     "LarvaOffline": "larvaworld.lib.model.agents.larva_offline",
 }
 
+
 def __getattr__(name: str) -> Any:
     module_path = _NAME_TO_MODULE.get(name)
     if module_path is None:
@@ -56,6 +69,7 @@ def __getattr__(name: str) -> Any:
     obj = getattr(mod, name)
     globals()[name] = obj
     return obj
+
 
 def __dir__() -> list[str]:
     return sorted(list(globals().keys()) + __all__)

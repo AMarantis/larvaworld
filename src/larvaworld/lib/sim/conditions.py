@@ -19,10 +19,10 @@ __all__: list[str] = [
 def get_exp_condition(exp: str) -> type[ExpCondition] | None:
     """
     Get experiment condition class for given experiment type.
-    
+
     Maps experiment type strings to their corresponding condition
     checker classes for experiment termination logic.
-    
+
     Args:
         exp: Experiment type identifier string. Supported values:
              - 'PItrain_mini': Preference training (mini version)
@@ -30,11 +30,11 @@ def get_exp_condition(exp: str) -> type[ExpCondition] | None:
              - 'catch_me': Chase/tag game
              - 'keep_the_flag': Flag possession game
              - 'capture_the_flag': Flag capture game
-    
+
     Returns:
         ExpCondition subclass for the experiment, or None if
         experiment type is not recognized.
-    
+
     Example:
         >>> CondClass = get_exp_condition('PItrain')
         >>> if CondClass:
@@ -55,7 +55,7 @@ def get_exp_condition(exp: str) -> type[ExpCondition] | None:
 class ExpCondition:
     """
     Base class for experiment completion conditions.
-    
+
     Defines interface for checking if an experiment should terminate
     and provides utilities for UI state updates.
     """
@@ -63,10 +63,10 @@ class ExpCondition:
     def __init__(self, env: ExpRun):
         """
         Initialize experiment condition checker.
-        
+
         Args:
             env: ExpRun instance with agents, sources, and simulation state.
-        
+
         Example:
             >>> condition = MyCondition(env=experiment_env)
             >>> if condition.check():
@@ -77,10 +77,10 @@ class ExpCondition:
     def check(self) -> bool:
         """
         Check if experiment completion condition is met.
-        
+
         Returns:
             True if experiment should end, False otherwise.
-        
+
         Note:
             Subclasses must override this method with specific logic.
         """
@@ -110,7 +110,7 @@ class ExpCondition:
 class PrefTrainCondition(ExpCondition):
     """
     Preference training experiment condition.
-    
+
     Implements olfactory preference training protocol with alternating
     CS (conditioned stimulus) and UCS (unconditioned stimulus) phases,
     followed by test trials to measure preference index (PI).
@@ -119,20 +119,20 @@ class PrefTrainCondition(ExpCondition):
     def __init__(self, **kwargs):
         """
         Initialize preference training condition.
-        
+
         Sets up odor sources, training counters, and peak intensities
         for CS/UCS stimuli in preference learning paradigm.
-        
+
         Args:
             **kwargs: Passed to ExpCondition.__init__ (requires env).
-        
+
         Attributes:
             peak_intensity: Maximum odor intensity (default 2.0).
             CS_counter: Number of CS training trials completed.
             UCS_counter: Number of UCS training trials completed.
             CS_sources: Food odor sources (conditioned).
             UCS_sources: Non-food odor sources (unconditioned).
-        
+
         Example:
             >>> condition = PrefTrainCondition(env=exp_env)
             >>> condition.check()  # Returns True when all trials complete

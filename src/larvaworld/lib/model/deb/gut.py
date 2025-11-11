@@ -16,14 +16,14 @@ __all__: list[str] = [
 class Gut(NestedConf):
     """
     Gut digestion and absorption model for DEB energetics.
-    
+
     Models gut dynamics including ingestion, enzymatic digestion, carrier-mediated
     absorption, and faecal production. Tracks gut content (food mass M_X, digested
     product M_P), enzyme dynamics (M_g), and carrier availability (M_c).
-    
+
     Integrates with DEB model to compute assimilation energy flow (p_A) based
     on gut absorption rather than simplified functional response.
-    
+
     Attributes:
         M_gm: Gut capacity per unit volume (C-moles, default: 0.01)
         k_abs: Absorption rate constant (default: 1.0)
@@ -34,12 +34,13 @@ class Gut(NestedConf):
         M_X: Current food mass in gut (C-moles)
         M_P: Current digested product in gut (C-moles)
         p_A: Assimilation power from gut absorption (J/day)
-    
+
     Example:
         >>> gut = Gut(deb=deb_model, save_dict=True)
         >>> gut.update(V_X=0.001)  # Ingest food volume
         >>> power = gut.p_A  # Get assimilation power
     """
+
     M_gm = PositiveNumber(10**-2, doc="gut capacity in C-moles for unit of gut volume")
     r_w2l = param.Magnitude(0.2, doc="body width to length ratio")
     r_gut_w = param.Magnitude(0.7, doc="gut width relative to body width")

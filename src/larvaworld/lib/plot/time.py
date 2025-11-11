@@ -24,17 +24,17 @@ __all__: list[str] = [
 def plot_ethogram(subfolder: str = "timeplots", **kwargs: Any) -> Any:
     """
     Create ethogram showing behavioral bouts over time.
-    
+
     Generates dual-panel time series showing runs/pauses and left/right turns
     as colored horizontal bars representing behavioral epochs.
-    
+
     Args:
         subfolder: Subfolder for saving. Defaults to 'timeplots'
         **kwargs: Additional arguments passed to AutoPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_ethogram(datasets=[d1, d2])
     """
@@ -67,6 +67,7 @@ def plot_ethogram(subfolder: str = "timeplots", **kwargs: Any) -> Any:
 
                         lines = [[(b0, j + 1), (b1, j + 1)] for b0, b1 in zip(b0s, b1s)]
                         from matplotlib import collections as mc
+
                         lc = mc.LineCollection(lines, colors=bcol, linewidths=2)
                         P.axs[idx].add_collection(lc)
 
@@ -98,10 +99,10 @@ def plot_nengo_network(
 ) -> Any:
     """
     Plot Nengo neural network probe outputs over time.
-    
+
     Creates multi-panel time series showing neural network activity from
     Nengo probes for different modules (crawler, turner, feeder, etc.).
-    
+
     Args:
         datasets: List of datasets with Nengo probe data
         group: Probe group name ('anemotaxis', 'frequency', etc.). Required if probes is None
@@ -109,10 +110,10 @@ def plot_nengo_network(
         same_plot: Plot all probes on same axis. Defaults to False
         subfolder: Subfolder for saving. Defaults to 'nengo'
         **kwargs: Additional arguments passed to AutoPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_nengo_network(datasets=[d1], group='anemotaxis', same_plot=True)
     """
@@ -203,10 +204,10 @@ def timeplot(
 ) -> Any:
     """
     Create time series plot for one or more parameters.
-    
+
     Generates single-panel time series with quantile bands showing parameter
     evolution over time, with optional individual trajectories.
-    
+
     Args:
         ks: Parameter shortcut keys. Required if pars is empty
         pars: Direct parameter names. Uses ks if empty
@@ -223,10 +224,10 @@ def timeplot(
         leg_fontsize: Legend font size. Defaults to 15
         figsize: Figure size. Defaults to (7.5, 5)
         **kwargs: Additional arguments passed to AutoPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = timeplot(ks=['v', 'fov'], datasets=[d1, d2], individuals=True)
     """
@@ -323,10 +324,10 @@ def timeplots(
 ) -> Any:
     """
     Create multi-panel time series plots.
-    
+
     Generates stacked time series panels (one per parameter) showing
     quantile bands for multiple parameters over time.
-    
+
     Args:
         ks: Parameter shortcut keys to plot
         subfolder: Subfolder for saving. Defaults to 'timeplots'
@@ -337,10 +338,10 @@ def timeplots(
         absolute: Use absolute values. Defaults to False
         show_first: Highlight first individual. Defaults to False
         **kwargs: Additional arguments passed to AutoPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = timeplots(ks=['v', 'fov', 'b'], datasets=[d1, d2], unit='min')
     """
@@ -374,17 +375,17 @@ def timeplots(
 def plot_navigation_index(subfolder: str = "source", **kwargs: Any) -> Any:
     """
     Plot navigation index time series.
-    
+
     Creates time series showing navigation efficiency index over time,
     measuring directed movement toward source/target.
-    
+
     Args:
         subfolder: Subfolder for saving. Defaults to 'source'
         **kwargs: Additional arguments passed to AutoPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_navigation_index(datasets=[d1, d2])
     """
@@ -419,17 +420,17 @@ def plot_navigation_index(subfolder: str = "source", **kwargs: Any) -> Any:
 def plot_pathlength(scaled: bool = False, **kwargs: Any) -> Any:
     """
     Plot cumulative path length over time.
-    
+
     Creates time series showing total distance traveled (scaled or absolute)
     accumulated over the experiment duration.
-    
+
     Args:
         scaled: Use body-length-scaled distance. Defaults to False
         **kwargs: Additional arguments passed to timeplots
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_pathlength(datasets=[d1, d2], scaled=True)
     """
@@ -438,21 +439,23 @@ def plot_pathlength(scaled: bool = False, **kwargs: Any) -> Any:
 
 
 @funcs.graph("dispersal")
-def plot_dispersal(range: Tuple[int, int] = (0, 40), scaled: bool = False, **kwargs: Any) -> Any:
+def plot_dispersal(
+    range: Tuple[int, int] = (0, 40), scaled: bool = False, **kwargs: Any
+) -> Any:
     """
     Plot dispersal metric over time.
-    
+
     Creates time series showing spatial dispersal from origin over
     specified time range (scaled or absolute distance).
-    
+
     Args:
         range: Time range (start, end) in minutes. Defaults to (0, 40)
         scaled: Use body-length-scaled distance. Defaults to False
         **kwargs: Additional arguments passed to timeplots
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_dispersal(datasets=[d1, d2], range=(0, 60), scaled=True)
     """

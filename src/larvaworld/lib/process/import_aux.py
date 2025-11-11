@@ -65,7 +65,11 @@ def init_endpoint_dataframe_from_timeseries(
 
 
 def read_timeseries_from_raw_files_per_parameter(
-    pref: str, tracker: Optional[Any] = None, dt: Optional[float] = None, Npoints: Optional[int] = None, Ncontour: Optional[int] = None
+    pref: str,
+    tracker: Optional[Any] = None,
+    dt: Optional[float] = None,
+    Npoints: Optional[int] = None,
+    Ncontour: Optional[int] = None,
 ) -> pd.DataFrame:
     """
     Reads timeseries data stored in txt files of the lab-specific Jovanic format and returns them as a pd.Dataframe.
@@ -210,16 +214,16 @@ def read_timeseries_from_raw_files_per_larva(
 def get_Schleyer_metadata_inv_x(dir: str) -> bool:
     """
     Determine if x-axis should be inverted based on Schleyer lab metadata.
-    
+
     Reads metadata file to check odor side configuration and returns
     whether x-axis inversion is needed for consistent data orientation.
-    
+
     Args:
         dir: Directory containing vidAndLogs/metadata.txt file.
-    
+
     Returns:
         True if x-axis should be inverted (odor on right), False otherwise.
-    
+
     Example:
         >>> inv_x = get_Schleyer_metadata_inv_x('/path/to/dataset')
     """
@@ -637,19 +641,19 @@ def generate_dataframes(
 ) -> tuple[Optional[pd.DataFrame], Optional[pd.DataFrame]]:
     """
     Generate timeseries and endpoint DataFrames from single tracks.
-    
+
     Concatenates individual larva tracks and computes endpoint metrics,
     with optional tick completion and interpolation.
-    
+
     Args:
         dfs: List of single-track DataFrames.
         dt: Tracking timestep in seconds.
         complete_ticks: If True, fill missing ticks with NaNs.
         **kwargs: Additional arguments passed to concatenate_larva_tracks.
-    
+
     Returns:
         Tuple of (step_df, endpoint_df), or (None, None) if no valid tracks.
-    
+
     Example:
         >>> step_df, end_df = generate_dataframes(
         ...     dfs=[track1, track2],

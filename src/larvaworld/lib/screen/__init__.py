@@ -1,6 +1,7 @@
 """
 Rendering and visualization on a pygame display
 """
+
 from __future__ import annotations
 
 from typing import Any

@@ -59,7 +59,41 @@ __all__: list[str] = [
     "plot_heatmap_PI",
 ]
 
-_SUBMODULES = {name: f"{__name__}.{name}" for name in __all__ if name not in ["AutoBasePlot", "AutoPlot", "GridPlot"] and not name.startswith(("plot_", "circ", "confidence_", "dataset_", "label_", "annotate_", "dual_", "save_", "process_", "prob_", "single_", "configure_", "define_", "get_", "color_", "diff_", "mpl_")) and name not in ["diff_df", "mpl_table", "plot_debs", "plot_2d", "plot_3pars", "plot_heatmap_PI"]}
+_SUBMODULES = {
+    name: f"{__name__}.{name}"
+    for name in __all__
+    if name not in ["AutoBasePlot", "AutoPlot", "GridPlot"]
+    and not name.startswith(
+        (
+            "plot_",
+            "circ",
+            "confidence_",
+            "dataset_",
+            "label_",
+            "annotate_",
+            "dual_",
+            "save_",
+            "process_",
+            "prob_",
+            "single_",
+            "configure_",
+            "define_",
+            "get_",
+            "color_",
+            "diff_",
+            "mpl_",
+        )
+    )
+    and name
+    not in [
+        "diff_df",
+        "mpl_table",
+        "plot_debs",
+        "plot_2d",
+        "plot_3pars",
+        "plot_heatmap_PI",
+    ]
+}
 _CLASS_TO_MODULE = {
     "AutoBasePlot": f"{__name__}.base",
     "AutoPlot": f"{__name__}.base",
@@ -94,6 +128,7 @@ _FUNCTION_TO_MODULE = {
     "plot_heatmap_PI": f"{__name__}.scape",
 }
 
+
 def __getattr__(name: str):
     module_path = _SUBMODULES.get(name)
     if module_path is None:
@@ -101,6 +136,7 @@ def __getattr__(name: str):
         class_module_path = _CLASS_TO_MODULE.get(name)
         if class_module_path is not None:
             from importlib import import_module
+
             mod = import_module(class_module_path)
             obj = getattr(mod, name)
             globals()[name] = obj
@@ -109,6 +145,7 @@ def __getattr__(name: str):
         function_module_path = _FUNCTION_TO_MODULE.get(name)
         if function_module_path is not None:
             from importlib import import_module
+
             mod = import_module(function_module_path)
             obj = getattr(mod, name)
             globals()[name] = obj
@@ -119,6 +156,7 @@ def __getattr__(name: str):
     mod = import_module(module_path)
     globals()[name] = mod
     return mod
+
 
 def __dir__() -> list[str]:
     return sorted(list(globals().keys()) + list(__all__))

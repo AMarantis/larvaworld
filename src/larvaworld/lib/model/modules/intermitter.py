@@ -73,11 +73,11 @@ default_bout_distros = util.AttrDict(
 class Intermitter(Timer):
     """
     Intermitter module for run/pause/feed behavioral state control.
-    
+
     Manages transitions between locomotor states (running, pausing, feeding)
     using stochastic bout generators. Controls exploitation-exploration
     balance (EEB) for feeding decisions and tracks behavioral statistics.
-    
+
     Attributes:
         EEB: Exploitation-exploration balance (0=exploit, 1=explore)
         EEB_decay: Exponential decay of EEB when no food detected
@@ -90,11 +90,12 @@ class Intermitter(Timer):
         stridechain_dist: Stride-number distribution for run epochs
         run_dist: Temporal distribution for run epochs
         cur_state: Current behavioral state ('exec', 'pause', or 'feed')
-    
+
     Example:
         >>> intermitter = Intermitter(EEB=0.3, crawl_freq=1.42, feed_freq=2.0)
         >>> state = intermitter.step(stride_completed=True, on_food=False)
     """
+
     EEB = param.Magnitude(
         0.0,
         step=0.01,
@@ -222,7 +223,9 @@ class Intermitter(Timer):
         r = self.feeder_reoccurence_rate if not self.use_EEB else self.EEB
         return np.random.uniform(0, 1, 1) < r
 
-    def alternate_exploreNexploit(self, feed_motion: bool = False, on_food: bool = False) -> None:
+    def alternate_exploreNexploit(
+        self, feed_motion: bool = False, on_food: bool = False
+    ) -> None:
         if feed_motion:
             assert self.cur_Nfeeds is not None
             self.Nfeeds += 1
@@ -282,7 +285,12 @@ class Intermitter(Timer):
             self.pause_durs.append(dur)
             self.exp_Tpause = None
 
-    def update_state(self, stride_completed: bool = False, feed_motion: bool = False, on_food: bool = False) -> str | None:
+    def update_state(
+        self,
+        stride_completed: bool = False,
+        feed_motion: bool = False,
+        on_food: bool = False,
+    ) -> str | None:
         if self.cur_state is None:
             self.trigger_locomotion()
         if self.feed_bouts:
@@ -344,7 +352,9 @@ class Intermitter(Timer):
             d[nam.dur_ratio(c)] = d[cum_chunk_t] / d[cum_t]
         return d
 
-    def save_dict(self, path: str | None = None, dic: dict[str, Any] | None = None) -> None:
+    def save_dict(
+        self, path: str | None = None, dic: dict[str, Any] | None = None
+    ) -> None:
         if dic is None:
             dic = self.build_dict()
         if path is not None:
@@ -365,20 +375,26 @@ class Intermitter(Timer):
 class OfflineIntermitter(Intermitter):
     """
     Offline intermitter with fixed-frequency stride/feed detection.
-    
+
     Extends Intermitter with tick-based stride and feed detection
     at fixed intervals (offline mode, no real-time physics).
-    
+
     Example:
         >>> offline_int = OfflineIntermitter(EEB=0.5, crawl_freq=1.5, dt=0.1)
         >>> state = offline_int.step(on_food=True)
     """
+
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.crawl_ticks = np.round(1 / (self.crawl_freq * self.dt)).astype(int)
         self.feed_ticks = np.round(1 / (self.feed_freq * self.dt)).astype(int)
 
-    def step(self, stride_completed: bool | None = None, feed_motion: bool | None = None, on_food: bool = True) -> str | None:
+    def step(
+        self,
+        stride_completed: bool | None = None,
+        feed_motion: bool | None = None,
+        on_food: bool = True,
+    ) -> str | None:
         self.count_time()
         if feed_motion is None:
             feed_motion = self.cur_state == "feed" and self.ticks % self.feed_ticks == 0
@@ -392,21 +408,22 @@ class OfflineIntermitter(Intermitter):
 class BranchIntermitter(Intermitter):
     """
     Branch intermitter with critical dynamics for pause/run generation.
-    
+
     Extends Intermitter using exponential (exp_bout) and critical
     (critical_bout) distributions for more realistic behavioral branching.
     No feeding bouts in this mode.
-    
+
     Attributes:
         feed_bouts: Fixed to False (no feeding)
         beta: Beta coefficient for exponential bout distribution
         c: Critical parameter for criticality function
         sigma: ISING branching coefficient
-    
+
     Example:
         >>> branch_int = BranchIntermitter(beta=4.7, c=0.7, sigma=1.0, dt=0.1)
         >>> state = branch_int.step(stride_completed=True)
     """
+
     feed_bouts = param.Boolean(False, readonly=True)
     beta = OptionalPositiveNumber(
         default=None, doc="The beta coefficient for the exponential function"
@@ -434,18 +451,19 @@ class BranchIntermitter(Intermitter):
 class FittedIntermitter(OfflineIntermitter):
     """
     Fitted intermitter using reference dataset parameters.
-    
+
     Constructs OfflineIntermitter from stored reference dataset
     configurations (crawl/feed frequencies, bout distributions).
-    
+
     Args:
         refID: Reference dataset ID to load intermitter config from
         **kwargs: Override parameters (optional)
-    
+
     Example:
         >>> fitted_int = FittedIntermitter(refID='exploration')
         >>> state = fitted_int.step(on_food=False)
     """
+
     def __init__(self, refID: str, **kwargs: Any) -> None:
         c = reg.conf.Ref.getRef(refID)["intermitter"]
         stored_conf = {
@@ -466,16 +484,16 @@ class FittedIntermitter(OfflineIntermitter):
 def get_EEB_poly1d(**kws: Any) -> np.poly1d:
     """
     Compute polynomial fit of EEB vs mean feeding frequency.
-    
+
     Simulates intermitter across EEB range (0-1) and fits polynomial
     to map feeding frequency back to EEB parameter.
-    
+
     Args:
         **kws: Intermitter configuration keyword arguments
-    
+
     Returns:
         Polynomial (degree 5) mapping feed frequency to EEB
-    
+
     Example:
         >>> poly = get_EEB_poly1d(crawl_freq=1.42, feed_freq=2.0, dt=0.1)
         >>> eeb_estimate = poly(0.15)  # For feed_freq=0.15
@@ -492,22 +510,24 @@ def get_EEB_poly1d(**kws: Any) -> np.poly1d:
     return z
 
 
-def get_EEB_time_fractions(refID: str | None = None, dt: float | None = None, **kwargs: Any) -> pd.DataFrame:
+def get_EEB_time_fractions(
+    refID: str | None = None, dt: float | None = None, **kwargs: Any
+) -> pd.DataFrame:
     """
     Compute time fractions for behavioral states across EEB range.
-    
+
     Simulates intermitter across EEB values (0-1) and computes
     duration ratios for crawl/pause/feed states. Returns DataFrame
     for analysis and visualization.
-    
+
     Args:
         refID: Reference dataset ID for intermitter config (optional)
         dt: Time step override (optional)
         **kwargs: Intermitter configuration if refID not provided
-    
+
     Returns:
         DataFrame with EEB values and corresponding time fraction ratios
-    
+
     Example:
         >>> df = get_EEB_time_fractions(refID='exploration', dt=0.1)
         >>> print(df[['EEB', 'crawl ratio', 'pause ratio']])

@@ -28,7 +28,7 @@ class TestArrangeIndexLabels:
         # Creates ["", "GROUP1", ""] for count=3
         index = pd.Index(["group1", "group1", "group1"])
         result = arrange_index_labels(index)
-        
+
         # Should center label with empty strings
         assert len(result) == 3
         assert result[0] == ""
@@ -41,7 +41,7 @@ class TestArrangeIndexLabels:
         # For Nk=4: Nk1=1, Nk2=2 -> ["", "GROUP1", "", ""]
         index = pd.Index(["group1"] * 4)
         result = arrange_index_labels(index)
-        
+
         assert len(result) == 4
         assert result[0] == ""
         assert result[1] == "GROUP1"
@@ -53,7 +53,7 @@ class TestArrangeIndexLabels:
         # Lines 42-50: Processes each unique group
         index = pd.Index(["a", "a", "a", "b", "b", "c"])
         result = arrange_index_labels(index)
-        
+
         # a: 3 items -> ["", "A", ""]
         # b: 2 items, Nk1=0, Nk2=1 -> ["B", ""]
         # c: 1 item -> ["C"]
@@ -70,7 +70,7 @@ class TestArrangeIndexLabels:
         # Lines 46-47: When Nk=1, Nk1=0, Nk2=0 -> just [k.upper()]
         index = pd.Index(["a", "b", "c"])
         result = arrange_index_labels(index)
-        
+
         assert result == ["A", "B", "C"]
 
     def test_arrange_preserves_order(self):
@@ -78,7 +78,7 @@ class TestArrangeIndexLabels:
         # Lines 42: index.unique() preserves order
         index = pd.Index(["z", "z", "a", "a", "m", "m"])
         result = arrange_index_labels(index)
-        
+
         # Should have Z, A, M in that order (not alphabetical)
         assert "Z" in result
         assert "A" in result
@@ -97,11 +97,10 @@ class TestMplTable:
         """Test basic table creation."""
         # Lines 192-347: mpl_table function
         # Creates AutoBasePlot with table
-        data = pd.DataFrame({
-            "A": [1, 2, 3],
-            "B": [4, 5, 6]
-        }, index=["row1", "row2", "row3"])
-        
+        data = pd.DataFrame(
+            {"A": [1, 2, 3], "B": [4, 5, 6]}, index=["row1", "row2", "row3"]
+        )
+
         with patch("larvaworld.lib.plot.table.plot.AutoBasePlot") as mock_plot:
             mock_instance = MagicMock()
             mock_ax = MagicMock()
@@ -112,9 +111,9 @@ class TestMplTable:
             mock_instance.fig = MagicMock()
             mock_instance.get.return_value = "plot_output"
             mock_plot.return_value = mock_instance
-            
+
             result = mpl_table(data, name="test_table", return_table=False)
-            
+
             # Lines 287: Creates AutoBasePlot
             mock_plot.assert_called_once()
             # Lines 289: Turns off axis
@@ -130,7 +129,7 @@ class TestMplTable:
         """Test returning table object instead of plot."""
         # Lines 344-345: return_table=True returns (ax, fig, mpl)
         data = pd.DataFrame({"A": [1, 2]})
-        
+
         with patch("larvaworld.lib.plot.table.plot.AutoBasePlot") as mock_plot:
             mock_instance = MagicMock()
             mock_ax = MagicMock()
@@ -140,9 +139,9 @@ class TestMplTable:
             mock_instance.axs = [mock_ax]
             mock_instance.fig = MagicMock()
             mock_plot.return_value = mock_instance
-            
+
             ax, fig, mpl = mpl_table(data, return_table=True)
-            
+
             assert ax == mock_ax
             assert fig == mock_instance.fig
             assert mpl == mock_table
@@ -151,7 +150,7 @@ class TestMplTable:
         """Test table with title."""
         # Lines 340: ax.set_title(title)
         data = pd.DataFrame({"A": [1]})
-        
+
         with patch("larvaworld.lib.plot.table.plot.AutoBasePlot") as mock_plot:
             mock_instance = MagicMock()
             mock_ax = MagicMock()
@@ -161,16 +160,16 @@ class TestMplTable:
             mock_instance.axs = [mock_ax]
             mock_instance.fig = MagicMock()
             mock_plot.return_value = mock_instance
-            
+
             mpl_table(data, title="Test Title", return_table=False)
-            
+
             mock_ax.set_title.assert_called_once_with("Test Title")
 
     def test_mpl_table_font_size(self):
         """Test table font size setting."""
         # Lines 303-304: mpl.auto_set_font_size(False), mpl.set_fontsize(font_size)
         data = pd.DataFrame({"A": [1]})
-        
+
         with patch("larvaworld.lib.plot.table.plot.AutoBasePlot") as mock_plot:
             mock_instance = MagicMock()
             mock_ax = MagicMock()
@@ -180,9 +179,9 @@ class TestMplTable:
             mock_instance.axs = [mock_ax]
             mock_instance.fig = MagicMock()
             mock_plot.return_value = mock_instance
-            
+
             mpl_table(data, font_size=20, return_table=False)
-            
+
             mock_table.auto_set_font_size.assert_called_once_with(False)
             mock_table.set_fontsize.assert_called_once_with(20)
 
@@ -191,7 +190,7 @@ class TestMplTable:
         # Lines 342-343: P.fig.subplots_adjust(**adjust_kws)
         data = pd.DataFrame({"A": [1]})
         adjust_kws = {"left": 0.1, "right": 0.9}
-        
+
         with patch("larvaworld.lib.plot.table.plot.AutoBasePlot") as mock_plot:
             mock_instance = MagicMock()
             mock_ax = MagicMock()
@@ -201,21 +200,19 @@ class TestMplTable:
             mock_instance.axs = [mock_ax]
             mock_instance.fig = MagicMock()
             mock_plot.return_value = mock_instance
-            
+
             mpl_table(data, adjust_kws=adjust_kws, return_table=False)
-            
+
             mock_instance.fig.subplots_adjust.assert_called_once_with(**adjust_kws)
 
     def test_mpl_table_highlighted_cells_row_min(self):
         """Test highlighting minimum values in rows."""
         # Lines 250-281: get_idx function for row_min
         # Lines 253-259: Finds minimum in each row
-        data = pd.DataFrame({
-            "A": [3.0, 1.0, 5.0],
-            "B": [1.0, 2.0, 3.0],
-            "C": [2.0, 3.0, 4.0]
-        })
-        
+        data = pd.DataFrame(
+            {"A": [3.0, 1.0, 5.0], "B": [1.0, 2.0, 3.0], "C": [2.0, 3.0, 4.0]}
+        )
+
         with patch("larvaworld.lib.plot.table.plot.AutoBasePlot") as mock_plot:
             mock_instance = MagicMock()
             mock_ax = MagicMock()
@@ -232,9 +229,9 @@ class TestMplTable:
             mock_instance.axs = [mock_ax]
             mock_instance.fig = MagicMock()
             mock_plot.return_value = mock_instance
-            
+
             mpl_table(data, highlighted_cells="row_min", return_table=False)
-            
+
             # Lines 308-309: Highlights cells in highlight_idx with highlight_color
             # Should call set_facecolor on highlighted cells
             assert mock_table._cells[(1, 1)].set_facecolor.called  # min in row 0
@@ -243,7 +240,7 @@ class TestMplTable:
         """Test adding additional header row."""
         # Lines 319-331: Adds header0 cell when header0 is not None
         data = pd.DataFrame({"A": [1]})
-        
+
         with patch("larvaworld.lib.plot.table.plot.AutoBasePlot") as mock_plot:
             mock_instance = MagicMock()
             mock_ax = MagicMock()
@@ -254,9 +251,9 @@ class TestMplTable:
             mock_instance.axs = [mock_ax]
             mock_instance.fig = MagicMock()
             mock_plot.return_value = mock_instance
-            
+
             mpl_table(data, header0="FIELD", header0_color="red", return_table=False)
-            
+
             # Lines 322-330: Adds cell at (0, -1)
             mock_table.add_cell.assert_called_once()
             call_kwargs = mock_table.add_cell.call_args[1]
@@ -276,26 +273,26 @@ class TestErrorTable:
         # Lines 402-431: error_table function
         # Lines 421: Transposes and rounds data
         data = np.array([[1.2345, 2.3456], [3.4567, 4.5678]])
-        
+
         with patch("larvaworld.lib.plot.table.mpl_table") as mock_mpl_table:
             mock_mpl_table.return_value = "table_output"
-            
+
             result = error_table(data, k="test_metric")
-            
+
             # Lines 423-430: Calls mpl_table with transposed, rounded data
             mock_mpl_table.assert_called_once()
             call_args = mock_mpl_table.call_args
-            
+
             # Check data is transposed and rounded to 3 decimals
             passed_data = call_args[0][0]
             expected_data = np.round(data, 3).T
             assert np.array_equal(passed_data, expected_data)
-            
+
             # Lines 425: highlighted_cells="row_min"
             assert call_args[1]["highlighted_cells"] == "row_min"
             # Lines 428: name includes metric key
             assert call_args[1]["name"] == "error_table_test_metric"
-            
+
             assert result == "table_output"
 
     def test_error_table_figsize_calculation(self):
@@ -307,10 +304,10 @@ class TestErrorTable:
         # After .T: 3x2
         # figsize uses the NEW shape: ((new_shape[1] + 3) * 4, new_shape[0])
         # new_shape = (3, 2), so figsize = ((2 + 3) * 4, 3) = (20, 3)
-        
+
         with patch("larvaworld.lib.plot.table.mpl_table") as mock_mpl_table:
             error_table(data, k="")
-            
+
             call_args = mock_mpl_table.call_args
             # Lines 422: figsize calculated AFTER transpose
             transposed_shape = data.T.shape  # (3, 2)
@@ -321,10 +318,10 @@ class TestErrorTable:
         """Test passing additional kwargs to mpl_table."""
         # Lines 429: **kwargs passed to mpl_table
         data = np.array([[1.0, 2.0]])
-        
+
         with patch("larvaworld.lib.plot.table.mpl_table") as mock_mpl_table:
             error_table(data, k="metric", show=True, save_to="/tmp")
-            
+
             call_args = mock_mpl_table.call_args
             assert call_args[1]["show"] == True
             assert call_args[1]["save_to"] == "/tmp"
@@ -333,10 +330,10 @@ class TestErrorTable:
         """Test that error values are rounded to 3 decimals."""
         # Lines 421: np.round(data, 3)
         data = np.array([[1.23456789, 2.98765432]])
-        
+
         with patch("larvaworld.lib.plot.table.mpl_table") as mock_mpl_table:
             error_table(data)
-            
+
             passed_data = mock_mpl_table.call_args[0][0]
             # Should be rounded to 3 decimals
             assert passed_data[0, 0] == 1.235
@@ -351,7 +348,7 @@ class TestMplTableHighlighting:
         """Test highlighting maximum values in rows."""
         # Lines 260-266: row_max highlighting mode
         data = pd.DataFrame([[1, 5, 3], [7, 2, 9]], columns=["A", "B", "C"])
-        
+
         with patch("larvaworld.lib.plot.table.plot.AutoBasePlot") as mock_plot:
             mock_instance = MagicMock()
             mock_ax = MagicMock()
@@ -365,9 +362,14 @@ class TestMplTableHighlighting:
             mock_instance.axs = [mock_ax]
             mock_instance.fig = MagicMock()
             mock_plot.return_value = mock_instance
-            
-            mpl_table(data, highlighted_cells="row_max", highlight_color="red", return_table=False)
-            
+
+            mpl_table(
+                data,
+                highlighted_cells="row_max",
+                highlight_color="red",
+                return_table=False,
+            )
+
             # Lines 308-309: Should highlight max cells
             assert mock_table._cells[(1, 1)].set_facecolor.called
             assert mock_table._cells[(2, 2)].set_facecolor.called
@@ -376,7 +378,7 @@ class TestMplTableHighlighting:
         """Test highlighting minimum values in columns."""
         # Lines 267-273: col_min highlighting mode
         data = pd.DataFrame([[3, 8], [1, 5], [7, 2]], columns=["A", "B"])
-        
+
         with patch("larvaworld.lib.plot.table.plot.AutoBasePlot") as mock_plot:
             mock_instance = MagicMock()
             mock_ax = MagicMock()
@@ -390,9 +392,9 @@ class TestMplTableHighlighting:
             mock_instance.axs = [mock_ax]
             mock_instance.fig = MagicMock()
             mock_plot.return_value = mock_instance
-            
+
             mpl_table(data, highlighted_cells="col_min", return_table=False)
-            
+
             # Lines 308-309: Should highlight min cells
             assert mock_table._cells[(2, 0)].set_facecolor.called
             assert mock_table._cells[(3, 1)].set_facecolor.called
@@ -401,7 +403,7 @@ class TestMplTableHighlighting:
         """Test highlighting maximum values in columns."""
         # Lines 274-280: col_max highlighting mode
         data = pd.DataFrame([[3, 2], [9, 5], [7, 8]], columns=["A", "B"])
-        
+
         with patch("larvaworld.lib.plot.table.plot.AutoBasePlot") as mock_plot:
             mock_instance = MagicMock()
             mock_ax = MagicMock()
@@ -415,9 +417,9 @@ class TestMplTableHighlighting:
             mock_instance.axs = [mock_ax]
             mock_instance.fig = MagicMock()
             mock_plot.return_value = mock_instance
-            
+
             mpl_table(data, highlighted_cells="col_max", return_table=False)
-            
+
             # Lines 308-309: Should highlight max cells
             assert mock_table._cells[(2, 0)].set_facecolor.called
             assert mock_table._cells[(3, 1)].set_facecolor.called
@@ -426,7 +428,7 @@ class TestMplTableHighlighting:
         """Test highlighting cells by text content."""
         # Lines 334-340: highlighted_celltext_dict functionality
         data = pd.DataFrame([["red", "blue"], ["green", "red"]], columns=["A", "B"])
-        
+
         with patch("larvaworld.lib.plot.table.plot.AutoBasePlot") as mock_plot:
             mock_instance = MagicMock()
             mock_ax = MagicMock()
@@ -443,11 +445,13 @@ class TestMplTableHighlighting:
             mock_instance.axs = [mock_ax]
             mock_instance.fig = MagicMock()
             mock_plot.return_value = mock_instance
-            
+
             # Lines 334-340: Loop through cells and highlight if text matches
             highlight_dict = {"red": ["red"], "blue": ["blue"]}
-            mpl_table(data, highlighted_celltext_dict=highlight_dict, return_table=False)
-            
+            mpl_table(
+                data, highlighted_celltext_dict=highlight_dict, return_table=False
+            )
+
             # Should call set_facecolor for cells containing matched text
             assert mock_cell1.set_facecolor.called
             assert mock_cell2.set_facecolor.called
@@ -456,7 +460,7 @@ class TestMplTableHighlighting:
         """Test custom column widths."""
         # Lines 285-286: Custom colWidths passed to table
         data = pd.DataFrame([[1, 2, 3]], columns=["A", "B", "C"])
-        
+
         with patch("larvaworld.lib.plot.table.plot.AutoBasePlot") as mock_plot:
             mock_instance = MagicMock()
             mock_ax = MagicMock()
@@ -465,10 +469,10 @@ class TestMplTableHighlighting:
             mock_instance.axs = [mock_ax]
             mock_instance.fig = MagicMock()
             mock_plot.return_value = mock_instance
-            
+
             col_widths = [0.2, 0.5, 0.3]
             mpl_table(data, colWidths=col_widths, return_table=False)
-            
+
             # Lines 285-286, 303-304: colWidths passed to ax.table
             call_kwargs = mock_ax.table.call_args[1]
             assert "colWidths" in call_kwargs
@@ -478,7 +482,7 @@ class TestMplTableHighlighting:
         """Test header columns formatting."""
         # Lines 313-314: header_columns > 0 applies header formatting
         data = pd.DataFrame([[1, 2], [3, 4]], columns=["A", "B"])
-        
+
         with patch("larvaworld.lib.plot.table.plot.AutoBasePlot") as mock_plot:
             mock_instance = MagicMock()
             mock_ax = MagicMock()
@@ -492,10 +496,9 @@ class TestMplTableHighlighting:
             mock_instance.axs = [mock_ax]
             mock_instance.fig = MagicMock()
             mock_plot.return_value = mock_instance
-            
+
             mpl_table(data, header_columns=1, return_table=False)
-            
+
             # Lines 313-314: Should set text props for header column cells
             assert mock_table._cells[(1, 0)].set_text_props.called
             assert mock_table._cells[(2, 0)].set_text_props.called
-

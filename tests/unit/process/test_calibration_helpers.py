@@ -6,7 +6,9 @@ from larvaworld.lib import reg, util
 from larvaworld.lib.process.calibration import comp_segmentation, fit_metric_definition
 
 
-def _make_stride_variability_row(point_idx: int = 2, use_component: bool = True) -> pd.DataFrame:
+def _make_stride_variability_row(
+    point_idx: int = 2, use_component: bool = True
+) -> pd.DataFrame:
     """Create a minimal stride variability DataFrame compatible with fit_metric_definition."""
     str_cols = reg.getPar(["str_sd_var", "str_t_var"])
     data = {

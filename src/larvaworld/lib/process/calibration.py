@@ -97,24 +97,24 @@ def comp_linear(d: LarvaDataset, mode: str = "minimal") -> None:
 def vel_definition(d: LarvaDataset) -> Dict[str, Any]:
     """
     Compute velocity-related metrics for model calibration.
-    
+
     Combines stride variability analysis with bend-orientation correlation
     to determine optimal velocity calculation methods for larva movement.
-    
+
     Args:
         d: LarvaDataset with computed spatial and angular data.
            Must have midline positions and angular velocities computed.
-    
+
     Returns:
         Dict containing calibration metrics with keys:
         - 'stride_data': DataFrame with stride analysis
         - 'stride_variability': Variability coefficients
         - 'bend2or_regression': Regression parameters
         - 'bend2or_correlation': Correlation coefficients
-    
+
     Side Effects:
         Updates d.vel_definition attribute and saves results to disk.
-    
+
     Example:
         >>> d = LarvaDataset(dir='path/to/data')
         >>> d.comp_spatial()
@@ -138,18 +138,18 @@ def vel_definition(d: LarvaDataset) -> Dict[str, Any]:
 def comp_stride_variation(d: LarvaDataset) -> Dict[str, Any]:
     """
     Compute stride variability metrics for movement analysis.
-    
+
     Analyzes stride length and frequency variations across different
     movement conditions to characterize locomotor patterns.
-    
+
     Args:
         d: LarvaDataset with spatial data and computed velocities.
-    
+
     Returns:
         Dict with keys:
         - 'stride_data': DataFrame with stride analysis
         - 'stride_variability': Variability metrics (mean, std, CV)
-    
+
     Example:
         >>> d = LarvaDataset(dir='path/to/data')
         >>> d.comp_spatial()
@@ -279,22 +279,24 @@ def comp_stride_variation(d: LarvaDataset) -> Dict[str, Any]:
     return dic
 
 
-def fit_metric_definition(str_var: pd.DataFrame, df_corr: pd.DataFrame, c: DatasetConfig) -> None:
+def fit_metric_definition(
+    str_var: pd.DataFrame, df_corr: pd.DataFrame, c: DatasetConfig
+) -> None:
     """
     Fit metric definitions using stride variability and correlation data.
-    
+
     Determines optimal threshold parameters for movement classification
     based on stride variability patterns and behavioral correlations.
-    
+
     Args:
         str_var: DataFrame containing stride variability metrics.
         df_corr: DataFrame with correlation coefficients between
                 different movement parameters.
         c: Dataset configuration with angular parameters.
-    
+
     Side Effects:
         Updates c.angular.best_combo and related configuration attributes.
-    
+
     Example:
         >>> metrics = fit_metric_definition(stride_data, corr_data, config)
     """
@@ -322,24 +324,26 @@ def fit_metric_definition(str_var: pd.DataFrame, df_corr: pd.DataFrame, c: Datas
     md.angular.bend = "from_vectors"
 
 
-def comp_segmentation(s: pd.DataFrame, e: pd.DataFrame, c: DatasetConfig) -> Dict[str, Any]:
+def comp_segmentation(
+    s: pd.DataFrame, e: pd.DataFrame, c: DatasetConfig
+) -> Dict[str, Any]:
     """
     Compute segmentation metrics for behavioral analysis.
-    
+
     Analyzes movement segments to identify distinct behavioral
     patterns and transitions in larva locomotion using bend-orientation
     correlation analysis.
-    
+
     Args:
         s: DataFrame with step segment data.
         e: DataFrame with epoch segment data.
         c: Dataset configuration with midline point information.
-    
+
     Returns:
         Dict with keys:
         - 'bend2or_regression': Regression parameters
         - 'bend2or_correlation': Correlation coefficients
-    
+
     Example:
         >>> segments = comp_segmentation(step_data, epoch_data, config)
     """

@@ -1,6 +1,7 @@
 """
 Methods for managing spatial metrics (2D x-y arrays)
 """
+
 from __future__ import annotations
 
 import copy
@@ -62,7 +63,12 @@ __all__: list[str] = [
 ]
 
 
-def fft_max(a: np.ndarray, dt: float, fr_range: tuple[float, float] = (0.0, +np.inf), return_amps: bool = False) -> float | tuple[float, np.ndarray]:
+def fft_max(
+    a: np.ndarray,
+    dt: float,
+    fr_range: tuple[float, float] = (0.0, +np.inf),
+    return_amps: bool = False,
+) -> float | tuple[float, np.ndarray]:
     """
     Compute power spectrum and dominant frequency of a signal.
 
@@ -100,7 +106,13 @@ def fft_max(a: np.ndarray, dt: float, fr_range: tuple[float, float] = (0.0, +np.
         return fr
 
 
-def detect_strides(a: np.ndarray, dt: float, vel_thr: float = 0.3, stretch: tuple[float, float] = (0.75, 2.0), fr: Optional[float] = None) -> np.ndarray:
+def detect_strides(
+    a: np.ndarray,
+    dt: float,
+    vel_thr: float = 0.3,
+    stretch: tuple[float, float] = (0.75, 2.0),
+    fr: Optional[float] = None,
+) -> np.ndarray:
     """
     Detect stride events in velocity timeseries.
 
@@ -159,7 +171,9 @@ def stride_interp(a: np.ndarray, strides: np.ndarray, Nbins: int = 64) -> np.nda
     return aa
 
 
-def mean_stride_curve(a: np.ndarray, strides: np.ndarray, da: np.ndarray, Nbins: int = 64) -> AttrDict:
+def mean_stride_curve(
+    a: np.ndarray, strides: np.ndarray, da: np.ndarray, Nbins: int = 64
+) -> AttrDict:
     """
     Compute median stride curves separated by direction.
 
@@ -194,7 +208,9 @@ def mean_stride_curve(a: np.ndarray, strides: np.ndarray, da: np.ndarray, Nbins:
     return dic
 
 
-def comp_PI(arena_xdim: float, xs: np.ndarray, return_num: bool = False) -> float | tuple[float, int]:
+def comp_PI(
+    arena_xdim: float, xs: np.ndarray, return_num: bool = False
+) -> float | tuple[float, int]:
     """
     Compute preference index for spatial distribution.
 
@@ -289,7 +305,12 @@ def straightness_index(ss: pd.DataFrame, rolling_ticks: np.ndarray) -> np.ndarra
     return SI0
 
 
-def sense_food(pos: tuple[float, float], sources: Optional[Any] = None, grid: Optional[Any] = None, radius: Optional[float] = None) -> Any:
+def sense_food(
+    pos: tuple[float, float],
+    sources: Optional[Any] = None,
+    grid: Optional[Any] = None,
+    radius: Optional[float] = None,
+) -> Any:
     """
     Detect food sources near a position.
 
@@ -398,6 +419,7 @@ class Collision(Exception):
     Example:
         >>> raise Collision(agent1, agent2)
     """
+
     def __init__(self, object1: Any, object2: Any) -> None:
         self.object1 = object1
         self.object2 = object2
@@ -424,7 +446,13 @@ def rearrange_contour(ps0: list[tuple[float, float]]) -> list[tuple[float, float
     return ps_plus + ps_minus
 
 
-def comp_bearing(xs: np.ndarray, ys: np.ndarray, ors: float | np.ndarray, loc: tuple[float, float] = (0.0, 0.0), in_deg: bool = True) -> np.ndarray:
+def comp_bearing(
+    xs: np.ndarray,
+    ys: np.ndarray,
+    ors: float | np.ndarray,
+    loc: tuple[float, float] = (0.0, 0.0),
+    in_deg: bool = True,
+) -> np.ndarray:
     """
     Compute bearing (azimuth) of oriented points relative to reference location.
 
@@ -453,7 +481,9 @@ def comp_bearing(xs: np.ndarray, ys: np.ndarray, ors: float | np.ndarray, loc: t
     return drads if in_deg else np.deg2rad(drads)
 
 
-def comp_bearing_solo(x: float, y: float, o: float, loc: tuple[float, float] = (0.0, 0.0)) -> float:
+def comp_bearing_solo(
+    x: float, y: float, o: float, loc: tuple[float, float] = (0.0, 0.0)
+) -> float:
     """
     Compute bearing angle for single oriented point relative to location.
 
@@ -477,7 +507,10 @@ def comp_bearing_solo(x: float, y: float, o: float, loc: tuple[float, float] = (
 
 
 def compute_dispersal_solo(
-    xy: np.ndarray | pd.DataFrame, min_valid_proportion: float = 0.2, max_start_proportion: float = 0.1, min_end_proportion: float = 0.9
+    xy: np.ndarray | pd.DataFrame,
+    min_valid_proportion: float = 0.2,
+    max_start_proportion: float = 0.1,
+    min_end_proportion: float = 0.9,
 ) -> np.ndarray:
     """
     Compute dispersal (distance from start) for single trajectory.
@@ -522,7 +555,9 @@ def compute_dispersal_solo(
 #         return df_slice
 
 
-def compute_dispersal_multi(xy0: pd.DataFrame, t0: float, t1: float, dt: float, **kwargs: Any) -> tuple[np.ndarray, int]:
+def compute_dispersal_multi(
+    xy0: pd.DataFrame, t0: float, t1: float, dt: float, **kwargs: Any
+) -> tuple[np.ndarray, int]:
     """
     Compute dispersal values for multiple agents over time range.
 
@@ -557,7 +592,9 @@ def compute_dispersal_multi(xy0: pd.DataFrame, t0: float, t1: float, dt: float, 
     return AA0.flatten(), Nt
 
 
-def compute_component_velocity(xy: np.ndarray, angles: np.ndarray, dt: float, return_dst: bool = False) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
+def compute_component_velocity(
+    xy: np.ndarray, angles: np.ndarray, dt: float, return_dst: bool = False
+) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """
     Compute velocity component along orientation angles.
 
@@ -592,7 +629,12 @@ def compute_component_velocity(xy: np.ndarray, angles: np.ndarray, dt: float, re
         return v
 
 
-def compute_velocity_threshold(v: np.ndarray, Nbins: int = 500, max_v: Optional[float] = None, kernel_width: float = 0.02) -> float:
+def compute_velocity_threshold(
+    v: np.ndarray,
+    Nbins: int = 500,
+    max_v: Optional[float] = None,
+    kernel_width: float = 0.02,
+) -> float:
     """
     Compute velocity threshold using density-based approach.
 
@@ -745,7 +787,9 @@ def boolean_indexing(v: list[np.ndarray], fillval: float = np.nan) -> np.ndarray
     return out
 
 
-def concat_datasets(ddic: dict[str, Any], key: str = "end", unit: str = "sec") -> pd.DataFrame:
+def concat_datasets(
+    ddic: dict[str, Any], key: str = "end", unit: str = "sec"
+) -> pd.DataFrame:
     """
     Concatenate multiple datasets into single DataFrame.
 
@@ -807,7 +851,11 @@ def moving_average(a: np.ndarray, n: int = 3) -> np.ndarray:
     return np.convolve(a, np.ones((n,)) / n, mode="same")
 
 
-def body_contour(points: list[tuple[float, float]] = [(0.9, 0.1), (0.05, 0.1)], start: tuple[float, float] = (1, 0), stop: tuple[float, float] = (0, 0)) -> np.ndarray:
+def body_contour(
+    points: list[tuple[float, float]] = [(0.9, 0.1), (0.05, 0.1)],
+    start: tuple[float, float] = (1, 0),
+    stop: tuple[float, float] = (0, 0),
+) -> np.ndarray:
     """
     Generate symmetric body contour from half-side points.
 
@@ -832,7 +880,9 @@ def body_contour(points: list[tuple[float, float]] = [(0.9, 0.1), (0.05, 0.1)], 
     return xy
 
 
-def apply_per_level(s: pd.DataFrame, func: Any, level: str = "AgentID", **kwargs: Any) -> np.ndarray:
+def apply_per_level(
+    s: pd.DataFrame, func: Any, level: str = "AgentID", **kwargs: Any
+) -> np.ndarray:
     """
     Apply function to each group in MultiIndex DataFrame.
 
@@ -1013,7 +1063,12 @@ def compute_dst(s: pd.DataFrame, point: str = "") -> None:
     s[nam.dst(point)] = apply_per_level(s[nam.xy(point)], eudist).flatten()
 
 
-def comp_extrema(a: pd.Series, order: int = 3, threshold: Optional[tuple[float, float]] = None, return_2D: bool = True) -> np.ndarray:
+def comp_extrema(
+    a: pd.Series,
+    order: int = 3,
+    threshold: Optional[tuple[float, float]] = None,
+    return_2D: bool = True,
+) -> np.ndarray:
     """
     Compute local extrema in time series using scipy.signal.argrelextrema.
 
@@ -1127,7 +1182,13 @@ def align_trajectories(
     """
 
 
-def fixate_larva(s: pd.DataFrame, c: Any, arena_dims: tuple[float, float], P1: str, P2: Optional[str] = None) -> tuple[pd.DataFrame, np.ndarray]:
+def fixate_larva(
+    s: pd.DataFrame,
+    c: Any,
+    arena_dims: tuple[float, float],
+    P1: str,
+    P2: Optional[str] = None,
+) -> tuple[pd.DataFrame, np.ndarray]:
     """
     Transform coordinates to fixate primary point to arena center.
 

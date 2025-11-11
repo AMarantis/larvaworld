@@ -1,6 +1,7 @@
 """
 Methods for managing colors
 """
+
 from __future__ import annotations
 
 import random
@@ -188,7 +189,12 @@ def colortuple2str(t: tuple[float, float, float]) -> str:
     return matplotlib.colors.rgb2hex(t)
 
 
-def col_range(q: np.ndarray | float, low: tuple[int, int, int] | str = (255, 0, 0), high: tuple[int, int, int] | str = (255, 255, 255), mul255: bool = False) -> np.ndarray:
+def col_range(
+    q: np.ndarray | float,
+    low: tuple[int, int, int] | str = (255, 0, 0),
+    high: tuple[int, int, int] | str = (255, 255, 255),
+    mul255: bool = False,
+) -> np.ndarray:
     """
     Map values to colors along a gradient between two colors.
 
@@ -248,6 +254,7 @@ class Color:
         >>> all(c >= 200 for c in col)
         True
     """
+
     BLACK = (0, 0, 0)
     WHITE = (255, 255, 255)
     RED = (255, 0, 0)
@@ -258,7 +265,14 @@ class Color:
     DARK_GRAY = (64, 64, 64)
 
     @staticmethod
-    def random_color(min_r: int = 0, min_g: int = 0, min_b: int = 0, max_r: int = 255, max_g: int = 255, max_b: int = 255) -> tuple[int, int, int]:
+    def random_color(
+        min_r: int = 0,
+        min_g: int = 0,
+        min_b: int = 0,
+        max_r: int = 255,
+        max_g: int = 255,
+        max_b: int = 255,
+    ) -> tuple[int, int, int]:
         r = random.randint(min_r, max_r)
         g = random.randint(min_g, max_g)
         b = random.randint(min_b, max_b)
@@ -274,7 +288,11 @@ class Color:
         # return colortuple2str((r, g, b))
 
     @staticmethod
-    def timeseries_to_col(a: np.ndarray | float, lim: float = 1.0, color_range: list[tuple[int, int, int]] = [RED, GREEN]) -> tuple[float, float, float] | list[tuple[float, float, float]]:
+    def timeseries_to_col(
+        a: np.ndarray | float,
+        lim: float = 1.0,
+        color_range: list[tuple[int, int, int]] = [RED, GREEN],
+    ) -> tuple[float, float, float] | list[tuple[float, float, float]]:
         t = np.clip(np.abs(a) / lim, a_min=0, a_max=1)
         (r1, b1, g1), (r2, b2, g2) = color_range
         r, b, g = r2 - r1, b2 - b1, g2 - g1
@@ -344,7 +362,9 @@ def mix2colors(c0: str, c1: str) -> str:
     return cc
 
 
-def scaled_velocity_to_col(a: np.ndarray | float) -> np.ndarray | tuple[float, float, float]:
+def scaled_velocity_to_col(
+    a: np.ndarray | float,
+) -> np.ndarray | tuple[float, float, float]:
     """
     Map scaled velocity values to color gradient.
 
@@ -365,7 +385,9 @@ def scaled_velocity_to_col(a: np.ndarray | float) -> np.ndarray | tuple[float, f
     return Color.timeseries_to_col(a, lim=0.8)
 
 
-def angular_velocity_to_col(a: np.ndarray | float) -> np.ndarray | tuple[float, float, float]:
+def angular_velocity_to_col(
+    a: np.ndarray | float,
+) -> np.ndarray | tuple[float, float, float]:
     """
     Map angular velocity values to color gradient.
 

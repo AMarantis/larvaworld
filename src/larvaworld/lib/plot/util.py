@@ -14,7 +14,8 @@ import os
 import warnings
 
 import matplotlib
-matplotlib.use('Agg')  # Set non-interactive backend for headless environments
+
+matplotlib.use("Agg")  # Set non-interactive backend for headless environments
 
 import numpy as np
 import pandas as pd
@@ -56,20 +57,20 @@ def plot_quantiles(
 ) -> None:
     """
     Plot quantiles or confidence intervals along with the mean.
-    
+
     Computes and plots 25th, 50th (median), and 75th percentiles with
     shaded interquartile range. Handles numpy arrays, DataFrames, or Series.
-    
+
     Args:
         df: Data to compute quantiles from. If numpy.ndarray, quantiles are
             computed along the first axis (columns). If pandas.DataFrame or
             pandas.Series, quantiles are computed grouped by the 'Step' level
         x: X-axis values for the plot. Uses default range if None
         **kwargs: Additional keyword arguments passed to plot_mean_and_range
-        
+
     Raises:
         Exception: If the input data type is not recognized
-        
+
     Example:
         >>> plot_quantiles(data_array, x_values, axis=plt.gca(), color='blue', label='Data')
     """
@@ -102,10 +103,10 @@ def plot_mean_and_range(
 ) -> None:
     """
     Plot the mean and a shaded range (quantiles or confidence intervals).
-    
+
     Draws mean line with shaded region between lower and upper bounds,
     commonly used for showing uncertainty or variability.
-    
+
     Args:
         x: X-axis values for the plot
         mean: Mean values to be plotted
@@ -117,7 +118,7 @@ def plot_mean_and_range(
         label: Label for the legend. Defaults to None
         linestyle: Line style for the mean line ('solid', 'dashed'). Defaults to 'solid'
         linewidth: Line width for the mean line. Defaults to 2
-        
+
     Example:
         >>> plot_mean_and_range(x_values, mean_values, lower_bound, upper_bound, plt.gca(), color='blue', label='Mean and Range')
     """
@@ -156,10 +157,10 @@ def circular_hist(
 ) -> Tuple["np.ndarray", "np.ndarray", Any]:
     """
     Produce a circular histogram of angles on polar axes.
-    
+
     Creates polar histogram showing angular distribution with optional
     density normalization and customizable bin partitioning.
-    
+
     Args:
         ax: Polar axes instance created with subplot_kw=dict(projection='polar')
         x: Angles to plot in radians
@@ -170,11 +171,11 @@ def circular_hist(
         gaps: Whether to allow gaps between bins. When False, bins partition
             entire [-pi, pi] range. Defaults to True
         **kwargs: Additional keyword arguments passed to matplotlib bar plot
-        
+
     Returns:
         Tuple of (n, bins, patches) where n is number of values in each bin,
         bins are bin edges, and patches is BarContainer or list of Polygon
-        
+
     Example:
         >>> n, bins, patches = circular_hist(polar_ax, angle_data, bins=20, density=True)
     """
@@ -203,6 +204,7 @@ def circular_hist(
 
     # Plot data on ax
     from matplotlib import pyplot as plt
+
     patches = plt.bar(
         bins[:-1],
         radius,
@@ -226,14 +228,19 @@ def circular_hist(
 
 
 def circNarrow(
-    ax: "Axes", data: "np.ndarray", alpha: float, label: str, color: str, Nbins: int = 16
+    ax: "Axes",
+    data: "np.ndarray",
+    alpha: float,
+    label: str,
+    color: str,
+    Nbins: int = 16,
 ) -> None:
     """
     Create a circular histogram with an arrow indicator.
-    
+
     Combines polar histogram with fancy arrow pointing to mean direction,
     useful for visualizing angular distributions with directional bias.
-    
+
     Args:
         ax: Polar axes instance created with subplot_kw=dict(projection='polar')
         data: Angles to plot in radians
@@ -241,7 +248,7 @@ def circNarrow(
         label: Label for the circular histogram
         color: Color of the circular histogram and arrow
         Nbins: Number of equal-width bins. Defaults to 16
-        
+
     Example:
         >>> circNarrow(polar_ax, angle_data, alpha=0.5, label='Orientation', color='blue', Nbins=16)
     """
@@ -344,10 +351,10 @@ def dataset_legend(
 ) -> Any:
     """
     Create a legend for all datasets with their specified labels and colors.
-    
+
     Generates custom legend with colored patch handles for multiple datasets,
     with customizable positioning and handle dimensions.
-    
+
     Args:
         labels: List of labels for each dataset
         colors: List of colors corresponding to each dataset
@@ -356,10 +363,10 @@ def dataset_legend(
         handlelength: Length of legend handles. Defaults to 0.5
         handleheight: Height of legend handles. Defaults to 0.5
         **kwargs: Additional keyword arguments passed to legend
-        
+
     Returns:
         matplotlib.legend.Legend: The created legend
-        
+
     Example:
         >>> leg = dataset_legend(['Control', 'Test'], ['blue', 'red'], ax=axes, anchor=(1.05, 1))
     """
@@ -377,6 +384,7 @@ def dataset_legend(
 
     if ax is None:
         from matplotlib import pyplot as plt
+
         leg = plt.legend(**kws)
     else:
         leg = ax.legend(**kws)
@@ -384,13 +392,15 @@ def dataset_legend(
     return leg
 
 
-def label_diff(i: int, j: int, text: str, X: Sequence[float], Y: Sequence[float], ax: "Axes") -> None:
+def label_diff(
+    i: int, j: int, text: str, X: Sequence[float], Y: Sequence[float], ax: "Axes"
+) -> None:
     """
     Label the difference between two data points with an annotation and an arrow.
-    
+
     Draws horizontal bracket with text annotation between two points,
     commonly used for showing statistical significance.
-    
+
     Args:
         i: Index of the first data point
         j: Index of the second data point
@@ -398,7 +408,7 @@ def label_diff(i: int, j: int, text: str, X: Sequence[float], Y: Sequence[float]
         X: List of x-coordinates for data points
         Y: List of y-coordinates for data points
         ax: Matplotlib axes on which to annotate the difference
-        
+
     Example:
         >>> label_diff(0, 1, '***', [1, 2], [10, 12], ax)
     """
@@ -420,16 +430,16 @@ def label_diff(i: int, j: int, text: str, X: Sequence[float], Y: Sequence[float]
 def pvalue_star(pv: float) -> str:
     """
     Convert a p-value to a star annotation for significance.
-    
+
     Maps p-value to standard significance notation: **** (p<0.0001),
     *** (p<0.001), ** (p<0.01), * (p<0.05), ns (not significant).
-    
+
     Args:
         pv: The p-value to be converted
-        
+
     Returns:
         Star annotation representing the significance level
-        
+
     Example:
         >>> pvalue_star(0.001)
         '***'
@@ -453,10 +463,10 @@ def annotate_plot(
 ) -> None:
     """
     Annotate a plot with Mann-Whitney U test p-values.
-    
+
     Performs pairwise Mann-Whitney U tests and adds statistical annotations
     (stars) to boxplots or similar plots using statannot.
-    
+
     Args:
         box: Seaborn plot object to annotate
         data: DataFrame containing the data
@@ -466,7 +476,7 @@ def annotate_plot(
         show_ns: Whether to display annotations for non-significant comparisons. Defaults to True
         target_only: Specify a target value for comparisons. Defaults to None
         **kwargs: Additional arguments for annotation customization
-        
+
     Example:
         >>> annotate_plot(box, data, x='group', y='value', show_ns=False, target_only='control')
     """
@@ -536,10 +546,10 @@ def dual_half_circle(
 ) -> List[Any]:
     """
     Add two half circles to axes with specified face colors rotated at angle.
-    
+
     Creates two wedge patches forming complete circle with different colored
     halves, rotated to specified angle in degrees.
-    
+
     Args:
         center: Center coordinates of the half circles
         radius: Radius of the half circles. Defaults to 0.04
@@ -547,15 +557,16 @@ def dual_half_circle(
         ax: Matplotlib axes to add half circles to. Uses current axes if None
         colors: Face colors of the two half circles (left half, right half). Defaults to ('W', 'k')
         **kwargs: Additional keyword arguments to customize the appearance of the half circles
-        
+
     Returns:
         List containing the two half circle wedge patches
-        
+
     Example:
         >>> wedges = dual_half_circle((0.5, 0.5), radius=0.05, angle=45, colors=('red', 'blue'))
     """
     if ax is None:
         from matplotlib import pyplot as plt
+
         ax = plt.gca()
     theta1, theta2 = angle, angle + 180
     w1 = patches.Wedge(center, radius, theta1, theta2, fc=colors[0], **kwargs)
@@ -568,21 +579,22 @@ def dual_half_circle(
 def save_plot(fig: "Figure", filepath: str, filename: str) -> None:
     """
     Save a Matplotlib figure to a specified file path.
-    
+
     Saves figure at high resolution (300 DPI), closes it, and prints
     confirmation message.
-    
+
     Args:
         fig: Matplotlib figure to save
         filepath: Full file path where the figure should be saved
         filename: Name of the file to save
-        
+
     Example:
         >>> save_plot(fig, '/path/to/output.png', 'output.png')
     """
     fig.savefig(filepath, dpi=300, facecolor=None)
     try:
         from matplotlib import pyplot as plt
+
         plt.close(fig)
     except:
         pass
@@ -598,26 +610,27 @@ def process_plot(
 ) -> Any:
     """
     Process and optionally save or show a Matplotlib figure.
-    
+
     Handles common plot finalization: showing, saving to file, and
     returning figure or metadata based on return_fig flag.
-    
+
     Args:
         fig: Matplotlib figure to process
         save_to: Directory where the figure should be saved. Figure won't be saved if None
         filename: Name of the file to save
         return_fig: Whether to return the figure in the result. Defaults to False
         show: Whether to display the figure. Defaults to False
-        
+
     Returns:
         If return_fig=False: The processed figure
         If return_fig=True: Tuple of (fig, save_to, filename)
-        
+
     Example:
         >>> result = process_plot(fig, save_to='./plots', filename='output.png', return_fig=True, show=False)
     """
     if show:
         from matplotlib import pyplot as plt
+
         plt.show()
 
     if hasattr(fig, "patch"):
@@ -647,10 +660,10 @@ def prob_hist(
 ) -> None:
     """
     Create a probability histogram or distribution plot for multiple datasets.
-    
+
     Generates probability histograms using seaborn or matplotlib with optional
     KDE overlay and polynomial fit smoothing.
-    
+
     Args:
         vs: List of arrays - datasets to plot
         colors: List of colors for each dataset
@@ -662,7 +675,7 @@ def prob_hist(
         sns_kws: Additional keyword arguments for Seaborn. Defaults to {}
         plot_fit: Whether to plot a smoothed fit curve. Defaults to True
         **kwargs: Additional keyword arguments for the histogram
-        
+
     Example:
         >>> fig, ax = plt.subplots()
         >>> prob_hist([data1, data2], ['blue', 'green'], ['Dataset 1', 'Dataset 2'], bins=20, ax=ax)
@@ -708,10 +721,10 @@ def single_boxplot(
 ) -> None:
     """
     Create a single boxplot with optional annotations and stripplot.
-    
+
     Generates seaborn boxplot with optional statistical annotations and
     overlaid stripplot showing individual data points.
-    
+
     Args:
         x: Column name for the x-axis
         y: Column name for the y-axis
@@ -725,7 +738,7 @@ def single_boxplot(
         target_only: Filter the data to include only a specific target. Defaults to None
         stripplot: Whether to include a stripplot alongside the boxplot. Defaults to True
         **kwargs: Additional keyword arguments to customize the boxplot
-        
+
     Example:
         >>> single_boxplot(x='group', y='value', ax=ax, data=df, annotation=True, stripplot=True)
     """
@@ -780,10 +793,10 @@ def configure_subplot_grid(
 ) -> Dict[str, Any]:
     """
     Calculate grid dimensions and configure subplot grid parameters.
-    
+
     Determines optimal number of rows and columns for arranging N elements
     in a grid, with customizable figure sizing and axis sharing.
-    
+
     Args:
         N: Total number of elements. Defaults to None
         wh: Width and height for each subplot. Defaults to None
@@ -796,17 +809,19 @@ def configure_subplot_grid(
         Nrows_coef: Coefficient to adjust the number of rows. Defaults to 1
         figsize: Figure size (width, height). Defaults to None
         **kwargs: Additional keyword arguments passed to subplot creation function
-        
+
     Returns:
         Dictionary of keyword arguments for configuring subplots including
         nrows, ncols, figsize, sharex, and sharey
-        
+
     Example:
         >>> kws = configure_subplot_grid(N=6, wh=5, sharex=True, Ncols=3)
     """
 
     # print(figsize,wh,w,h)
-    def calculate_grid_dimensions(N: Optional[int], Ncols: Optional[int], Nrows: Optional[int]) -> Tuple[int, int]:
+    def calculate_grid_dimensions(
+        N: Optional[int], Ncols: Optional[int], Nrows: Optional[int]
+    ) -> Tuple[int, int]:
         if N:
             if Nrows:
                 if Ncols is None:
@@ -833,20 +848,22 @@ def configure_subplot_grid(
     return kws
 
 
-def define_end_ks(ks: Optional[Sequence[str]] = None, mode: str = "basic") -> Sequence[str]:
+def define_end_ks(
+    ks: Optional[Sequence[str]] = None, mode: str = "basic"
+) -> Sequence[str]:
     """
     Define endpoint parameter shortcuts for different analysis modes.
-    
+
     Returns predefined sets of endpoint parameter keys based on analysis
     mode (basic, minimal, tiny, etc.) or custom list.
-    
+
     Args:
         ks: Custom parameter shortcuts. Uses mode-specific set if None
         mode: Analysis mode ('basic', 'minimal', 'tiny', 'deb', etc.). Defaults to 'basic'
-        
+
     Returns:
         List of parameter shortcut keys
-        
+
     Example:
         >>> ks = define_end_ks(mode='minimal')
         >>> ks = define_end_ks(ks=['fsv', 'sv_mu', 'cum_sd'])
@@ -965,20 +982,20 @@ def get_vs(
 ) -> List["np.ndarray"]:
     """
     Extract parameter values from multiple datasets.
-    
+
     Collects parameter arrays from datasets with optional transformations
     (absolute values, radian to degree conversion).
-    
+
     Args:
         datasets: List of datasets to extract from
         par: Parameter name to extract
         key: Data key ('step', 'end', etc.). Defaults to 'step'
         absolute: Use absolute values. Defaults to False
         rad2deg: Convert radians to degrees. Defaults to False
-        
+
     Returns:
         List of numpy arrays containing parameter values
-        
+
     Example:
         >>> values = get_vs(datasets=[d1, d2], par='v', key='step', absolute=True)
     """
@@ -1008,10 +1025,10 @@ def color_epochs(
 ) -> None:
     """
     Color behavioral epochs on time series plot.
-    
+
     Adds colored background regions and boundary lines for behavioral
     epochs (strides, pauses, turns) on existing axes.
-    
+
     Args:
         epochs: List of (start, end) index tuples
         ax: Matplotlib axes to annotate
@@ -1020,7 +1037,7 @@ def color_epochs(
         facecolor: Fill color for epoch regions. Defaults to 'lightblue'
         epoch_boundaries: Show vertical lines at boundaries. Defaults to True
         epoch_area: Fill epoch regions with color. Defaults to True
-        
+
     Example:
         >>> color_epochs([(10, 20), (30, 40)], ax, time_array, facecolor='green')
     """

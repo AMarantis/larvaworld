@@ -187,12 +187,14 @@ class TestEudi5x:
         a = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
         b = np.array([0.5, 0.5])
         result = eudi5x(a, b)
-        expected = np.array([
-            np.sqrt(0.5),  # distance from (0,0) to (0.5,0.5)
-            np.sqrt(0.5),  # distance from (1,0) to (0.5,0.5)
-            np.sqrt(0.5),  # distance from (0,1) to (0.5,0.5)
-            np.sqrt(0.5),  # distance from (1,1) to (0.5,0.5)
-        ])
+        expected = np.array(
+            [
+                np.sqrt(0.5),  # distance from (0,0) to (0.5,0.5)
+                np.sqrt(0.5),  # distance from (1,0) to (0.5,0.5)
+                np.sqrt(0.5),  # distance from (0,1) to (0.5,0.5)
+                np.sqrt(0.5),  # distance from (1,1) to (0.5,0.5)
+            ]
+        )
         np.testing.assert_array_almost_equal(result, expected)
 
     def test_eudi5x_3d_points(self):
@@ -231,10 +233,9 @@ class TestEudiNxN:
 
     def test_eudiNxN_multiple_sets(self):
         """Test with multiple sets of points."""
-        a = np.array([
-            [[0.0, 0.0], [1.0, 0.0]],
-            [[2.0, 0.0], [3.0, 0.0]]
-        ])  # 2 sets, 2 points each
+        a = np.array(
+            [[[0.0, 0.0], [1.0, 0.0]], [[2.0, 0.0], [3.0, 0.0]]]
+        )  # 2 sets, 2 points each
         b = np.array([[0.0, 0.0]])  # 1 reference point
         result = eudiNxN(a, b)
         # Result shape is (K, N, M) = (1, 2, 2)
@@ -557,4 +558,3 @@ class TestCollision:
         """Test that Collision is an Exception."""
         collision = Collision(1, 2)
         assert isinstance(collision, Exception)
-

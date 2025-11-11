@@ -111,23 +111,31 @@ class FunctionDict:
 
 funcs = FunctionDict()
 
+
 def __getattr__(name):
     """
     Lazily import subpackages and dataset classes to keep lib import lightweight.
     """
     if name in {"param", "reg", "plot", "model", "process", "screen", "sim"}:
         from importlib import import_module
+
         module = import_module(f"{__name__}.{name}")
         globals()[name] = module
         return module
-    
+
     # Lazy import dataset classes through process facade
-    if name in {"ParamLarvaDataset", "BaseLarvaDataset", "LarvaDataset", "LarvaDatasetCollection"}:
+    if name in {
+        "ParamLarvaDataset",
+        "BaseLarvaDataset",
+        "LarvaDataset",
+        "LarvaDatasetCollection",
+    }:
         from . import process
+
         obj = getattr(process, name)
         globals()[name] = obj
         return obj
-        
+
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 

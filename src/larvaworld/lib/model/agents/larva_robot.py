@@ -17,6 +17,7 @@ else:
 from ... import util
 from ...model.modules import Actuator, MotorController, ProximitySensor
 from ...param import PositiveNumber
+
 # ScreenManager import deferred due to circular dependency - will be imported when needed
 from . import LarvaSim
 
@@ -31,25 +32,27 @@ __displayname__ = "Braitenberg-like larva"
 class LarvaRobot(LarvaSim):
     """
     Virtual larva agent for genetic algorithm optimization.
-    
+
     Extends LarvaSim with genome-based parameter encoding, enabling
     evolutionary optimization of behavioral parameters via GA. The genome
     represents evolvable traits (locomotor gains, sensor weights, etc.).
-    
+
     Attributes:
         genome: Parameter genome vector for GA optimization (optional)
-        
+
     Args:
         larva_pars: Dictionary of larva configuration parameters
         genome: Optional genome encoding of evolvable parameters
         **kwargs: Additional agent configuration
-        
+
     Example:
         >>> genome = np.array([0.5, 1.2, 0.8])  # Evolvable parameters
         >>> robot = LarvaRobot(larva_pars={'model': 'explorer'}, genome=genome)
     """
 
-    def __init__(self, larva_pars: dict[str, Any], genome: Any | None = None, **kwargs: Any) -> None:
+    def __init__(
+        self, larva_pars: dict[str, Any], genome: Any | None = None, **kwargs: Any
+    ) -> None:
         super().__init__(**larva_pars, **kwargs)
         self.genome = genome
 
@@ -57,11 +60,11 @@ class LarvaRobot(LarvaSim):
 class ObstacleLarvaRobot(LarvaRobot):
     """
     Obstacle-avoiding larva robot with Braitenberg-like sensorimotor coupling.
-    
+
     Extends LarvaRobot with bilateral proximity sensors and motor controllers
     that implement reactive obstacle avoidance through differential actuation.
     Uses sensor-motor coupling to generate turning away from obstacles.
-    
+
     Attributes:
         Lmotor: Left motor controller with proximity sensor
         Rmotor: Right motor controller with proximity sensor
@@ -71,7 +74,7 @@ class ObstacleLarvaRobot(LarvaRobot):
         sensor_max_distance: Maximum sensing distance
         motor_coefficient: Motor gain coefficient
         min_actuator_value: Minimum motor output value
-        
+
     Example:
         >>> robot = ObstacleLarvaRobot(
         ...     larva_pars={'model': 'navigator'},

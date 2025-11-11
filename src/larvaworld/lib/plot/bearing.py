@@ -30,11 +30,11 @@ def plot_turn_Dbearing(
 ) -> Any:
     """
     Plot bearing changes during turns on polar axes.
-    
+
     Creates polar plots showing body orientation before and after turns,
     relative to a reference angle or center. Useful for analyzing turning
     behavior and orientation preferences.
-    
+
     Args:
         name: Plot name for saving. Auto-generated if None
         min_angle: Minimum turn amplitude to include. Defaults to 30.0 degrees
@@ -44,10 +44,10 @@ def plot_turn_Dbearing(
         Nplots: Number of subplot panels (2 or 4). Defaults to 4
         subfolder: Subfolder for saving plots. Defaults to 'turn'
         **kwargs: Additional arguments passed to AutoPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_turn_Dbearing(datasets=[d1, d2], min_angle=20.0, Nplots=4)
     """
@@ -140,16 +140,16 @@ def plot_turn_Dbearing(
 def plot_turn_Dorient2center(**kwargs: Any) -> Any:
     """
     Plot turn orientation changes relative to center.
-    
+
     Convenience wrapper for plot_turn_Dbearing() with ref_angle=None,
     showing orientation changes relative to the arena center during turns.
-    
+
     Args:
         **kwargs: Arguments passed to plot_turn_Dbearing()
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_turn_Dorient2center(datasets=[d1, d2])
     """
@@ -170,11 +170,11 @@ def plot_chunk_Dorient2source(
 ) -> Any:
     """
     Plot bearing to source during behavioral chunks.
-    
+
     Creates polar plots showing body orientation relative to a source (e.g., odor)
     at the start and stop of behavioral epochs (strides, runs, etc.). Includes
     statistical correction for mean orientation change.
-    
+
     Args:
         source_ID: Identifier for the source/target object
         datasets: List of LarvaDataset objects to analyze
@@ -185,10 +185,10 @@ def plot_chunk_Dorient2source(
         min_dur: Minimum chunk duration to include. Defaults to 0.0 seconds
         plot_merged: Whether to include merged dataset. Defaults to False
         **kwargs: Additional arguments passed to AutoPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_chunk_Dorient2source('Food', datasets=[d1, d2], chunk='run')
     """

@@ -24,21 +24,21 @@ def plot_fft_multi(
 ) -> Any:
     """
     Plot FFT power spectra for multiple parameters.
-    
+
     Creates Fourier analysis plots showing frequency power spectra and
     dominant frequency distributions for velocity and angular velocity,
     with inset probability histogram.
-    
+
     Args:
         ks: Parameter keys to analyze. Defaults to ('v', 'fov') for forward
             and angular velocity
         name: Plot name for saving. Defaults to 'frequency_powerspectrum'
         axx: Inset axes for probability histogram. Auto-created if None
         **kwargs: Additional arguments passed to AutoPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = plot_fft_multi(ks=['v', 'fov'], datasets=[d1, d2])
     """

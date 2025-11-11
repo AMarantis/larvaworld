@@ -23,7 +23,7 @@ __all__: list[str] = [
     "GroupedObject",
     # envs.valuegrid
     "AnalyticalValueLayer",
-    "GaussianValueLayer", 
+    "GaussianValueLayer",
     "DiffusionValueLayer",
     "OdorScape",
     "FoodGrid",
@@ -38,7 +38,7 @@ __all__: list[str] = [
     "moduleDB",
     # agents (newly added)
     "Larva",
-    "BaseController", 
+    "BaseController",
     "LarvaSim",
     # envs (newly added)
     "Arena",
@@ -106,19 +106,19 @@ _SUBPACKAGES: dict[str, str] = {
 
 def __getattr__(name: str) -> Any:
     from importlib import import_module
-    
+
     # Check if it's a subpackage
     if name in _SUBPACKAGES:
         module_path = _SUBPACKAGES[name]
         mod = import_module(module_path)
         globals()[name] = mod
         return mod
-    
+
     # Check if it's a class/symbol
     module_path = _NAME_TO_MODULE.get(name)
     if module_path is None:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    
+
     mod = import_module(module_path)
     obj = getattr(mod, name)
     globals()[name] = obj

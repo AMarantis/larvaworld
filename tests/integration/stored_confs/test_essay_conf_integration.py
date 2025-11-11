@@ -40,6 +40,7 @@ def patched_generators(monkeypatch):
 
     monkeypatch.setattr(reg.gen, "LarvaGroup", DummyGroup)
     monkeypatch.setattr(reg.gen, "Exp", DummyExp)
+
     def dummy_diff(*_, **__):
         from pandas import DataFrame
 
@@ -50,7 +51,9 @@ def patched_generators(monkeypatch):
     monkeypatch.setattr(plot_pkg, "diff_df", dummy_diff)
 
 
-def test_essay_dict_contains_expected_types(dataset_lock, monkeypatch, patched_generators):
+def test_essay_dict_contains_expected_types(
+    dataset_lock, monkeypatch, patched_generators
+):
     """Essay_dict should expose all predefined essay experiment collections."""
     from larvaworld.lib.reg import config as reg_config
     from larvaworld.lib.reg.stored_confs.essay_conf import Essay_dict
@@ -110,9 +113,9 @@ def test_chemotaxis_models_provide_variants(dataset_lock, patched_generators):
         assert "model" in meta
         assert "color" in meta
         flattened_keys = meta.model.flatten().keys()
-        assert any(key.startswith("brain") for key in flattened_keys), (
-            f"{label} model lacks brain configuration entries"
-        )
+        assert any(
+            key.startswith("brain") for key in flattened_keys
+        ), f"{label} model lacks brain configuration entries"
 
     assert essay.exp_dict, "Chemotaxis experiment configurations missing"
     for configs in essay.exp_dict.values():

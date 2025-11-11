@@ -1,6 +1,7 @@
 """
 Screen management for pygame-based simulation visualization
 """
+
 from __future__ import annotations
 from typing import Any
 
@@ -116,7 +117,9 @@ class MediaDrawOps(NestedConf):
     def overlap_mode(self) -> bool:
         return self.image_mode == "overlap"
 
-    def new_video_writer(self, fps: int, video_filepath: str | None = None) -> Any | None:
+    def new_video_writer(
+        self, fps: int, video_filepath: str | None = None
+    ) -> Any | None:
         if self.save_video:
             if video_filepath is None:
                 video_filepath = self.video_filepath
@@ -224,6 +227,7 @@ class ScreenOps(ColorDrawOps, AgentDrawOps, MediaDrawOps):
         >>> screen_ops.fps = 30
         >>> screen_ops.trail_dt = 20.0
     """
+
     pass
 
 
@@ -354,6 +358,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
             self.caption = str(m.id)
 
         import pygame
+
         pygame.init()
         os.environ["SDL_VIDEO_WINDOW_POS"] = "%d,%d" % (1550, 400)
         self.v = self.init_screen()
@@ -368,16 +373,19 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
     @property
     def mouse_position(self) -> Any:
         import pygame
+
         p = np.array(pygame.mouse.get_pos()) - self._translation
         return np.linalg.inv(self._scale).dot(p)
 
     @property
     def new_display_surface(self) -> Any:
         import pygame
+
         return pygame.Surface(self.display_size, pygame.SRCALPHA)
 
     def _draw_arena(self, tank_color: Any, screen_color: Any) -> None:
         import pygame
+
         surf1 = self.new_display_surface
         surf2 = self.new_display_surface
         vs = [self._transform(v) for v in self.model.space.vertices]
@@ -388,6 +396,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
 
     def init_screen(self) -> Any:
         import pygame
+
         flags = pygame.HWSURFACE | pygame.DOUBLEBUF
         if self.show_display:
             v = pygame.display.set_mode((self.w + self.panel_width, self.h), flags)
@@ -398,17 +407,30 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
         return v
 
     def draw_circle(
-        self, position: tuple[float, float] = (0, 0), radius: float = 0.1, color: Any = (0, 0, 0), filled: bool = True, width: float = 0.01
+        self,
+        position: tuple[float, float] = (0, 0),
+        radius: float = 0.1,
+        color: Any = (0, 0, 0),
+        filled: bool = True,
+        width: float = 0.01,
     ) -> None:
         import pygame
+
         p = self._transform(position)
         r = int(self._scale[0, 0] * radius)
         w = 0 if filled else int(self._scale[0, 0] * width)
         pygame.draw.circle(self.v, color, p, r, w)
 
-    def draw_polygon(self, vertices: list[tuple[float, float]] | Any, color: Any = (0, 0, 0), filled: bool = True, width: float = 0.01) -> None:
+    def draw_polygon(
+        self,
+        vertices: list[tuple[float, float]] | Any,
+        color: Any = (0, 0, 0),
+        filled: bool = True,
+        width: float = 0.01,
+    ) -> None:
         if vertices is not None and len(vertices) > 1:
             import pygame
+
             vs = [self._transform(v) for v in vertices]
             w = 0 if filled else int(self._scale[0, 0] * width)
             pygame.draw.polygon(self.v, color, vs, w)
@@ -420,7 +442,13 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
         vs = ps[ConvexHull(ps).vertices].tolist()
         self.draw_polygon(vs, **kwargs)
 
-    def draw_grid(self, all_vertices: list[list[tuple[float, float]]] | Any, colors: list[Any], filled: bool = True, width: float = 0.01) -> None:
+    def draw_grid(
+        self,
+        all_vertices: list[list[tuple[float, float]]] | Any,
+        colors: list[Any],
+        filled: bool = True,
+        width: float = 0.01,
+    ) -> None:
         all_vertices = [
             [self._transform(v) for v in vertices] for vertices in all_vertices
         ]
@@ -428,8 +456,15 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
         for vs, c in zip(all_vertices, colors):
             pygame.draw.polygon(self.v, c, vs, w)
 
-    def draw_polyline(self, vertices: list[tuple[float, float]], color: Any = (0, 0, 0), closed: bool = False, width: float = 0.01) -> None:
+    def draw_polyline(
+        self,
+        vertices: list[tuple[float, float]],
+        color: Any = (0, 0, 0),
+        closed: bool = False,
+        width: float = 0.01,
+    ) -> None:
         import pygame
+
         vs = [self._transform(v) for v in vertices]
         w = int(self._scale[0, 0] * width)
         if isinstance(color, list):
@@ -438,17 +473,30 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
         else:
             pygame.draw.lines(self.v, color, closed=closed, points=vs, width=w)
 
-    def draw_line(self, start: tuple[float, float], end: tuple[float, float], color: Any = (0, 0, 0), width: float = 0.01) -> None:
+    def draw_line(
+        self,
+        start: tuple[float, float],
+        end: tuple[float, float],
+        color: Any = (0, 0, 0),
+        width: float = 0.01,
+    ) -> None:
         import pygame
+
         start = self._transform(start)
         end = self._transform(end)
         w = int(self._scale[0, 0] * width)
         pygame.draw.line(self.v, color, start, end, w)
 
     def draw_transparent_circle(
-        self, position: tuple[float, float] = (0, 0), radius: float = 0.1, color: Any = (0, 0, 0, 125), filled: bool = True, width: float = 0.01
+        self,
+        position: tuple[float, float] = (0, 0),
+        radius: float = 0.1,
+        color: Any = (0, 0, 0, 125),
+        filled: bool = True,
+        width: float = 0.01,
     ) -> None:
         import pygame
+
         r = int(self._scale[0, 0] * radius)
         s = pygame.Surface((2 * r, 2 * r), pygame.HWSURFACE | pygame.SRCALPHA)
         w = 0 if filled else int(self._scale[0, 0] * width)
@@ -457,6 +505,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
 
     def draw_text_box(self, font: Any, rect: Any) -> None:
         import pygame
+
         self.v.blit(font, rect)
 
     def draw_envelope(self, points: list[tuple[float, float]], **kwargs: Any) -> None:
@@ -464,9 +513,17 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
         self.draw_polygon(vs, **kwargs)
 
     def draw_arrow_line(
-        self, start: tuple[float, float], end: tuple[float, float], color: Any = (0, 0, 0), width: float = 0.01, dl: float = 0.02, phi: float = 0, s: int = 10
+        self,
+        start: tuple[float, float],
+        end: tuple[float, float],
+        color: Any = (0, 0, 0),
+        width: float = 0.01,
+        dl: float = 0.02,
+        phi: float = 0,
+        s: int = 10,
     ) -> None:
         import math
+
         a0 = math.atan2(end[1] - start[1], end[0] - start[0])
         l0 = np.sqrt((end[0] - start[0]) ** 2 + (end[1] - start[1]) ** 2)
         w = int(self._scale[0, 0] * width)
@@ -490,6 +547,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
 
     def set_background(self) -> None:
         import pygame
+
         path = f"{ROOT_DIR}/lib/screen/background.png"
         print("Loading background image from", path)
         self.bgimage = pygame.image.load(path)
@@ -501,6 +559,7 @@ class ScreenAreaPygame(ScreenAreaZoomable, ScreenOps):
 
     def draw_background(self, bg: list[float] = [0, 0, 0]) -> None:
         import pygame
+
         if self.bgimage is not None and self.bgimagerect is not None:
             x, y, a = bg
             try:
@@ -605,6 +664,7 @@ class ScreenManager(ScreenAreaPygame):
     @staticmethod
     def close_requested() -> bool:
         import pygame
+
         if pygame.display.get_init():
             return pygame.event.peek(pygame.QUIT)
         return False
@@ -630,11 +690,13 @@ class ScreenManager(ScreenAreaPygame):
     def _render(self) -> Any:
         if self.show_display:
             import pygame
+
             pygame.display.flip()
             image = pygame.surfarray.pixels3d(self.v)
             # self._t.tick(self.manager._fps)
         else:
             import pygame
+
             image = pygame.surfarray.array3d(self.v)
         if self.vid_writer:
             self.vid_writer.append_data(np.flipud(np.rot90(image)))
@@ -719,7 +781,15 @@ class ScreenManager(ScreenAreaPygame):
             self.bg[:, self.model.t - 1] if self.bg is not None else [0, 0, 0]
         )
 
-    def toggle(self, name: str, value: Any | None = None, show: bool = False, minus: bool = False, plus: bool = False, disp: Any | None = None) -> None:
+    def toggle(
+        self,
+        name: str,
+        value: Any | None = None,
+        show: bool = False,
+        minus: bool = False,
+        plus: bool = False,
+        disp: Any | None = None,
+    ) -> None:
         """
         Presentation of user-input-induced changes on screen
         """
@@ -785,6 +855,7 @@ class ScreenManager(ScreenAreaPygame):
             self.pygame_keys = reg.controls.load()["pygame_keys"]
 
         import pygame
+
         ev = pygame.event.get()
         for e in ev:
             if e.type == pygame.QUIT:
@@ -912,7 +983,10 @@ class ScreenManager(ScreenAreaPygame):
                 from ...gui.gui_aux.windows import delete_objects_window
             except ImportError:
                 # GUI is deprecated and not available
-                vprint("GUI features are deprecated and not available. Use alternative methods to delete items.", 1)
+                vprint(
+                    "GUI features are deprecated and not available. Use alternative methods to delete items.",
+                    1,
+                )
                 return
 
             if delete_objects_window(self.selected_agents):
@@ -930,7 +1004,10 @@ class ScreenManager(ScreenAreaPygame):
                         from ...gui.gui_aux import DynamicGraph
                     except ImportError:
                         # GUI is deprecated and not available
-                        vprint("GUI features are deprecated and not available. Dynamic graphs unavailable.", 1)
+                        vprint(
+                            "GUI features are deprecated and not available. Dynamic graphs unavailable.",
+                            1,
+                        )
                         return
 
                     self.dynamic_graphs.append(DynamicGraph(agent=sel))
@@ -944,7 +1021,10 @@ class ScreenManager(ScreenAreaPygame):
                         from ...gui.gui_aux.windows import set_kwargs
                     except ImportError:
                         # GUI is deprecated and not available
-                        vprint("GUI features are deprecated and not available. Cannot set odor gains.", 1)
+                        vprint(
+                            "GUI features are deprecated and not available. Cannot set odor gains.",
+                            1,
+                        )
                         return
 
                     sel.brain.olfactor.gain = set_kwargs(
@@ -989,6 +1069,7 @@ class ScreenManager(ScreenAreaPygame):
         )
         if self.intro_text:
             import pygame
+
             box = _rendering.ScreenTextBoxRect(
                 text=m.configuration_text,
                 text_color="lightgreen",
@@ -1012,8 +1093,12 @@ class ScreenManager(ScreenAreaPygame):
         self.screen_clock = _rendering.SimulationClock(
             sim_step_in_sec=m.dt, pos=self.item_pos("clock"), **kws
         )
-        self.screen_scale = _rendering.SimulationScale(pos=self.item_pos("scale"), **kws)
-        self.screen_state = _rendering.SimulationState(model=m, pos=self.item_pos("state"), **kws)
+        self.screen_scale = _rendering.SimulationScale(
+            pos=self.item_pos("scale"), **kws
+        )
+        self.screen_state = _rendering.SimulationState(
+            model=m, pos=self.item_pos("state"), **kws
+        )
         self.screen_texts = util.AttrDict(
             {
                 name: _rendering.ScreenMsgText(text=name, **kws)
@@ -1223,7 +1308,12 @@ class GA_ScreenManager(ScreenManager):
     """
 
     def __init__(
-        self, model: Any, black_background: bool = True, panel_width: int = 600, scene: str = "no_boxes", **kwargs: Any
+        self,
+        model: Any,
+        black_background: bool = True,
+        panel_width: int = 600,
+        scene: str = "no_boxes",
+        **kwargs: Any,
     ) -> None:
         super().__init__(
             model=model,

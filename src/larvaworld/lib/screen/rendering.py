@@ -1,6 +1,7 @@
 """
 Screen renderable items for pygame-based simulation visualization
 """
+
 from __future__ import annotations
 from typing import Any
 
@@ -85,6 +86,7 @@ class ScreenTextFont(NestedConf):
     @param.depends("font_size", watch=True)
     def update_font(self) -> None:
         import pygame
+
         pygame.init()
         self.font = pygame.font.SysFont(self.font_type, self.font_size)
 
@@ -151,6 +153,7 @@ class ScreenTextBoxRect(ScreenTextFont, Viewable):
         >>> text_box = ScreenTextBoxRect(text="Status", frame_rect=rect)
         >>> text_box.draw(viewer)
     """
+
     visible = param.Boolean(False)
     frame_rect = param.ClassSelector(class_=object, doc="The frame rectangle")
     linewidth = PositiveNumber(10.0, doc="The linewidth to draw the box")
@@ -163,6 +166,7 @@ class ScreenTextBoxRect(ScreenTextFont, Viewable):
     def draw(self, v: Any, **kwargs: Any) -> None:
         if self.show_frame and self.frame_rect is not None:
             import pygame
+
             pygame.draw.rect(
                 v.v,
                 color=self.text_color,
@@ -190,6 +194,7 @@ class ScreenTextBox(ScreenTextFont, ViewableToggleable, Area2DPixel):
         >>> text_box = ScreenTextBox(text="Info", dims=(200, 40))
         >>> text_box.toggle()  # Show/hide
     """
+
     dims = IntegerTuple(default=(140, 32))
     visible = param.Boolean(False)
     linewidth = PositiveNumber(0.001, doc="The linewidth to draw the box")
@@ -208,6 +213,7 @@ class ScreenTextBox(ScreenTextFont, ViewableToggleable, Area2DPixel):
                 # v.draw_polygon(self.shape, color=self.color, filled=False, width=self.linewidth)
                 # pygame.draw.rect(v._window, color=self.color, rect=self.shape)
                 import pygame
+
                 pygame.draw.rect(
                     v.v,
                     color=self.color,
@@ -231,6 +237,7 @@ class IDBox(ScreenTextFont, ViewableToggleable):
         >>> id_box = IDBox(agent=larva_agent)
         >>> id_box.draw(viewer)  # Draws ID text near agent
     """
+
     visible = param.Boolean(False)
     agent = param.ClassSelector(class_=Pos2D, doc="The agent owning the ID")
 
@@ -275,6 +282,7 @@ class ScreenMsgText(ScreenTextFontRel, Viewable):
         >>> msg = ScreenMsgText(reference_area=screen_area, text="Paused")
         >>> msg.draw(viewer)
     """
+
     text_centre_scale = param.NumericTuple(
         (0.91, 1), doc="The text center position relative to the position"
     )
@@ -316,6 +324,7 @@ class SimulationClock(PosPixelRel2AreaViewable):
         >>> clock.tick_clock()  # Advance by one time step
         >>> clock.draw(viewer)  # Render current time
     """
+
     pos_scale = param.NumericTuple((0.94, 0.04))
 
     def __init__(self, sim_step_in_sec: float, **kwargs: Any) -> None:
@@ -392,6 +401,7 @@ class SimulationScale(PosPixelRel2AreaViewable):
         >>> scale = SimulationScale(reference_area=screen)
         >>> scale.draw(viewer)  # Draws scale bar with mm label
     """
+
     pos_scale = param.NumericTuple((0.1, 0.04))
 
     def __init__(self, **kwargs: Any) -> None:
@@ -427,6 +437,7 @@ class SimulationScale(PosPixelRel2AreaViewable):
     def draw(self, v: Any, **kwargs: Any) -> None:
         for line in self.lines:
             import pygame
+
             pygame.draw.line(v.v, self.color, line[0], line[1], 1)
         # v.draw_text_box(self.text_font, self.text_font_r)
         self.text_font.draw(v, **kwargs)
@@ -453,6 +464,7 @@ class SimulationState(PosPixelRel2AreaViewable):
         >>> state.set_text("PAUSED")
         >>> state.draw(viewer)
     """
+
     pos_scale = param.NumericTuple((0.85, 0.94))
 
     def __init__(self, model: Any, **kwargs: Any) -> None:

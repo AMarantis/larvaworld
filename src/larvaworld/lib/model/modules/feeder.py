@@ -27,21 +27,22 @@ __all__: list[str] = [
 class Feeder(Oscillator):
     """
     Feeder module for feeding behavior and head-sweeping motions.
-    
+
     Implements oscillatory feeding behavior with configurable frequency,
     feeding radius, and bite volume. Controls mouth-hook movements
     during food consumption periods.
-    
+
     Attributes:
         freq: Feeding oscillation frequency in Hz (1.0-3.0)
         feed_radius: Accessible feeding radius (fraction of body length)
         V_bite: Volume consumed per feeding motion (fraction of body volume)
-    
+
     Example:
         >>> feeder = Feeder(freq=2.0, feed_radius=0.05, V_bite=0.001)
         >>> feeder.start_effector()
         >>> feeder.step()
     """
+
     freq = PositiveNumber(2.0, bounds=(1.0, 3.0))
     feed_radius = param.Magnitude(
         0.05,

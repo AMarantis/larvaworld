@@ -1,6 +1,7 @@
 """
 Class managing parameter naming
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -126,6 +127,7 @@ class NamingRegistry(AttrDict):
         >>> nam.midline(3)  # body points
         ['head', 'point2', 'tail']
     """
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.k_pref = [
@@ -227,7 +229,9 @@ class NamingRegistry(AttrDict):
     def contour_xy(self, Nc: int, flat: bool = False, xsNys: bool = False):
         return self.xy(self.contour(Nc), flat=flat, xsNys=xsNys)
 
-    def midline_xy(self, N: int, reverse: bool = False, flat: bool = False, xsNys: bool = False):
+    def midline_xy(
+        self, N: int, reverse: bool = False, flat: bool = False, xsNys: bool = False
+    ):
         return self.xy(self.midline(N, reverse=reverse), flat=flat, xsNys=xsNys)
 
     @property

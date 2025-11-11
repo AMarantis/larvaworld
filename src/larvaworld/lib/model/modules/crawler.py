@@ -33,36 +33,38 @@ __all__: list[str] = [
 class Crawler(StepEffector):
     """
     Base crawler module for peristaltic locomotion.
-    
+
     Abstract base class for crawling behavior modules that generate
     forward locomotion through peristaltic waves. Extends StepEffector
     to provide stride-based movement with oscillatory patterns.
-    
+
     Example:
         >>> # Use concrete subclasses like StrideOscillator, GaussOscillator
         >>> crawler = GaussOscillator(freq=1.5, stride_dst_mean=0.25)
     """
+
     pass
 
 
 class StrideOscillator(Crawler, StepOscillator):
     """
     Stride-based oscillatory crawler with variable step length.
-    
+
     Implements peristaltic crawling using frequency-based oscillation
     with stochastic stride lengths. Each stride distance is sampled
     from a normal distribution, providing realistic locomotion variability.
-    
+
     Attributes:
         freq: Oscillation frequency in Hz (0.5-3.0)
         stride_dst_mean: Mean stride distance (fraction of body length)
         stride_dst_std: Stride distance standard deviation
         step_to_length: Current stride distance (resampled each stride)
-    
+
     Example:
         >>> crawler = StrideOscillator(freq=1.42, stride_dst_mean=0.23, stride_dst_std=0.04)
         >>> velocity = crawler.step()
     """
+
     freq = PositiveNumber(1.42, bounds=(0.5, 3.0))
     stride_dst_mean = PositiveNumber(
         0.23,
@@ -106,19 +108,20 @@ class StrideOscillator(Crawler, StepOscillator):
 class GaussOscillator(StrideOscillator):
     """
     Gaussian-windowed oscillatory crawler.
-    
+
     Extends StrideOscillator with gaussian-shaped velocity modulation
     within each stride cycle. Provides smooth, biologically realistic
     acceleration/deceleration profiles during peristaltic crawling.
-    
+
     Attributes:
         std: Standard deviation of gaussian window (fraction of cycle, 0-1)
         gauss_w: Precomputed 360-point gaussian window for cycle modulation
-    
+
     Example:
         >>> crawler = GaussOscillator(freq=1.5, std=0.6, stride_dst_mean=0.25)
         >>> velocity = crawler.step()
     """
+
     # mode = param.Selector(default='gaussian', readonly=True)
     std = PositiveNumber(
         0.6,
@@ -140,18 +143,19 @@ class GaussOscillator(StrideOscillator):
 class SquareOscillator(StrideOscillator):
     """
     Square-wave oscillatory crawler.
-    
+
     Extends StrideOscillator with square-wave velocity modulation,
     creating distinct power/recovery phases in each stride cycle.
-    
+
     Attributes:
         duty: Duty cycle fraction (0-1) for square wave modulation
               Controls percentage of time at maximum velocity
-    
+
     Example:
         >>> crawler = SquareOscillator(freq=1.2, duty=0.6, stride_dst_mean=0.20)
         >>> velocity = crawler.step()
     """
+
     # mode = param.Selector(default='square', readonly=True)
     duty = param.Magnitude(
         0.6,
@@ -171,19 +175,20 @@ class SquareOscillator(StrideOscillator):
 class PhaseOscillator(StrideOscillator):
     """
     Phase-modulated oscillatory crawler with realistic velocity profile.
-    
+
     Extends StrideOscillator with cosine-based phase modulation,
     producing the most biologically realistic peristaltic crawling patterns.
     Velocity peaks at a configurable phase within each stride cycle.
-    
+
     Attributes:
         max_vel_phase: Phase angle (radians) where velocity is maximum
         max_scaled_vel: Maximum scaled forward velocity coefficient
-    
+
     Example:
         >>> crawler = PhaseOscillator(freq=1.42, max_vel_phase=3.49, max_scaled_vel=0.51)
         >>> velocity = crawler.step()
     """
+
     # mode = param.Selector(default='realistic', readonly=True)
     max_vel_phase = Phase(
         3.49,

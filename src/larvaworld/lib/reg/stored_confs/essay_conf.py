@@ -13,7 +13,7 @@ from ...reg.larvagroup import LarvaGroup
 __all__: list[str] = [
     "Essay_dict",
     "Essay",
-    "RvsS_Essay", 
+    "RvsS_Essay",
     "DoublePatch_Essay",
     "Chemotaxis_Essay",
 ]

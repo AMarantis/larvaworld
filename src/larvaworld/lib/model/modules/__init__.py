@@ -49,6 +49,7 @@ _NAME_TO_MODULE: dict[str, str] = {
     "ProximitySensor": "larvaworld.lib.model.modules.sensor2",
 }
 
+
 def __getattr__(name: str) -> Any:
     """
     Lazily resolve public symbols on first access to avoid importing
@@ -63,6 +64,7 @@ def __getattr__(name: str) -> Any:
     obj = getattr(mod, name)
     globals()[name] = obj  # cache for subsequent lookups
     return obj
+
 
 def __dir__() -> list[str]:  # help tooling: list public symbols
     return sorted(list(globals().keys()) + __all__)

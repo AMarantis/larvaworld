@@ -70,6 +70,4 @@ def test_read_timeseries_from_raw_files_per_parameter(tmp_path):
     ordered = result.reset_index()
     assert ordered["AgentID"].tolist() == [1, 1, 2, 2]
     np.testing.assert_allclose(ordered["Step"].values, [0.0, 1.0, 0.0, 1.0])
-    np.testing.assert_allclose(
-        ordered[["head_x", "tail_x"]].iloc[1].values, [0.1, 1.1]
-    )
+    np.testing.assert_allclose(ordered[["head_x", "tail_x"]].iloc[1].values, [0.1, 1.1])

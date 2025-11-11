@@ -36,24 +36,26 @@ __displayname__ = "Larva agent"
 class Larva(MobileAgent):
     """
     Base larva agent with trajectory tracking and visualization.
-    
+
     Extends MobileAgent to provide larva-specific behaviors including
     trajectory recording, orientation tracking, and comprehensive
     drawing capabilities for visualization.
-    
+
     Attributes:
         trajectory: List of (x, y) positions recorded over time
         orientation_trajectory: List of orientations (radians) over time
         cum_dur: Cumulative duration of simulation in seconds
         model: The ABM model containing this agent
         unique_id: Unique identifier string for this agent
-    
+
     Example:
         >>> larva = Larva(model=sim_model, unique_id="larva_001")
         >>> larva.step()  # Execute one simulation timestep
     """
 
-    def __init__(self, model: Any | None = None, unique_id: str | None = None, **kwargs: Any) -> None:
+    def __init__(
+        self, model: Any | None = None, unique_id: str | None = None, **kwargs: Any
+    ) -> None:
         if unique_id is None and model:
             unique_id = model.next_id(type="Larva")
         super().__init__(unique_id=unique_id, model=model, **kwargs)
@@ -154,14 +156,14 @@ class Larva(MobileAgent):
 class LarvaContoured(Larva, Contour):
     """
     Larva agent with contour-based body representation.
-    
+
     Combines base Larva behavior with Contour geometry, providing
     visual representation via polygon vertices around the body perimeter.
     Useful for rendering realistic larva shapes and collision detection.
-    
+
     Attributes:
         vertices: List of (x, y) points defining the body contour
-        
+
     Example:
         >>> larva = LarvaContoured(model=sim_model, num_vertices=20)
         >>> larva.draw(screen_manager)  # Draws contour outline
@@ -206,15 +208,15 @@ class LarvaContoured(Larva, Contour):
 class LarvaSegmented(Larva, SegmentedBodySensored):
     """
     Larva agent with segmented body and sensor capabilities.
-    
+
     Combines base Larva with SegmentedBodySensored to provide realistic
     biomechanical modeling via discrete body segments and sensor placement
     for olfaction, touch, and other modalities.
-    
+
     Attributes:
         segs: Collection of body segments with individual colors
         sensors: Dictionary of sensory modules by modality
-        
+
     Example:
         >>> larva = LarvaSegmented(model=sim_model, Nsegs=11)
         >>> larva.define_sensor('olfactor', pos=(0.5, 0))
@@ -293,11 +295,11 @@ class LarvaSegmented(Larva, SegmentedBodySensored):
 class LarvaMotile(LarvaSegmented):
     """
     Complete larva agent with behavior, energetics, and growth.
-    
+
     Extends LarvaSegmented with brain-driven behavior, DEB-based energetics,
     and life history dynamics. Represents a fully autonomous larva capable
     of sensing, decision-making, feeding, and growth over developmental stages.
-    
+
     Attributes:
         brain: Behavioral control system (DefaultBrain or NengoBrain)
         deb: Dynamic Energy Budget model for metabolism and growth
@@ -306,14 +308,14 @@ class LarvaMotile(LarvaSegmented):
         cum_food_detected: Cumulative timesteps on food
         amount_eaten: Total food consumed (in mg)
         carried_objects: List of objects being carried
-        
+
     Args:
         brain: Brain configuration dict or instance
         energetics: DEB energetics parameters (optional)
         life_history: Life stages and substrate info (optional)
         body: Body shape parameters dict
         **kwargs: Additional agent configuration
-        
+
     Example:
         >>> larva = LarvaMotile(
         ...     brain={'olfactor': {'gain': 2.0}},
@@ -326,7 +328,14 @@ class LarvaMotile(LarvaSegmented):
 
     __displayname__ = "Behaving & growing larva"
 
-    def __init__(self, brain: Any, energetics: Any, life_history: Any, body: dict[str, Any], **kwargs: Any) -> None:
+    def __init__(
+        self,
+        brain: Any,
+        energetics: Any,
+        life_history: Any,
+        body: dict[str, Any],
+        **kwargs: Any,
+    ) -> None:
         super().__init__(**body, **kwargs)
         self.carried_objects = []
         self.brain = self.build_brain(brain)
@@ -375,7 +384,9 @@ class LarvaMotile(LarvaSegmented):
         else:
             return 0
 
-    def build_energetics(self, energetic_pars: Any | None, life_history: Any | None) -> None:
+    def build_energetics(
+        self, energetic_pars: Any | None, life_history: Any | None
+    ) -> None:
         """
         Initializes and builds the energetics model for the larva.
 

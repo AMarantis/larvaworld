@@ -26,10 +26,10 @@ __all__: list[str] = [
 class OptimizationOps(NestedConf):
     """
     Configuration for optimization-guided parameter space search.
-    
+
     Defines stopping criteria and optimization goals for batch runs
     that use optimization instead of grid search to explore parameter space.
-    
+
     Attributes:
         fit_par: Fitness parameter name to optimize.
         minimize: If True, minimize fitness; if False, maximize.
@@ -38,6 +38,7 @@ class OptimizationOps(NestedConf):
         threshold: Target fitness value to reach.
         operator: Aggregation operator ('mean' or 'std') across agents.
     """
+
     fit_par = param.String(None, doc="The fitness parameter to be optimized")
     minimize = param.Boolean(True, doc="Whether to minimize the fitness parameter.")
     absolute = param.Boolean(
@@ -54,13 +55,13 @@ class OptimizationOps(NestedConf):
     def check(self, fits: np.ndarray) -> None:
         """
         Check optimization stopping criteria and log status.
-        
+
         Evaluates whether to halt optimization based on maximum
         simulations reached or threshold achieved.
-        
+
         Args:
             fits: Array of fitness values from completed simulations.
-        
+
         Side Effects:
             Prints status message via vprint.
         """
@@ -75,13 +76,13 @@ class OptimizationOps(NestedConf):
     def threshold_reached(self, fits: np.ndarray) -> bool:
         """
         Check if fitness threshold has been reached.
-        
+
         Compares best fitness value (min or max based on optimization
         direction) against the target threshold.
-        
+
         Args:
             fits: Array of fitness values from completed simulations.
-        
+
         Returns:
             True if threshold reached, False otherwise.
         """
@@ -94,19 +95,20 @@ class OptimizationOps(NestedConf):
 class BatchRun(reg.generators.SimConfiguration, ap.Experiment):
     """
     Batch execution of parameter space search experiments.
-    
+
     Runs multiple simulations with varying parameters to explore
     parameter space either via grid search or optimization-guided search.
     Extends agentpy.Experiment for parallel execution and result aggregation.
-    
+
     Attributes:
         optimization: OptimizationOps configuration for guided search.
-    
+
     Example:
         >>> batch_conf = reg.conf.Batch.getID('chemorbit')
         >>> batch = BatchRun(experiment='chemorbit', **batch_conf)
         >>> batch.simulate(n_jobs=4)
     """
+
     optimization = ClassAttr(OptimizationOps, doc="The optimization configuration")
 
     def __init__(
@@ -122,27 +124,27 @@ class BatchRun(reg.generators.SimConfiguration, ap.Experiment):
     ) -> None:
         """
         Simulation mode 'Batch' launches a batch-run of a specified experiment type that performs a parameter-space search.
-        
+
         Extends the agentpy.Experiment class.
-        Controls the execution of multiple single simulations ('Exp' mode, see ExpRun class) with slightly different 
+        Controls the execution of multiple single simulations ('Exp' mode, see ExpRun class) with slightly different
         parameter-sets to cover a predefined parameter-space.
 
         Args:
             experiment: The preconfigured type of batch-run to launch.
-            space_search: Dictionary that configures the parameter-space to be covered. Each entry is a parameter name 
+            space_search: Dictionary that configures the parameter-space to be covered. Each entry is a parameter name
                          and the respective arguments:
                          - Direct value: param_name: value
                          - Discrete values: param_name: {'values': [v1, v2, ...]}
                          - Continuous range: param_name: {'range': (min, max)}
                          - Grid range: param_name: {'range': (min, max), 'Ngrid': N}
-            id: Unique ID of the batch-run simulation. If not specified it is automatically set according to the 
+            id: Unique ID of the batch-run simulation. If not specified it is automatically set according to the
                 batch-run type.
             space_kws: Additional arguments for the parameter-space construction.
             exp: The type of experiment for single runs launched by the batch-run.
             exp_kws: Additional arguments for the single runs.
             store_data: Whether to store batch-run results.
             **kwargs: Arguments passed to parent class (ap.Experiment).
-        
+
         Example:
             >>> batch_conf = reg.conf.Batch.getID('chemorbit')
             >>> batch = BatchRun(experiment='chemorbit', **batch_conf)
@@ -259,10 +261,10 @@ class BatchRun(reg.generators.SimConfiguration, ap.Experiment):
 def space_search_sample(space_dict: dict[str, Any], n: int = 1, **kwargs: Any):
     """
     Convert parameter space dictionary to agentpy Sample object.
-    
+
     Transforms user-friendly parameter space specification into
     agentpy sampling objects (Values, Range, IntRange) for batch execution.
-    
+
     Args:
         space_dict: Parameter space specification with structure:
                    - Direct value: param_name: value
@@ -271,10 +273,10 @@ def space_search_sample(space_dict: dict[str, Any], n: int = 1, **kwargs: Any):
                    - Grid range: param_name: {'range': (min, max), 'Ngrid': N}
         n: Number of samples to generate (default: 1 for grid search).
         **kwargs: Additional args passed to ap.Sample constructor.
-    
+
     Returns:
         agentpy.Sample object for batch parameter iteration.
-    
+
     Example:
         >>> space = {
         >>>     'N': 50,

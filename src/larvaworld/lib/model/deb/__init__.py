@@ -14,6 +14,7 @@ __all__: list[str] = [
 
 _LOADED: bool = False
 
+
 def _load_all() -> None:
     global _LOADED
     if _LOADED:

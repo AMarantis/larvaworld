@@ -1,6 +1,7 @@
 """
 Basic Agent-based modeling classes
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -28,7 +29,13 @@ class BasicABModel:
 
     """
 
-    def __init__(self, id: str = "ABModel", parameters: Any | None = None, _run_id: Any | None = None, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        id: str = "ABModel",
+        parameters: Any | None = None,
+        _run_id: Any | None = None,
+        **kwargs: Any,
+    ) -> None:
         # Prepare parameters
         self.p = util.AttrDict()
         if parameters:

@@ -27,15 +27,18 @@ def error_barplot(
     evaluation: Dict[str, Any],
     labels: Optional[Dict[str, str]] = None,
     name: str = "error_barplots",
-    titles: Sequence[str] = (r"$\bf{endpoint}$ $\bf{metrics}$", r"$\bf{timeseries}$ $\bf{metrics}$"),
+    titles: Sequence[str] = (
+        r"$\bf{endpoint}$ $\bf{metrics}$",
+        r"$\bf{timeseries}$ $\bf{metrics}$",
+    ),
     **kwargs: Any,
 ) -> Any:
     """
     Create bar plots comparing error metrics across models.
-    
+
     Generates multi-panel bar plots showing endpoint and timeseries error metrics
     for different model configurations with statistical comparisons.
-    
+
     Args:
         error_dict: Dictionary of error DataFrames by metric type
         evaluation: Dictionary of evaluation metadata with group labels and colors
@@ -43,13 +46,14 @@ def error_barplot(
         name: Plot name for saving. Defaults to 'error_barplots'
         titles: Panel titles. Defaults to endpoint and timeseries labels
         **kwargs: Additional arguments passed to AutoBasePlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = error_barplot(error_dict, evaluation, labels={'endpoint': 'Endpoints'})
     """
+
     def build_legend(ax: Any, eval_df: Any) -> None:
         h, l = ax.get_legend_handles_labels()
         empty = Patch(color="none")
@@ -88,16 +92,16 @@ def error_barplot(
 def intake_barplot(**kwargs: Any) -> Any:
     """
     Create bar plot of food intake amounts.
-    
+
     Convenience wrapper for barplot() specifically for food amount ('f_am')
     parameter visualization across datasets.
-    
+
     Args:
         **kwargs: Arguments passed to barplot()
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = intake_barplot(datasets=[d1, d2], labels=['Control', 'Test'])
     """
@@ -114,10 +118,10 @@ def barplot(
 ) -> Any:
     """
     Create bar plots with statistical comparisons across datasets.
-    
+
     Generates bar plots for specified parameters showing mean values with
     error bars and p-values from t-tests between dataset pairs.
-    
+
     Args:
         ks: Parameter keys to plot
         coupled_labels: Labels for paired comparisons. If provided, datasets
@@ -125,10 +129,10 @@ def barplot(
         xlabel: Custom x-axis label. Defaults to None
         leg_cols: Colors for legend items. Auto-generated if None
         **kwargs: Additional arguments passed to AutoPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = barplot(ks=['v', 'a'], datasets=[d1, d2], labels=['Control', 'Test'])
     """
@@ -232,10 +236,10 @@ def auto_barplot(
 ) -> Any:
     """
     Create automatic bar plots with enhanced statistical annotations.
-    
+
     Similar to barplot() but with enhanced automatic layout and statistical
     significance markers for paired comparisons. Shows asterisks for p <= 0.05.
-    
+
     Args:
         ks: Parameter keys to plot
         coupled_labels: Labels for paired comparisons. If provided, datasets
@@ -243,10 +247,10 @@ def auto_barplot(
         xlabel: Custom x-axis label. Defaults to None
         leg_cols: Colors for legend items. Auto-generated if None
         **kwargs: Additional arguments passed to AutoPlot
-        
+
     Returns:
         Plot output (figure object or None based on return_fig setting)
-        
+
     Example:
         >>> fig = auto_barplot(ks=['run_count'], coupled_labels=['Control', 'Treatment'])
     """

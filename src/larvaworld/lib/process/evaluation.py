@@ -31,22 +31,27 @@ __all__: list[str] = [
 ]
 
 
-def eval_end_fast(ee: EndpointDataFrame, e_data: pd.DataFrame, e_sym: Dict[str, str], mode: str = "pooled") -> dict:
+def eval_end_fast(
+    ee: EndpointDataFrame,
+    e_data: pd.DataFrame,
+    e_sym: Dict[str, str],
+    mode: str = "pooled",
+) -> dict:
     """
     Fast evaluation of endpoint data against reference.
-    
+
     Compares endpoint metrics using Kolmogorov-Smirnov test (pooled mode)
     or RMSE (1:1 mode) for statistical comparison.
-    
+
     Args:
         ee: Endpoint DataFrame with simulation results.
         e_data: Reference endpoint DataFrame.
         e_sym: Dict mapping parameter names to display symbols.
         mode: 'pooled' (KS test) or '1:1' (RMSE).
-    
+
     Returns:
         Dict with evaluation scores per symbol.
-    
+
     Example:
         >>> scores = eval_end_fast(
         ...     ee=sim_endpoint,
@@ -68,24 +73,28 @@ def eval_end_fast(ee: EndpointDataFrame, e_data: pd.DataFrame, e_sym: Dict[str, 
 
 
 def eval_distro_fast(
-    ss: StepDataFrame, s_data: pd.DataFrame, s_sym: Dict[str, str], mode: str = "pooled", min_size: int = 10
+    ss: StepDataFrame,
+    s_data: pd.DataFrame,
+    s_sym: Dict[str, str],
+    mode: str = "pooled",
+    min_size: int = 10,
 ) -> dict:
     """
     Fast evaluation of step/distribution data against reference.
-    
+
     Compares step-wise parameter distributions using Kolmogorov-Smirnov
     tests with different comparison modes.
-    
+
     Args:
         ss: Step DataFrame with simulation timeseries data.
         s_data: Reference step DataFrame.
         s_sym: Dict mapping parameter names to display symbols.
         mode: 'pooled', '1:1', or '1:pooled' comparison mode.
         min_size: Minimum sample size for valid comparison.
-    
+
     Returns:
         Dict with evaluation scores (structure depends on mode).
-    
+
     Example:
         >>> scores = eval_distro_fast(
         ...     ss=sim_step,
@@ -141,20 +150,20 @@ def eval_fast(
 ) -> AttrDict:
     """
     Fast evaluation of datasets against reference data.
-    
+
     Combines endpoint and distribution evaluations using
     Kolmogorov-Smirnov tests for comprehensive statistical comparison.
-    
+
     Args:
         datasets: List of LarvaDataset instances to evaluate.
         data: AttrDict with 'end' and 'distro' reference DataFrames.
         symbols: AttrDict with 'end' and 'distro' parameter symbols.
         mode: Evaluation mode ('pooled', '1:1', or '1:pooled').
         min_size: Minimum sample size for valid comparison.
-    
+
     Returns:
         AttrDict with evaluation results per dataset.
-    
+
     Example:
         >>> results = eval_fast(
         ...     datasets=[d1, d2],
@@ -191,17 +200,17 @@ def eval_fast(
 def RSS(vs0: np.array, vs: np.array) -> float:
     """
     Root sum of squares (normalized RMSE).
-    
+
     Computes normalized root mean squared error between reference
     and comparison arrays, scaling by reference range.
-    
+
     Args:
         vs0: Reference array values.
         vs: Comparison array values (same shape as vs0).
-    
+
     Returns:
         Normalized RMSE value (rounded to 2 decimals).
-    
+
     Example:
         >>> ref = np.array([1, 2, 3, 4, 5])
         >>> comp = np.array([1.1, 2.2, 2.9, 4.1, 5.0])
@@ -217,20 +226,20 @@ def RSS(vs0: np.array, vs: np.array) -> float:
 def RSS_dic(dd: LarvaDataset, d: LarvaDataset) -> float:
     """
     Calculate RSS for pooled cycle curves between datasets.
-    
+
     Computes normalized RMSE across all stride cycle curves,
     comparing simulation dataset against reference dataset.
-    
+
     Args:
         dd: Simulation LarvaDataset with pooled_cycle_curves.
         d: Reference LarvaDataset with pooled_cycle_curves.
-    
+
     Returns:
         Mean RSS statistic across all normalized cycle curves.
-    
+
     Side Effects:
         Sets dd.pooled_cycle_curves_errors attribute.
-    
+
     Example:
         >>> rss_stat = RSS_dic(sim_dataset, ref_dataset)
     """
@@ -257,22 +266,27 @@ def RSS_dic(dd: LarvaDataset, d: LarvaDataset) -> float:
     return stat
 
 
-def eval_RSS(rss: Dict[str, Any], rss_target: Dict[str, Any], rss_sym: Dict[str, str], mode: str = "1:pooled") -> dict:
+def eval_RSS(
+    rss: Dict[str, Any],
+    rss_target: Dict[str, Any],
+    rss_sym: Dict[str, str],
+    mode: str = "1:pooled",
+) -> dict:
     """
     Evaluate RSS metrics for multiple datasets.
-    
+
     Computes normalized RMSE for each parameter across multiple
     dataset IDs against reference targets.
-    
+
     Args:
         rss: Dict of {dataset_id: {param: array}} with comparison data.
         rss_target: Dict of {param: array} with reference targets.
         rss_sym: Dict mapping parameter names to display symbols.
         mode: Evaluation mode (currently only '1:pooled' supported).
-    
+
     Returns:
         Dict with structure {dataset_id: {symbol: RSS_value}}.
-    
+
     Example:
         >>> rss_scores = eval_RSS(
         ...     rss={'d1': {'v': arr1}, 'd2': {'v': arr2}},
@@ -293,17 +307,17 @@ def eval_RSS(rss: Dict[str, Any], rss_target: Dict[str, Any], rss_sym: Dict[str,
 def col_df(shorts: Sequence[str], groups: Sequence[str]) -> Any:
     """
     Create DataFrame for coloring evaluation metrics by category.
-    
+
     Generates color mapping for visualization of evaluation metrics
     grouped by category (angular, spatial, temporal, etc.).
-    
+
     Args:
         shorts: List of parameter short names.
         groups: List of category groups for each parameter.
-    
+
     Returns:
         DataFrame with group colors, symbols, and parameter info.
-    
+
     Example:
         >>> df = col_df(
         ...     shorts=['b', 'fov', 'cum_d'],
@@ -387,17 +401,17 @@ def cycle_curve_dict_multi(
 def get_target_data(d: LarvaDataset, eval_metrics: Any) -> AttrDict:
     """
     Extract target data from reference dataset for evaluation.
-    
+
     Separates endpoint and step parameters based on evaluation
     metrics configuration and data availability.
-    
+
     Args:
         d: Reference LarvaDataset with step and endpoint data.
         eval_metrics: Dict of {category: [param_names]} to evaluate.
-    
+
     Returns:
         AttrDict with 'step' and 'end' keys containing parameter dicts.
-    
+
     Example:
         >>> ref_data = get_target_data(
         ...     d=ref_dataset,
@@ -418,17 +432,17 @@ def get_target_data(d: LarvaDataset, eval_metrics: Any) -> AttrDict:
 def arrange_evaluation(data: AttrDict, eval_metrics: Any) -> Dict[str, Any]:
     """
     Arrange evaluation data into categorized color DataFrames.
-    
+
     Organizes endpoint and step parameters by evaluation metric
     categories and generates color mapping DataFrames.
-    
+
     Args:
         data: AttrDict with 'end' and 'step' parameter dicts.
         eval_metrics: Dict of {category: [param_names]}.
-    
+
     Returns:
         AttrDict with 'end' and 'step' color DataFrames.
-    
+
     Example:
         >>> arranged = arrange_evaluation(
         ...     data=AttrDict(end={'cum_d': arr}, step={'v': arr}),
@@ -455,17 +469,17 @@ def arrange_evaluation(data: AttrDict, eval_metrics: Any) -> Dict[str, Any]:
 class Evaluation(NestedConf):
     """
     Configuration for dataset evaluation against reference data.
-    
+
     Defines evaluation criteria, target metrics, and comparison methods
     for assessing simulation quality against experimental datasets.
-    
+
     Attributes:
         refID: Reference dataset identifier.
         refDir: Directory containing the reference dataset.
         eval_metrics: Dict of metrics to evaluate, grouped by category.
         minimization: If True, minimize fitness; if False, maximize.
         metric_categories: Categories for organizing evaluation metrics.
-    
+
     Example:
         >>> eval_conf = Evaluation(
         ...     refID='exploration',
@@ -700,16 +714,16 @@ class Evaluation(NestedConf):
 class DataEvaluation(Evaluation):
     """
     Data evaluation with normalization and multi-mode comparison.
-    
+
     Extends Evaluation to support multiple normalization modes
     (raw, minmax, standardized) and evaluation modes for flexible
     dataset comparison strategies.
-    
+
     Attributes:
         norm_modes: List of normalization modes ('raw', 'minmax', 'std').
         eval_modes: List of evaluation modes ('pooled', '1:1', '1:pooled').
         error_dicts: AttrDict storing evaluation error results.
-    
+
     Example:
         >>> data_eval = DataEvaluation(
         ...     refID='exploration',

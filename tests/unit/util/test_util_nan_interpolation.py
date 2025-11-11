@@ -28,7 +28,7 @@ class TestNanHelper:
         """Test with array containing no NaNs."""
         y = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
         nans, index_func = nan_helper(y)
-        
+
         assert not np.any(nans), "Should detect no NaNs"
         assert np.sum(nans) == 0
 
@@ -36,7 +36,7 @@ class TestNanHelper:
         """Test with array containing only NaNs."""
         y = np.array([np.nan, np.nan, np.nan])
         nans, index_func = nan_helper(y)
-        
+
         assert np.all(nans), "Should detect all NaNs"
         assert np.sum(nans) == 3
 
@@ -44,7 +44,7 @@ class TestNanHelper:
         """Test with array containing some NaNs."""
         y = np.array([1.0, np.nan, 3.0, np.nan, 5.0])
         nans, index_func = nan_helper(y)
-        
+
         assert np.sum(nans) == 2, "Should detect 2 NaNs"
         assert nans[1] and nans[3], "NaNs at indices 1 and 3"
         assert not nans[0] and not nans[2] and not nans[4]
@@ -53,7 +53,7 @@ class TestNanHelper:
         """Test that index function correctly converts logical indices."""
         y = np.array([1.0, np.nan, 3.0, np.nan, 5.0])
         nans, index_func = nan_helper(y)
-        
+
         nan_indices = index_func(nans)
         assert np.array_equal(nan_indices, np.array([1, 3]))
 
@@ -66,14 +66,14 @@ class TestInterpolateNans:
         """Test interpolation with no NaNs (should return unchanged)."""
         y = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
         result = interpolate_nans(y.copy())
-        
+
         assert np.array_equal(result, y)
 
     def test_single_nan_middle(self):
         """Test interpolation with single NaN in middle."""
         y = np.array([1.0, 2.0, np.nan, 4.0, 5.0])
         result = interpolate_nans(y.copy())
-        
+
         assert not np.any(np.isnan(result)), "Should fill all NaNs"
         assert result[2] == 3.0, "Linear interpolation: (2+4)/2 = 3"
 
@@ -81,7 +81,7 @@ class TestInterpolateNans:
         """Test interpolation with consecutive NaNs."""
         y = np.array([1.0, np.nan, np.nan, 4.0])
         result = interpolate_nans(y.copy())
-        
+
         assert not np.any(np.isnan(result)), "Should fill all NaNs"
         # Linear interpolation between 1.0 and 4.0
         assert np.isclose(result[1], 2.0, rtol=1e-5)
@@ -91,7 +91,7 @@ class TestInterpolateNans:
         """Test interpolation with separated NaNs."""
         y = np.array([1.0, np.nan, 3.0, np.nan, 5.0])
         result = interpolate_nans(y.copy())
-        
+
         assert not np.any(np.isnan(result)), "Should fill all NaNs"
         assert result[1] == 2.0, "Interpolate between 1 and 3"
         assert result[3] == 4.0, "Interpolate between 3 and 5"
@@ -100,7 +100,7 @@ class TestInterpolateNans:
         """Test interpolation with NaNs at start/end."""
         y = np.array([np.nan, 2.0, 3.0, np.nan])
         result = interpolate_nans(y.copy())
-        
+
         # np.interp extrapolates with edge values
         assert result[0] == 2.0, "Extrapolate with first valid value"
         assert result[3] == 3.0, "Extrapolate with last valid value"
@@ -110,7 +110,7 @@ class TestInterpolateNans:
         y = np.array([1.0, np.nan, 3.0])
         y_original = y.copy()
         result = interpolate_nans(y)
-        
+
         assert result is y, "Should return same array object"
         assert not np.array_equal(y, y_original), "Should modify in-place"
 
@@ -123,7 +123,7 @@ class TestParseArrayAtNans:
         """Test with array containing no NaNs."""
         a = np.array([1.0, 2.0, 3.0, 4.0])
         ds, de = parse_array_at_nans(a)
-        
+
         # From terminal: len(ds)=2, len(de)=1
         # The function does NOT guarantee equal starts/ends!
         # Just test that it returns arrays
@@ -136,7 +136,7 @@ class TestParseArrayAtNans:
         """Test with single NaN segment in middle."""
         a = np.array([1.0, 2.0, np.nan, np.nan, 5.0, 6.0])
         ds, de = parse_array_at_nans(a)
-        
+
         # From terminal: len(ds)=3, len(de)=2
         # The function does NOT guarantee equal starts/ends!
         # Just test that it detects segments
@@ -149,7 +149,7 @@ class TestParseArrayAtNans:
         """Test with multiple NaN segments."""
         a = np.array([1.0, np.nan, 3.0, np.nan, 5.0])
         ds, de = parse_array_at_nans(a)
-        
+
         # From terminal error: len(ds)=3, len(de)=2
         # Test actual behavior: function returns indices
         assert isinstance(ds, np.ndarray), "ds should be numpy array"
@@ -162,7 +162,7 @@ class TestParseArrayAtNans:
         """Test that function returns numpy arrays."""
         a = np.array([1.0, np.nan, 3.0])
         ds, de = parse_array_at_nans(a)
-        
+
         assert isinstance(ds, np.ndarray), "ds should be numpy array"
         assert isinstance(de, np.ndarray), "de should be numpy array"
 
@@ -176,9 +176,9 @@ class TestApplySosFilterToArrayWithNans:
         # Create simple lowpass filter
         sos = butter(N=1, Wn=0.2, btype="lowpass", analog=False, output="sos")
         x = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0])
-        
+
         result = apply_sos_filter_to_array_with_nans(sos, x, padlen=2)
-        
+
         # From terminal: result has NaN at end! sosfiltfilt can introduce edge NaNs
         # Test actual behavior: function returns array
         assert len(result) == len(x), "Should preserve length"
@@ -191,9 +191,9 @@ class TestApplySosFilterToArrayWithNans:
         """Test filtering array with NaNs."""
         sos = butter(N=1, Wn=0.2, btype="lowpass", analog=False, output="sos")
         x = np.array([1.0, 2.0, 3.0, np.nan, np.nan, 6.0, 7.0, 8.0])
-        
+
         result = apply_sos_filter_to_array_with_nans(sos, x, padlen=2)
-        
+
         # From terminal: result[0] is NOT NaN but filtered values still have issues
         # Test that function returns array and handles NaNs
         assert len(result) == len(x), "Should preserve length"
@@ -206,9 +206,9 @@ class TestApplySosFilterToArrayWithNans:
         sos = butter(N=1, Wn=0.2, btype="lowpass", analog=False, output="sos")
         # Very short valid segment (only 3 values, padlen=6)
         x = np.array([np.nan, 1.0, 2.0, 3.0, np.nan])
-        
+
         result = apply_sos_filter_to_array_with_nans(sos, x, padlen=6)
-        
+
         # Short segment (len=3 < padlen=6) should remain NaN (not filtered)
         assert len(result) == len(x), "Should preserve length"
         # Segment too short for filter, so remains NaN
@@ -224,9 +224,9 @@ class TestApplyFilterToArrayWithNansMultidim:
         a = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0])
         freq = 2.0  # cutoff frequency
         fr = 10.0  # framerate
-        
+
         result = apply_filter_to_array_with_nans_multidim(a, freq, fr, N=1)
-        
+
         # From terminal: result has NaN at end (edge effects from sosfiltfilt)
         assert result.shape == a.shape, "Should preserve shape"
         assert isinstance(result, np.ndarray), "Should return numpy array"
@@ -237,16 +237,18 @@ class TestApplyFilterToArrayWithNansMultidim:
     def test_2d_array(self):
         """Test filtering 2D array (multiple timeseries)."""
         # 2 timeseries of length 10
-        a = np.array([
-            [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0],
-            [10.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0]
-        ]).T  # Shape (10, 2)
-        
+        a = np.array(
+            [
+                [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0],
+                [10.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0],
+            ]
+        ).T  # Shape (10, 2)
+
         freq = 2.0
         fr = 10.0
-        
+
         result = apply_filter_to_array_with_nans_multidim(a, freq, fr, N=1)
-        
+
         # From terminal: result has NaNs at end row
         assert result.shape == a.shape, "Should preserve shape (10, 2)"
         assert isinstance(result, np.ndarray), "Should return numpy array"
@@ -261,9 +263,9 @@ class TestApplyFilterToArrayWithNansMultidim:
         a = np.random.randn(10, 2, 3)
         freq = 2.0
         fr = 10.0
-        
+
         result = apply_filter_to_array_with_nans_multidim(a, freq, fr, N=1)
-        
+
         assert result.shape == a.shape, "Should preserve shape (10, 2, 3)"
         assert isinstance(result, np.ndarray), "Should return numpy array"
 
@@ -272,7 +274,7 @@ class TestApplyFilterToArrayWithNansMultidim:
         a = np.random.randn(5, 5, 5, 5)
         freq = 2.0
         fr = 10.0
-        
+
         with pytest.raises(ValueError, match="up to 3-dimensional"):
             apply_filter_to_array_with_nans_multidim(a, freq, fr, N=1)
 
@@ -287,9 +289,9 @@ class TestConvexHull:
         xs = np.array([[0.0, 1.0, 1.0, 0.0]])
         ys = np.array([[0.0, 0.0, 1.0, 1.0]])
         N = 10
-        
+
         xxs, yys = convex_hull(xs, ys, N, interp_nans=False)
-        
+
         assert xxs.shape == (1, N), "Should have shape (1, 10)"
         assert yys.shape == (1, N), "Should have shape (1, 10)"
         # First 4 points should be the hull vertices
@@ -300,9 +302,9 @@ class TestConvexHull:
         xs = np.array([[0.0, 1.0, np.nan, 1.0, 0.0]])
         ys = np.array([[0.0, 0.0, np.nan, 1.0, 1.0]])
         N = 10
-        
+
         xxs, yys = convex_hull(xs, ys, N, interp_nans=False)
-        
+
         # Should handle NaNs gracefully
         assert xxs.shape == (1, N)
         assert yys.shape == (1, N)
@@ -312,27 +314,21 @@ class TestConvexHull:
         xs = np.array([[0.0, 1.0, 1.0, 0.0]])
         ys = np.array([[0.0, 0.0, 1.0, 1.0]])
         N = 10
-        
+
         xxs, yys = convex_hull(xs, ys, N, interp_nans=True)
-        
+
         # With interpolation, remaining NaNs should be filled
         assert xxs.shape == (1, N)
         assert yys.shape == (1, N)
 
     def test_multiple_trajectories(self):
         """Test with multiple trajectories."""
-        xs = np.array([
-            [0.0, 1.0, 1.0, 0.0],
-            [2.0, 3.0, 3.0, 2.0]
-        ])
-        ys = np.array([
-            [0.0, 0.0, 1.0, 1.0],
-            [0.0, 0.0, 1.0, 1.0]
-        ])
+        xs = np.array([[0.0, 1.0, 1.0, 0.0], [2.0, 3.0, 3.0, 2.0]])
+        ys = np.array([[0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0]])
         N = 10
-        
+
         xxs, yys = convex_hull(xs, ys, N, interp_nans=False)
-        
+
         assert xxs.shape == (2, N), "Should handle 2 trajectories"
         assert yys.shape == (2, N)
 
@@ -341,11 +337,10 @@ class TestConvexHull:
         xs = np.array([[0.0, 1.0]])  # Only 2 points
         ys = np.array([[0.0, 0.0]])
         N = 10
-        
+
         # Should handle gracefully (ConvexHull needs at least 3 points)
         xxs, yys = convex_hull(xs, ys, N, interp_nans=False)
-        
+
         assert xxs.shape == (1, N)
         # Should be all NaN or handle error gracefully
         assert xxs.shape[1] == N
-

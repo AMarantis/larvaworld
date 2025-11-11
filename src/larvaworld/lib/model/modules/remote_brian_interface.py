@@ -34,14 +34,24 @@ class RemoteBrianModelInterface:
         return "_".join([date_str, short_id])
 
     # remote_dt: duration of remote simulation per step in ms
-    def __init__(self, server_host: str = "localhost", server_port: int = 5795, remote_dt: int = 100) -> None:
+    def __init__(
+        self,
+        server_host: str = "localhost",
+        server_port: int = 5795,
+        remote_dt: int = 100,
+    ) -> None:
         self.server_host = server_host
         self.server_port = server_port
         self.t_sim = int(remote_dt)
         self.step_cache = {}
 
     def executeRemoteModelStep(
-        self, sim_id: str, model_instance_id: str, t_sim: int, t_warmup: int = 0, **kwargs: Any
+        self,
+        sim_id: str,
+        model_instance_id: str,
+        t_sim: int,
+        t_warmup: int = 0,
+        **kwargs: Any,
     ):
         # t_sim: duration of remote model simulation in ms
         # warmup: duration of remote model warmup in ms

@@ -82,7 +82,13 @@ def import_Jovanic(
     return s, e
 
 
-def import_Schleyer(source_dir: str, tracker: Any, filesystem: Any, save_mode: str = "semifull", **kwargs: Any) -> Tuple[Any, Any]:
+def import_Schleyer(
+    source_dir: str,
+    tracker: Any,
+    filesystem: Any,
+    save_mode: str = "semifull",
+    **kwargs: Any,
+) -> Tuple[Any, Any]:
     """
      Builds a larvaworld dataset from Schleyer-lab-specific raw data.
      The data is available at https://doi.gin.g-node.org/10.12751/g-node.5e1ifd/
@@ -124,7 +130,9 @@ def import_Schleyer(source_dir: str, tracker: Any, filesystem: Any, save_mode: s
     return generate_dataframes(dfs, tracker.dt, **kwargs)
 
 
-def import_Berni(source_files: List[str], tracker: Any, filesystem: Any, **kwargs: Any) -> Tuple[Any, Any]:
+def import_Berni(
+    source_files: List[str], tracker: Any, filesystem: Any, **kwargs: Any
+) -> Tuple[Any, Any]:
     """
      Builds a larvaworld dataset from Berni-lab-specific raw data
 
@@ -150,7 +158,9 @@ def import_Berni(source_files: List[str], tracker: Any, filesystem: Any, **kwarg
     return generate_dataframes(dfs, tracker.dt, **kwargs)
 
 
-def import_Arguello(source_files: List[str], tracker: Any, filesystem: Any, **kwargs: Any) -> Tuple[Any, Any]:
+def import_Arguello(
+    source_files: List[str], tracker: Any, filesystem: Any, **kwargs: Any
+) -> Tuple[Any, Any]:
     """
      Builds a larvaworld dataset from Arguello-lab-specific raw data
 

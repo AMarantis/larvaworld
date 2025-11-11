@@ -35,12 +35,12 @@ html_theme = "furo"
 html_static_path = ["_static"]
 
 # AutoAPI configuration
-autoapi_dirs = ['../src/larvaworld']
-autoapi_type = 'python'
-autoapi_ignore = ['*/gui/*', '*/tests/*']
+autoapi_dirs = ["../src/larvaworld"]
+autoapi_type = "python"
+autoapi_ignore = ["*/gui/*", "*/tests/*"]
 autoapi_options = [
-    'members',
-    'undoc-members',
-    'show-inheritance',
-    'show-module-summary',
+    "members",
+    "undoc-members",
+    "show-inheritance",
+    "show-module-summary",
 ]

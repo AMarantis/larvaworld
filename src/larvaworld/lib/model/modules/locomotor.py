@@ -32,11 +32,11 @@ __all__: list[str] = [
 class Locomotor(NestedConf):
     """
     Locomotor module orchestrating agent movement control.
-    
+
     Coordinates multiple behavioral modules (crawler, turner, feeder,
     intermitter) to produce realistic larva locomotion patterns with
     peristaltic crawling, turning, feeding, and run/pause transitions.
-    
+
     Attributes:
         interference: Crawl-bend coupling module (attenuates turning during crawling)
         intermitter: Behavioral intermittency module (controls run/pause/feed states)
@@ -44,7 +44,7 @@ class Locomotor(NestedConf):
         turner: Body-bending module (directional changes)
         crawler: Peristaltic crawling module (forward locomotion)
         dt: Simulation time step (seconds)
-    
+
     Args:
         conf: Locomotor configuration dict with module configs:
               - 'crawler': Crawler module config (or None)
@@ -54,14 +54,15 @@ class Locomotor(NestedConf):
               - 'interference': Interference module config (or None)
         dt: Simulation time step in seconds (default: 0.1)
         **kwargs: Additional keyword arguments passed to parent class
-    
+
     Returns:
         Tuple of (linear_velocity, angular_velocity, feed_flag) from step()
-    
+
     Example:
         >>> locomotor = Locomotor(conf=loco_conf, dt=0.1)
         >>> lin_vel, ang_vel, feeding = locomotor.step(A_in=0.5, length=2.0, on_food=False)
     """
+
     interference = ClassAttr(
         class_=MD.parent_class("interference"),
         default=None,
@@ -133,7 +134,9 @@ class Locomotor(NestedConf):
         else:
             return False
 
-    def step(self, A_in: float = 0, length: float = 1, on_food: bool = False) -> tuple[float, float, bool]:
+    def step(
+        self, A_in: float = 0, length: float = 1, on_food: bool = False
+    ) -> tuple[float, float, bool]:
         C, F, T, If = self.crawler, self.feeder, self.turner, self.interference
         if If:
             If.cur_attenuation = 1
