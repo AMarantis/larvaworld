@@ -36,7 +36,7 @@ larvaworld-app = "larvaworld.dashboards.main:main"
 "*" = ["*.sh", "*.png", "*.pdf", "*.txt", "*.csv"]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.10"
 rich = ">=10"
 typer = { extras = [ "all" ], version = "^0.9.0" }
 
@@ -101,7 +101,7 @@ sphinx-autoapi = "*"
 # myst-nb = "*"
 
 [tool.ruff]
-target-version = "py38"
+target-version = "py310"
 line-length = 88
 lint.select = [
   "B",   # flake8-bugbear

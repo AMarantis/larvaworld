@@ -15,6 +15,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
+      - uses: pre-commit/action@v3.0.1
+
+  # Make sure commit messages follow the conventional commits convention:
+  # https://www.conventionalcommits.org
+  commitlint:
+    name: Lint Commit Messages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: wagoid/commitlint-github-action@v6.0.1
+
   full-linux-py311:
     name: Full suite (Ubuntu, Python 3.11)
     runs-on: ubuntu-latest
@@ -22,27 +42,43 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install poetry
+        run: pipx install poetry
+
       - name: Set up Python
         uses: actions/setup-python@v5
+        id: setup-python
         with:
           python-version: '3.11'
-          cache: 'pip'
+          cache: 'poetry'
 
       - name: Install dependencies
+        run: poetry install
+        shell: bash
+
+      - name: Import the package
+        run: poetry run python -c "import larvaworld"
+        shell: bash
+
+      - name: Test venv import
+        shell: bash
         run: |
-          python -m pip install -U pip
-          pip install -e .
-          pip install pytest pytest-cov pytest-xdist
+          python3 -m venv venv
+          source venv/bin/activate
+          pip3 install .
+          python3 -c "import larvaworld"
 
       - name: Run full test suite (parallel + coverage)
-        run: |
-          pytest -n auto --cov=larvaworld --cov-report=term --cov-report=xml
+        run: poetry run pytest -n auto --cov=larvaworld --cov-report=term --cov-report=xml
+        shell: bash
 
-      - name: Upload coverage.xml
-        uses: actions/upload-artifact@v4
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
         with:
-          name: coverage-ubuntu-py311
-          path: coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          flags: full-suite
+          name: full-linux-py311
 
   smoke-matrix:
     name: Full suite (${{ matrix.os }}, Py ${{ matrix.python-version }})
@@ -50,8 +86,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest ]  # TODO: macOS disabled due to PyTables compilation issues
-        # os: [ ubuntu-latest, macos-latest, windows-latest ]
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
         python-version: [ '3.10', '3.11' ]
         exclude:
           - os: ubuntu-latest
@@ -74,24 +109,99 @@ jobs:
           echo "BLOSC_DIR=$(brew --prefix c-blosc)" >> $GITHUB_ENV
           echo "LZO_DIR=$(brew --prefix lzo)" >> $GITHUB_ENV
 
+      - name: Install poetry
+        run: pipx install poetry
+
       - name: Set up Python
         uses: actions/setup-python@v5
+        id: setup-python
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
+          cache: 'poetry'
 
       - name: Install dependencies
-        run: |
-          python -m pip install -U pip
-          pip install -e .
-          pip install pytest pytest-xdist pytest-cov
+        run: poetry install
+        shell: bash
+
+      - name: Import the package
+        run: poetry run python -c "import larvaworld"
+        shell: bash
 
       - name: Run full test suite (parallel + coverage)
-        run: |
-          pytest -n auto --cov=larvaworld --cov-report=term --cov-report=xml
+        run: poetry run pytest -n auto --cov=larvaworld --cov-report=term --cov-report=xml
+        shell: bash
 
-      - name: Upload coverage.xml
-        uses: actions/upload-artifact@v4
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
         with:
-          name: coverage-${{ matrix.os }}-py${{ matrix.python-version }}
-          path: coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          flags: smoke-${{ matrix.os }}-py${{ matrix.python-version }}
+          name: smoke-${{ matrix.os }}-py${{ matrix.python-version }}
+
+  release:
+    needs:
+      - lint
+      - commitlint
+      - full-linux-py311
+      - smoke-matrix
+
+    runs-on: ubuntu-latest
+    environment: release
+    concurrency: release
+    permissions:
+      id-token: write
+      attestations: write
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+
+      - name: Setup | Force correct release branch on workflow sha
+        run: |
+          git checkout -B ${{ github.ref_name }} ${{ github.sha }}
+
+      - name: Print debug info
+        run: |
+          echo "ref_name: '${{ github.ref_name }}' sha=${{ github.sha }}"
+
+      # On main branch: actual PSR + upload to PyPI & GitHub
+      - name: Conditional test
+        if: github.ref_name == 'master'
+        run: |
+          echo "ref_name: '${{ github.ref_name }}' sha=${{ github.sha }}"
+
+      # Do a dry run of PSR
+      - name: Test release
+        uses: python-semantic-release/python-semantic-release@v9.8.1
+        if: github.ref_name != 'master'
+        with:
+          root_options: --noop
+
+      # On main branch: actual PSR + upload to PyPI & GitHub
+      - name: Release and PyPi Upload
+        uses: python-semantic-release/python-semantic-release@v9.8.1
+        id: release
+        if: github.ref_name == 'master'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v1
+        if: steps.release.outputs.released == 'true'
+        with:
+          subject-path: "dist/*"
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        if: steps.release.outputs.released == 'true'
+
+      - name: Publish package distributions to GitHub Releases
+        uses: python-semantic-release/publish-action@v9.8.1
+        if: steps.release.outputs.released == 'true'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.release.outputs.tag }}
