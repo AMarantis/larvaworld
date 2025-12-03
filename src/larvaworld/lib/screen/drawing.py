@@ -1367,12 +1367,12 @@ class GA_ScreenManager(ScreenManager):
     """
     Specialized screen manager for Genetic Algorithm visualizations.
 
-    Extends ScreenManager with GA-specific defaults: black background,
-    wider side panel for GA metrics, and simplified scene settings.
+    Extends ScreenManager with GA-specific defaults: wider side panel
+    for GA metrics, and simplified scene settings.
 
     Attributes:
         model: The GA simulation model
-        black_background: Uses black background by default
+        black_background: Background color (default False for white background)
         panel_width: Side panel width (default 600px for GA metrics)
         scene: Scene configuration (default 'no_boxes')
 
@@ -1384,14 +1384,12 @@ class GA_ScreenManager(ScreenManager):
     def __init__(
         self,
         model: Any,
-        black_background: bool = True,
         panel_width: int = 600,
         scene: str = "no_boxes",
         **kwargs: Any,
     ) -> None:
         super().__init__(
             model=model,
-            black_background=black_background,
             panel_width=panel_width,
             caption=f"GA {model.experiment} : {model.id}",
             scene=scene,
