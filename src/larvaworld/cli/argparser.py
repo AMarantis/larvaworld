@@ -583,8 +583,8 @@ class SimModeParser(ArgumentParser):
             # For GA simulations, we want panel_width=600 (but keep black_background=False for white background)
             # If the values are the ScreenOps defaults (not explicitly set to different values),
             # replace them with GA defaults
-            if kw.screen_kws.get('panel_width') == 0:
-                kw.screen_kws['panel_width'] = 600
+            if kw.screen_kws.get("panel_width") == 0:
+                kw.screen_kws["panel_width"] = 600
             run = sim.GAlauncher(**kw)
         elif m == "Eval":
             run = sim.EvalRun(**self.eval_parser("Eval", args), **kw)

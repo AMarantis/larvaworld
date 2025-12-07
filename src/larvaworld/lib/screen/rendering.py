@@ -391,12 +391,12 @@ class SimulationClock(PosPixelRel2AreaViewable):
             # Render text to get rect dimensions
             if f.text_font_r is None:
                 f.render_text()
-        
+
         # Calculate baseline position using the largest font (hour/minute) as reference
         # Use hour font as reference since it has the largest font size
         reference_font = self.text_fonts["hour"]
         baseline_y = reference_font.text_font_r.midbottom[1]
-        
+
         # Second pass: align all fonts to the same baseline
         for k, f in self.text_fonts.items():
             # Adjust text_centre y to align baseline

@@ -447,7 +447,9 @@ class GAlauncher(BaseRun):
             self.progress_bar.update(self.generation_num)
         # self.gen_progressbar.start()
         # Reset the screen clock for the new generation
-        if hasattr(self, 'screen_manager') and hasattr(self.screen_manager, 'screen_clock'):
+        if hasattr(self, "screen_manager") and hasattr(
+            self.screen_manager, "screen_clock"
+        ):
             self.screen_manager.screen_clock.reset()
         self.start_generation_time = util.TimeUtil.current_time_sec()
         gen_load_dur = np.round(
