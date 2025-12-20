@@ -1101,7 +1101,9 @@ class ScreenManager(ScreenAreaPygame):
                     )
         elif k == "larva_collisions":
             m.larva_collisions = not m.larva_collisions
-            # m.eliminate_overlap()
+            state = "ON" if m.larva_collisions else "OFF"
+            # Provide on-screen feedback, consistent with other toggles
+            self.screen_texts["larva_collisions"].flash_text(f"allow overlaps {state}")
         else:
             self.toggle(k)
 

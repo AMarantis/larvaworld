@@ -1,5 +1,31 @@
 # Changelog
 
+## Unreleased
+
+- Relaxed version constraints for scientific dependencies in `pyproject.toml` to allow newer minor/patch releases within the same major version, while ensuring availability of wheels on Python 3.12. Changed from strict pinning (e.g., `"1.24.*"`) to range constraints (e.g., `">=1.24,<2.0"`). Affected packages:
+  - `geopandas`: `"0.13.*"` → `">=0.13,<1.0"`
+  - `holoviews`: `"1.17.*"` → `">=1.17,<2.0"`
+  - `hvplot`: `"0.10.*"` → `">=0.10,<1.0"`
+  - `imageio`: `"2.35.*"` → `">=2.35,<3.0"` (with `[ffmpeg]` extra for video export)
+  - `matplotlib`: `"3.7.*"` → `">=3.7,<4.0"`
+  - `movingpandas`: `"0.19.*"` → `">=0.19,<1.0"`
+  - `numpy`: `"1.24.*"` → `">=1.24,<2.0"`
+  - `panel`: `"1.2.*"` → `">=1.2,<2.0"` (pinned to fix `larvaworld-app` hang on Python 3.12/3.13)
+  - `pandas`: `"2.0.*"` → `">=2.0,<3.0"`
+  - `pint`: `"0.21.*"` → `">=0.21,<1.0"`
+  - `pint_pandas`: `"0.3"` → `">=0.3,<1.0"`
+  - `pygame`: `"2.6.*"` → `">=2.6,<3.0"`
+  - `pypdf`: `"5.0.*"` → `">=5.0,<6.0"`
+  - `seaborn`: `"0.13.*"` → `">=0.13,<1.0"`
+  - `scikit-learn`: `"1.3.*"` → `">=1.3,<2.0"`
+  - `scipy`: `"1.9.*"` → `">=1.9,<2.0"`
+  - `shapely`: `"2.0.*"` → `">=2.0,<3.0"`
+  - `typing-extensions`: `"4.12.*"` → `">=4.12,<5.0"`
+  - `param` remains pinned to `"2.1.*"` for backward compatibility with existing parameter definitions.
+- Added Python 3.13 support by updating Python version constraint from `">=3.10,<3.13"` to `">=3.10,<3.14"`.
+- Added `SALib <1.5.2` constraint to ensure compatibility with numpy 1.x.
+- Pinned `panel` to `"1.2.*"` (from `">=1.2,<2.0"`) to fix `larvaworld-app` hang issue on Python 3.12 and 3.13. Panel 1.8.x has compatibility issues with `pn.serve()` that prevent the web app from starting.
+
 ## v2.0.1 (2025-11-25)
 
 ### Fix
@@ -28,62 +54,27 @@
 ### Refactor
 
 - Documentation improvements, ci enhancements, and test marker refactoring ([`838b554`](https://github.com/nawrotlab/larvaworld/commit/838b55431584b9aa9c0ba18ce89a87fe79c09b0d))
-- Rename pytest marker from &#39;slow&#39; to &#39;heavy&#39; ([`333de3c`](https://github.com/nawrotlab/larvaworld/commit/333de3cfd726c6edfb05c67f494e53baacc673e9))
+- Rename pytest marker from 'slow' to 'heavy' ([`333de3c`](https://github.com/nawrotlab/larvaworld/commit/333de3cfd726c6edfb05c67f494e53baacc673e9))
 
-### Build
-
-- Refresh poetry.lock ([`f7c491b`](https://github.com/nawrotlab/larvaworld/commit/f7c491b92806c75b132726d2170970f14e0e7e1e))
-- Refresh poetry.lock ([`37e167f`](https://github.com/nawrotlab/larvaworld/commit/37e167fa2ce68f7605a5a525ea14387541daddce))
-
-## v2.0.0 (2025-11-22)
-
-### Style
-
-- Apply pre-commit formatting fixes ([`b2b9071`](https://github.com/nawrotlab/larvaworld/commit/b2b9071e674536b9b08c540733edaf5febd28400))
-
-### Fix
-
-- Update poetry.lock to include sphinxcontrib-mermaid ([`ac9eb33`](https://github.com/nawrotlab/larvaworld/commit/ac9eb33869d3814105e467fbfabdc5d860cd940a))
-
-### Documentation
-
-- Major documentation overhaul with sphinx/readthedocs setup ([`e453018`](https://github.com/nawrotlab/larvaworld/commit/e453018e6576c1806ba7294ea044d5ac1baccb59))
-- Update license to mit and fix python version constraints ([`8f136f8`](https://github.com/nawrotlab/larvaworld/commit/8f136f8efb889a4bed72ef6816a3c9f797373851))
+## v1.0.0 (2025-11-12)
 
 ### Breaking
 
-- Complete package modernization (phases 1-4) (#3) ([`188bfb7`](https://github.com/nawrotlab/larvaworld/commit/188bfb7643c3c33fb62d8af52ba033473c5984a5))
-
-## v1.0.0 (2025-05-08)
+- Complete package modernization (phases 1-4) (#3) ([`188bfb7`](https://github.com/AMarantis/larvaworld/commit/188bfb7643c3c33fb62d8af52ba033473c5984a5))
 
 ### Feature
 
-- Start semver at 1.0.0 (#35) ([`f532b66`](https://github.com/nawrotlab/larvaworld/commit/f532b6653ad0a5bba8111194c99ec87f2e7e3efe))
-
-## v0.1.0 (2025-05-08)
-
-### Fix
-
-- Semantic versioning ([`a224d62`](https://github.com/nawrotlab/larvaworld/commit/a224d62c2792ec195a8c95885b0f82f10d9f0c4e))
-- Semantic versioning ([`a6c3929`](https://github.com/nawrotlab/larvaworld/commit/a6c3929f2a588fdee0e8ba90f8ff0537f0ba37b4))
-
-## v0.1.0-rc.1 (2025-04-22)
+- Start semver at 1.0.0 (#35) ([`f532b66`](https://github.com/AMarantis/larvaworld/commit/f532b6653ad0a5bba8111194c99ec87f2e7e3efe))
+- Add venv install test to github action ([`edd69f5`](https://github.com/AMarantis/larvaworld/commit/edd69f503754dda864236356cda3cc7c4cc06b49))
+- Add venv install test to github action ([`09f218f`](https://github.com/AMarantis/larvaworld/commit/09f218f14b4b9fc65e1fe152604facc7a81099bf))
+- Add example code for remote brian interface and tutorial notebook ([`00e0b0c`](https://github.com/AMarantis/larvaworld/commit/00e0b0ca88c0a21f099e048c30dd0a3feeec15bc))
+- Add tutorial notebooks on library interface and custom modules ([`ec1dbd5`](https://github.com/AMarantis/larvaworld/commit/ec1dbd5cd2c41af9f9fea01dac2ca76dd9dfccca))
 
 ### Fix
 
-- Run venv test only on linux ([`cb2bcee`](https://github.com/nawrotlab/larvaworld/commit/cb2bcee20be0205db39d88bb0b8750d3c9e2fed8))
-- Remove importlib dependency ([`a065475`](https://github.com/nawrotlab/larvaworld/commit/a06547572c2fac881e16172519c1b6ac2339e1a2))
-- Add missing docopts dependency ([`248611c`](https://github.com/nawrotlab/larvaworld/commit/248611cc3fc478cabd93d0059c474ef96741645b))
-
-### Feature
-
-- Add venv install test to github action ([`edd69f5`](https://github.com/nawrotlab/larvaworld/commit/edd69f503754dda864236356cda3cc7c4cc06b49))
-- Add venv install test to github action ([`09f218f`](https://github.com/nawrotlab/larvaworld/commit/09f218f14b4b9fc65e1fe152604facc7a81099bf))
-- Add example code for remote brian interface and tutorial notebook ([`00e0b0c`](https://github.com/nawrotlab/larvaworld/commit/00e0b0ca88c0a21f099e048c30dd0a3feeec15bc))
-- Add tutorial notebooks on library interface and custom modules ([`ec1dbd5`](https://github.com/nawrotlab/larvaworld/commit/ec1dbd5cd2c41af9f9fea01dac2ca76dd9dfccca))
-
-## v0.0.1-rc.1 (2024-11-24)
-
-### Fix
-
-- Use master instead of main branch ([`a1d054b`](https://github.com/nawrotlab/larvaworld/commit/a1d054ba24ea5c1c8dab525a6b45be3678cbde47))
+- Semantic versioning ([`a224d62`](https://github.com/AMarantis/larvaworld/commit/a224d62c2792ec195a8c95885b0f82f10d9f0c4e))
+- Semantic versioning ([`a6c3929`](https://github.com/AMarantis/larvaworld/commit/a6c3929f2a588fdee0e8ba90f8ff0537f0ba37b4))
+- Run venv test only on linux ([`cb2bcee`](https://github.com/AMarantis/larvaworld/commit/cb2bcee20be0205db39d88bb0b8750d3c9e2fed8))
+- Remove importlib dependency ([`a065475`](https://github.com/AMarantis/larvaworld/commit/a06547572c2fac881e16172519c1b6ac2339e1a2))
+- Add missing docopts dependency ([`248611c`](https://github.com/AMarantis/larvaworld/commit/248611cc3fc478cabd93d0059c474ef96741645b))
+- Use master instead of main branch ([`a1d054b`](https://github.com/AMarantis/larvaworld/commit/a1d054ba24ea5c1c8dab525a6b45be3678cbde47))

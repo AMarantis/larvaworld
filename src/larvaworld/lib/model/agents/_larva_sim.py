@@ -181,7 +181,7 @@ class LarvaSim(LarvaMotile, BaseController):
             ang_vel = ang * self.ang_vel_coef
         else:
             raise
-        if self.border_collision or self.larva_collision:
+        if self.border_collision or self._has_larva_collision():
             lin_vel = 0
             ang_vel += np.sign(ang_vel) * np.pi / 10
         self.position_body(lin_vel, ang_vel)
@@ -233,6 +233,22 @@ class LarvaSim(LarvaMotile, BaseController):
             return False if len(ids) == 0 else True
         else:
             return False
+
+    def _has_larva_collision(self) -> bool:
+        """
+        Internal helper for collision handling that mirrors the
+        larva_collision property logic without relying on param's
+        attribute resolution.
+
+        Returns
+        -------
+        bool
+            True if there is a collision, False otherwise.
+        """
+        if not getattr(self.model, "larva_collisions", False):
+            ids = self.model.detect_collisions(self.unique_id)
+            return len(ids) > 0
+        return False
 
     def position_head_in_tank(
         self,
