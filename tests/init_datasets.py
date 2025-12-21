@@ -5,7 +5,7 @@ Run via:
     python larvaworld/tests/init_datasets.py
 
 The script performs three steps:
-1. Initializes the registry default reference dataset (`exploration.30controls`).
+1. Initializes the registry default reference dataset (via `define_default_refID()`).
 2. Imports key SchleyerGroup datasets from raw CSV files and persists processed artefacts.
 3. Verifies the expected processed files exist, emitting informative messages.
 
@@ -77,8 +77,9 @@ SCHLEYER_DATASETS: tuple[DatasetSpec, ...] = (
 
 
 def ensure_default_dataset() -> None:
-    """Ensure the default exploration.30controls dataset exists."""
+    """Ensure the default reference dataset exists."""
     try:
+        from larvaworld.lib import reg
         from larvaworld.lib.reg import define_default_refID
     except ModuleNotFoundError as exc:
         raise RuntimeError(
@@ -86,12 +87,13 @@ def ensure_default_dataset() -> None:
             "Run this script within the project environment (e.g. `poetry run` or the repo venv)."
         ) from exc
 
-    define_default_refID("exploration.30controls")
+    # Define default dataset (creates it if it doesn't exist)
+    default_ref_id = define_default_refID()
 
-    target = PROCESSED_ROOT / "exploration" / "30controls" / "data"
-    if not (target / "data.h5").exists():
+    # Verify the dataset was created by checking registry
+    if default_ref_id not in reg.conf.Ref.confIDs:
         raise RuntimeError(
-            "Default dataset exploration.30controls was not created as expected."
+            f"Default dataset {default_ref_id} was not created as expected."
         )
 
 

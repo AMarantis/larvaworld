@@ -154,16 +154,33 @@ Commit your changes following [Conventional Commits](https://www.conventionalcom
 
 ```bash
 git add .
-git commit -m "feat(module): your detailed description of your changes"
+git commit -m "feat(scope): your detailed description of your changes"
 ```
 
 **Commit message format:**
 
-- `feat(module): description` - New feature
-- `fix(module): description` - Bug fix
-- `docs(module): description` - Documentation changes
-- `refactor(module): description` - Code refactoring
-- `test(module): description` - Test additions/changes
+- `type(scope): description` - Recommended (scope helps categorize changes)
+- `type: description` - Also valid (scope is optional in Conventional Commits)
+
+Common `type` values:
+
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `refactor`: Code refactoring (no behavior change)
+- `test`: Test additions or changes
+- `chore`: Maintenance tasks (dependencies, config, etc.)
+- `build`: Build system or dependency changes
+
+Common `scope` examples in this repo: `sim`, `model`, `process`, `reg`, `screen`, `plot`, `ipc`, `cli`, `docs`, `ci`, `deps`.
+
+Examples:
+
+- `feat(sim): add batch-run storage output`
+- `fix(process): normalize shapes for collision checks`
+- `docs: update installation instructions`
+- `refactor(core): remove deprecation warnings`
+- `chore(deps): update dependencies`
 
 The commit message will be validated by CI using `commitlint`. If you've installed pre-commit hooks, it will be checked at commit time.
 

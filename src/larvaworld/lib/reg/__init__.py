@@ -24,20 +24,7 @@ __all__: list[str] = [
     "gen",
 ]
 
-import os
 import warnings
-
-# Deprecation: importing this private subpackage directly is discouraged for users
-if os.getenv("LARVAWORLD_STRICT_DEPRECATIONS") == "1":
-    raise ImportError(
-        "Deep import path deprecated. Use public API: 'from larvaworld.lib import reg' or higher-level APIs"
-    )
-else:
-    warnings.warn(
-        "Deep import path deprecated. Use public API: 'from larvaworld.lib import reg' or higher-level APIs",
-        DeprecationWarning,
-        stacklevel=2,
-    )
 
 warnings.simplefilter(action="ignore")
 

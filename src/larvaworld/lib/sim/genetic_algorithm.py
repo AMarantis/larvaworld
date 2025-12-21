@@ -446,6 +446,11 @@ class GAlauncher(BaseRun):
         if self.progress_bar:
             self.progress_bar.update(self.generation_num)
         # self.gen_progressbar.start()
+        # Reset the screen clock for the new generation
+        if hasattr(self, "screen_manager") and hasattr(
+            self.screen_manager, "screen_clock"
+        ):
+            self.screen_manager.screen_clock.reset()
         self.start_generation_time = util.TimeUtil.current_time_sec()
         gen_load_dur = np.round(
             self.start_generation_time - self.prestart_generation_time
@@ -674,6 +679,7 @@ class GAlauncher(BaseRun):
         vprint(f"Best fittness: {self.best_genome.fitness}", 1)
         if self.store_data:
             self.store_genomes(dic=self.all_genomes_dic, save_to=self.data_dir)
+            vprint(f"Simulation {self.id} stored in directory {self.dir}", 2)
 
     def store_genomes(self, dic: dict, save_to: str) -> None:
         """

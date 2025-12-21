@@ -93,10 +93,12 @@ def test_import_schleyer_datasets(tmp_path, dataset_lock):
             assert (data_dir / "data.h5").exists()
     else:
         # Fallback: use existing processed dataset snapshot
+        from larvaworld.lib import reg
+
         assert PROCESSED_CHECK.exists(), (
             "Expected processed dataset missing: " f"{PROCESSED_CHECK}"
         )
-        d = LarvaDataset(refID="exploration.30controls")
+        d = LarvaDataset(refID=reg.default_refID)
         # Minimal processing to exercise code paths
         d.comp_spatial()
         assert isinstance(d.s, pd.DataFrame) or hasattr(d, "s")

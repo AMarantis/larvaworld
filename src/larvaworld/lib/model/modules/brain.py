@@ -1,20 +1,5 @@
 from __future__ import annotations
 
-import os
-import warnings
-
-# Deprecation: discourage deep imports from internal module paths
-if os.getenv("LARVAWORLD_STRICT_DEPRECATIONS") == "1":
-    raise ImportError(
-        "Deep import path deprecated. Use public API: 'from larvaworld.lib.model.modules import Brain'"
-    )
-else:
-    warnings.warn(
-        "Deep import path deprecated. Use public API: 'from larvaworld.lib.model.modules import Brain'",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
 import numpy as np
 
 from ... import util

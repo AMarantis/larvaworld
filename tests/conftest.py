@@ -221,15 +221,16 @@ def real_dataset(ensure_datasets_ready):
     Provide a REAL LarvaDataset from registry for tests that need it.
 
     Requires ensure_datasets_ready fixture (datasets must exist).
-    Uses exploration.30controls as minimal real dataset.
+    Uses default reference dataset from registry.
 
     Returns:
         LarvaDataset with full preprocessing applied.
     """
+    from larvaworld.lib import reg
     from larvaworld.lib.process import LarvaDataset
 
     # Load real dataset from registry (datasets guaranteed ready via fixture)
-    d = LarvaDataset(refID="exploration.30controls")
+    d = LarvaDataset(refID=reg.default_refID)
 
     # Full preprocessing pipeline
     d.comp_spatial()

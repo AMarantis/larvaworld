@@ -352,10 +352,10 @@ class SimulationClock(PosPixelRel2AreaViewable):
                 font_size_scale=(1 / 40), text_centre_scale=(0.95, 1.0), **kws
             ),
             "second": ScreenTextFontRel(
-                font_size_scale=(1 / 50), text_centre_scale=(1.0, 1.0), **kws
+                font_size_scale=(1 / 50), text_centre_scale=(0.99, 1.0), **kws
             ),
             "dmsecond": ScreenTextFontRel(
-                font_size_scale=(1 / 50), text_centre_scale=(1.04, 1.1), **kws
+                font_size_scale=(1 / 50), text_centre_scale=(1.02, 1.0), **kws
             ),
         }
 
@@ -372,13 +372,39 @@ class SimulationClock(PosPixelRel2AreaViewable):
                     self.hour += 1
                     self.minute -= 60
 
+    def reset(self) -> None:
+        """Reset the clock to zero."""
+        self.time_in_min = 0
+        self.dmsecond = 0
+        self.second = 0
+        self.minute = 0
+        self.hour = 0
+
     def draw(self, v: Any, **kwargs: Any) -> None:
+        # First pass: set text and render all fonts to get dimensions
         for k, f in self.text_fonts.items():
             t = getattr(self, k)
             if k != "hour":
                 f.set_text(f":{t:02}")
             else:
                 f.set_text(f"{t:02}")
+            # Render text to get rect dimensions
+            if f.text_font_r is None:
+                f.render_text()
+
+        # Calculate baseline position using the largest font (hour/minute) as reference
+        # Use hour font as reference since it has the largest font size
+        reference_font = self.text_fonts["hour"]
+        baseline_y = reference_font.text_font_r.midbottom[1]
+
+        # Second pass: align all fonts to the same baseline
+        for k, f in self.text_fonts.items():
+            # Adjust text_centre y to align baseline
+            # midbottom[1] = center[1] + height/2, so center[1] = midbottom[1] - height/2
+            # We want all midbottoms at the same y, so adjust center accordingly
+            adjusted_y = baseline_y - f.text_font_r.height / 2
+            f.text_centre = (f.text_centre[0], adjusted_y)
+            f.text_font_r.center = f.text_centre
             f.draw(v, **kwargs)
 
     def set_default_color(self, color: Any) -> None:
@@ -446,7 +472,8 @@ class SimulationScale(PosPixelRel2AreaViewable):
 
     def set_default_color(self, color: Any) -> None:
         super().set_default_color(color)
-        self.text_font.text_color = self.color
+        # Use the color parameter directly to ensure text_font is updated correctly
+        self.text_font.text_color = color
 
 
 class SimulationState(PosPixelRel2AreaViewable):
@@ -488,4 +515,5 @@ class SimulationState(PosPixelRel2AreaViewable):
 
     def set_default_color(self, color: Any) -> None:
         super().set_default_color(color)
-        self.text_font.text_color = self.color
+        # Use the color parameter directly to ensure text_font is updated correctly
+        self.text_font.text_color = color

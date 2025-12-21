@@ -19,11 +19,13 @@ def test_default_reference_dataset_available(dataset_lock):
     """LarvaDataset refID should load and expose persisted artefacts."""
     import importlib
 
+    from larvaworld.lib import reg
+
     # Cold start safety: ensure process dataset module is loaded after registry bootstrap
     dataset_module = importlib.import_module("larvaworld.lib.process.dataset")
     LarvaDataset = dataset_module.LarvaDataset
 
-    dataset = LarvaDataset(refID="exploration.30controls", load_data=False)
+    dataset = LarvaDataset(refID=reg.default_refID, load_data=False)
     data_dir = Path(dataset.config.dir) / "data"
 
     assert data_dir.exists(), "processed directory missing"
@@ -50,7 +52,7 @@ def test_reference_dataset_loads_via_registry(dataset_lock):
     """Reference dataset should load through the registry API and expose files on disk."""
     from larvaworld.lib import reg
 
-    dataset = reg.conf.Ref.loadRef(id="exploration.30controls", load=False)
+    dataset = reg.conf.Ref.loadRef(id=reg.default_refID, load=False)
     dataset_dir = Path(dataset.config.dir)
 
     assert dataset_dir.exists()

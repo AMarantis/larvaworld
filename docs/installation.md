@@ -6,7 +6,7 @@ Larvaworld is published on [PyPI](https://pypi.org/project/larvaworld/) and can 
 
 ## System Requirements
 
-- **Python**: 3.10 or 3.11
+- **Python**: 3.10–3.13
 - **Operating Systems**: Linux, macOS, Windows
 - **RAM**: Minimum 4 GB (8+ GB recommended for large simulations)
 - **Disk Space**: ~100 MB for core installation
@@ -17,14 +17,13 @@ Larvaworld is published on [PyPI](https://pypi.org/project/larvaworld/) and can 
 
 ### Create a Virtual Environment
 
-First, ensure you have Python 3.10 or 3.11 installed. Then create and activate a virtual environment:
+First, ensure you have Python 3.10–3.13 installed. Then create and activate a virtual environment:
 
 **On Linux/macOS:**
 
 ```bash
-python3.10 -m venv larvaworld_env
-# or
-python3.11 -m venv larvaworld_env
+# Replace 3.12 with any supported version (3.10–3.13)
+python3.12 -m venv larvaworld_env
 
 source larvaworld_env/bin/activate
 ```
@@ -34,9 +33,8 @@ source larvaworld_env/bin/activate
 ```bash
 python -m venv larvaworld_env
 # or
-py -3.10 -m venv larvaworld_env
-# or
-py -3.11 -m venv larvaworld_env
+# Replace 3.12 with any supported version (3.10–3.13)
+py -3.12 -m venv larvaworld_env
 
 larvaworld_env\Scripts\activate
 ```

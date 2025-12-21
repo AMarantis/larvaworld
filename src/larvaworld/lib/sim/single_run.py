@@ -8,6 +8,7 @@ import io
 import agentpy
 import numpy as np
 import pandas as pd
+from shapely import geometry
 
 from ... import vprint
 from .. import reg, util
@@ -216,9 +217,24 @@ class ExpRun(BaseRun):
             scale (float, optional): A scaling factor to apply to the shapes. Defaults to 1.0.
 
         Returns:
-            dict: A dictionary where the keys are the unique IDs of the larva agents and the values are their shapes, scaled by the given factor.
+            dict: A dictionary where the keys are the unique IDs of the larva agents
+                  and the values are Shapely geometries (scaled by the given factor)
+                  that support spatial predicates like ``intersects``.
         """
-        return {l.unique_id: l.get_shape(scale=scale) for l in self.agents}
+        bodies: dict[Any, geometry.base.BaseGeometry] = {}
+        for l in self.agents:
+            shape = l.get_shape(scale=scale)
+            if shape is None:
+                continue
+            # If get_shape already returns a geometry with spatial predicates,
+            # use it directly; otherwise assume a coordinate sequence and wrap
+            # it in a Polygon for collision checks.
+            if hasattr(shape, "intersects"):
+                geom = shape
+            else:
+                geom = geometry.Polygon(shape)
+            bodies[l.unique_id] = geom
+        return bodies
 
     def analyze(self, **kwargs: Any) -> None:
         """
@@ -295,6 +311,7 @@ class ExpRun(BaseRun):
         for d in self.datasets:
             d.save()
             d.store_larva_dicts()
+        vprint(f"Simulation {self.id} stored in directory {self.dir}", 2)
 
     def load_agentpy_output(self):
         """

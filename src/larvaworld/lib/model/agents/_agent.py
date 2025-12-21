@@ -1,19 +1,5 @@
 from __future__ import annotations
 from typing import Any
-import os
-import warnings
-
-# Deprecation: discourage deep imports from internal module paths
-if os.getenv("LARVAWORLD_STRICT_DEPRECATIONS") == "1":
-    raise ImportError(
-        "Deep import path deprecated. Use public API: 'from larvaworld.lib.model.agents import MobileAgent'"
-    )
-else:
-    warnings.warn(
-        "Deep import path deprecated. Use public API: 'from larvaworld.lib.model.agents import MobileAgent'",
-        DeprecationWarning,
-        stacklevel=2,
-    )
 
 from ...param import (
     ClassAttr,
