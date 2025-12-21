@@ -25,6 +25,14 @@
 - Added Python 3.13 support by updating Python version constraint from `">=3.10,<3.13"` to `">=3.10,<3.14"`.
 - Added `SALib <1.5.2` constraint to ensure compatibility with numpy 1.x.
 - Pinned `panel` to `"1.2.*"` (from `">=1.2,<2.0"`) to fix `larvaworld-app` hang issue on Python 3.12 and 3.13. Panel 1.8.x has compatibility issues with `pn.serve()` that prevent the web app from starting.
+- Fixed collision handling bugs: introduced `_has_larva_collision()` helper in `LarvaSim` and normalized shapes to Shapely geometries in `ExpRun.get_larva_bodies()`.
+- Added UI feedback for larva overlap toggle (keyboard shortcut `Y`).
+- Added simulation storage directory feedback via `vprint` messages (verbosity level 2) for all simulation types (Exp, Batch, GA, Eval).
+- Updated tests to use `reg.default_refID` instead of hardcoded dataset IDs for better flexibility.
+- Removed deprecation warning infrastructure (`LARVAWORLD_STRICT_DEPRECATIONS` checks) from 25 files (~288 lines removed).
+- Updated documentation: added publications page, improved contributing.md with commit message examples, removed outdated badges from README, updated Python version support across all docs.
+- Minor fixes: timer baseline alignment, module-level constant docstrings for autoapi, end-of-file formatting.
+- Updated `poetry.lock` to match `pyproject.toml` dependency changes.
 
 ## v2.0.1 (2025-11-25)
 
