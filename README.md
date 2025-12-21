@@ -17,7 +17,7 @@
   <a href="https://pypi.org/project/larvaworld/">
     <img src="https://img.shields.io/pypi/v/larvaworld.svg?logo=python&logoColor=fff&style=flat-square" alt="PyPI Version">
   </a>
-  <img src="https://img.shields.io/badge/python-3.10%20%7C%203.11-blue?style=flat-square&logo=python&logoColor=fff" alt="Supported Python versions">
+  <img src="https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue?style=flat-square&logo=python&logoColor=fff" alt="Supported Python versions">
   <img src="https://img.shields.io/pypi/l/larvaworld.svg?style=flat-square" alt="License">
 </p>
 
@@ -42,7 +42,7 @@ Simulations operate across sub-millisecond neuronal dynamics, sub-second closed-
 
 ## Installation
 
-Larvaworld can be installed with `pip` (recommended) or `poetry`. **It is strongly recommended to install Larvaworld in a virtual environment** with Python 3.10 or 3.11.
+Larvaworld can be installed with `pip` (recommended) or `poetry`. **It is strongly recommended to install Larvaworld in a virtual environment** with Python 3.10–3.13.
 
 ### Quick Start
 
@@ -50,7 +50,8 @@ Larvaworld can be installed with `pip` (recommended) or `poetry`. **It is strong
 
    ```shell
    # Linux/macOS
-   python3.10 -m venv larvaworld_env
+   # Replace 3.12 with any supported version (3.10–3.13)
+   python3.12 -m venv larvaworld_env
    source larvaworld_env/bin/activate
 
    # Windows
@@ -71,14 +72,6 @@ Larvaworld can be installed with `pip` (recommended) or `poetry`. **It is strong
    ```
 
 For detailed installation instructions, troubleshooting, and optional dependencies, see the [full installation guide](https://larvaworld.readthedocs.io/en/latest/installation.html).
-
-### Video Export (Optional)
-
-If you plan to export simulations or replays as video files, install the ffmpeg extension of `imageio`:
-
-```shell
-pip install "imageio[ffmpeg]"
-```
 
 ## Features
 

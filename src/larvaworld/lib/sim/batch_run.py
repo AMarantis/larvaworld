@@ -226,6 +226,7 @@ class BatchRun(reg.generators.SimConfiguration, ap.Experiment):
             self.PI_heatmap()
         self.plot_results()
         util.storeH5(self.par_df, key="results", path=self.df_path, mode="w")
+        vprint(f"Simulation {self.id} stored in directory {self.dir}", 2)
         return self.par_df, self.figs
 
     def plot_results(self) -> None:

@@ -255,16 +255,12 @@ Installs **all** optional dependencies.
 
 ## Python Version Requirements
 
-Larvaworld supports **Python 3.10 and 3.11**:
+Larvaworld supports **Python 3.10–3.13**:
 
 ```toml
 [tool.poetry.dependencies]
-python = ">=3.10,<3.13"
+python = ">=3.10,<3.14"
 ```
-
-:::{warning}
-Python 3.12 is not yet supported due to some dependency incompatibilities (notably `tables` and `box2d-py`). Support for Python 3.12+ will be added once all dependencies are compatible.
-:::
 
 ## Dependency Updates
 

@@ -311,6 +311,7 @@ class ExpRun(BaseRun):
         for d in self.datasets:
             d.save()
             d.store_larva_dicts()
+        vprint(f"Simulation {self.id} stored in directory {self.dir}", 2)
 
     def load_agentpy_output(self):
         """

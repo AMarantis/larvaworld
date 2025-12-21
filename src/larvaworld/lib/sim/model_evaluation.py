@@ -203,7 +203,7 @@ class EvalRun(EvalConf, SimConfiguration):
     def store(self) -> None:
         if self.data_dir is not None:
             util.save_dict(self.error_dicts, f"{self.data_dir}/error_dicts.txt")
-            vprint(f"Results saved at {self.data_dir}", 1)
+            vprint(f"Simulation {self.id} stored in directory {self.dir}", 2)
 
     def plot_models(self, **kwargs: Any) -> None:
         GD = reg.graphs.dict

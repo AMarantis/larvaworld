@@ -6,7 +6,7 @@ Larvaworld Documentation
    :target: https://pypi.org/project/larvaworld/
    :alt: PyPI
 
-.. image:: https://img.shields.io/badge/python-3.10%20%7C%203.11-blue
+.. image:: https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue
    :target: https://www.python.org/downloads/
    :alt: Python Version
 

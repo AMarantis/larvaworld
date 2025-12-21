@@ -679,6 +679,7 @@ class GAlauncher(BaseRun):
         vprint(f"Best fittness: {self.best_genome.fitness}", 1)
         if self.store_data:
             self.store_genomes(dic=self.all_genomes_dic, save_to=self.data_dir)
+            vprint(f"Simulation {self.id} stored in directory {self.dir}", 2)
 
     def store_genomes(self, dic: dict, save_to: str) -> None:
         """
