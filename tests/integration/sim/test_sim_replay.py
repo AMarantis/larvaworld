@@ -73,11 +73,9 @@ def test_replay(id, conf):
 
 
 def test_replay_by_dir():
-    """Run an experiment replay specifying the dataset by its directory path."""
+    """Run an experiment replay specifying the dataset by its refID."""
     rep = sim.ReplayRun(
-        parameters=reg.gen.Replay(
-            refDir="SchleyerGroup/processed/exploration/30controls"
-        ).nestedConf,
+        parameters=reg.gen.Replay(refID=reg.default_refID).nestedConf,
         id="replay_by_dir",
         dir="./media/replay_by_dir",
     )
