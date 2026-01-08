@@ -132,6 +132,7 @@ run.simulate()
 ```python
 from larvaworld.lib.sim.single_run import ExpRun
 from larvaworld.lib import reg
+from larvaworld.lib.util import AttrDict
 
 # Load a stored environment configuration
 env_conf = reg.conf.Env.getID("arena_200mm")
@@ -139,17 +140,25 @@ env_conf = reg.conf.Env.getID("arena_200mm")
 # Load a stored model configuration
 model_conf = reg.conf.Model.getID("explorer")
 
+# Start from the built-in "dish" experiment parameters and override what we need
+params = reg.conf.Exp.getID("dish").get_copy()
+params.env_params = env_conf
+params.larva_groups = AttrDict(
+    {
+        "explorer": AttrDict(
+            {
+                "model": model_conf,
+                "distribution": {"N": 10},
+            }
+        )
+    }
+)
+
 # Create a custom experiment
 run = ExpRun(
     experiment="dish",
-    env_params=env_conf,
-    larva_groups={
-        "explorer": {
-            "model": model_conf,
-            "distribution": {"N": 10}
-        }
-    },
-    duration=5.0
+    parameters=params,
+    duration=5.0,
 )
 run.simulate()
 ```

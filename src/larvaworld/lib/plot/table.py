@@ -158,12 +158,17 @@ def modelConfTable(
                             continue
                         v = d[p]
                         if v is not None:
-                            if v.name is not None:
+                            dist_name = getattr(v, "name", None)
+                            if dist_name is not None:
                                 vs1, vs2 = reg.get_dist(
                                     k=p, k0=k, v=v, return_tabrows=True
                                 )
                                 data.append(vs1)
                                 data.append(vs2)
+                            else:
+                                # Scalar / non-distribution parameters (e.g. floats like EEB)
+                                # should still be represented in the table.
+                                data.append([k, p, "-", v, "-"])
                 else:
                     gen_rows2(d0, k, data)
 

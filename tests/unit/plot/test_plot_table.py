@@ -13,6 +13,7 @@ import pytest
 
 from larvaworld.lib.plot.table import (
     arrange_index_labels,
+    modelConfTable,
     mpl_table,
     error_table,
 )
@@ -262,6 +263,32 @@ class TestMplTable:
             # Lines 311-312, 331: set_text_props called for headers AND for (0,-1)
             # So it gets called twice total (once for header row, once for header0)
             assert mock_table._cells[(0, -1)].set_text_props.call_count >= 1
+
+
+@pytest.mark.fast
+class TestModelConfTable:
+    """Regression tests for model configuration tables."""
+
+    def test_model_conf_table_handles_intermitter_scalars(self):
+        """
+        modelConfTable should not crash when intermitter parameters are plain scalars
+        (e.g. EEB, crawl_freq) instead of distribution objects.
+        """
+
+        def _return_df(df, row_colors, mID, **kwargs):
+            return df
+
+        with patch("larvaworld.lib.plot.table.conf_table", side_effect=_return_df):
+            df = modelConfTable(mID="explorer")
+
+        assert isinstance(df, pd.DataFrame)
+        assert "parameter" in df.columns
+
+        # Ensure at least one intermitter scalar is present (this used to crash).
+        assert "EEB" in df["parameter"].values
+        row = df[df["parameter"] == "EEB"]
+        assert not row.empty
+        assert float(row["value"].iloc[0]) == 0.0
 
 
 @pytest.mark.fast

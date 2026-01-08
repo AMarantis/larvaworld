@@ -194,7 +194,6 @@ from larvaworld.lib.sim.genetic_algorithm import GAevaluation, optimize_mID
 # Define fitness function against reference dataset
 evaluator = GAevaluation(
     refID="exploration.30controls",
-    metric_definition="angular",
 )
 
 # Run genetic algorithm to optimize locomotory model
@@ -245,7 +244,7 @@ For detailed workflows, see {doc}`../working_with_larvaworld/ga_optimization_adv
 ### Command-Line Usage
 
 ```bash
-larvaworld Eval -refID exploration.30controls --modelIDs explorer navigator
+larvaworld Eval -refID exploration.30controls --modelIDs explorer navigator forager --analysis
 ```
 
 ### Python Usage
@@ -256,16 +255,17 @@ from larvaworld.lib.sim import EvalRun
 eval_run = EvalRun(
     refID='exploration.30controls',         # Reference dataset
     modelIDs=['explorer', 'navigator', 'forager'],  # Models to compare
-    duration=5.0,
-    Nagents=20  # Per model
+    duration=0.5,                            # Short run for a quick demo
+    N=20,                                    # Agents per model
+    screen_kws={},                           # Headless
 )
 eval_run.simulate()
 eval_run.plot_results()  # Statistical comparison plots
 eval_run.plot_models()   # Model-specific visualizations
 
 # Access results
-print(eval_run.error_dict['end'])   # Endpoint metric errors
-print(eval_run.error_dict['step'])  # Distribution metric errors
+print(eval_run.error_dicts['pooled']['end'])   # Endpoint metric errors
+print(eval_run.error_dicts['pooled']['step'])  # Distribution metric errors
 ```
 
 ### Characteristics
@@ -312,12 +312,17 @@ larvaworld Replay -refID exploration.30controls -video_name replay.mp4
 
 ```python
 from larvaworld.lib.sim import ReplayRun
+from larvaworld.lib import reg
+
+# Build replay parameters (trim time_range for a quick demo if desired)
+params = reg.gen.Replay(refID="exploration.30controls", time_range=(0, 5)).nestedConf
 
 replay = ReplayRun(
-    refID='exploration.30controls',
+    parameters=params,
     screen_kws={
-        'vis_mode': 'video',
-        'video_name': 'exploration_replay.mp4'
+        "vis_mode": "video",
+        "save_video": True,
+        "video_file": "exploration_replay",
     }
 )
 replay.run()  # No simulation, just visualization

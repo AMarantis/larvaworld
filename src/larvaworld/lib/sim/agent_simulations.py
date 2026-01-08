@@ -3,6 +3,7 @@ from __future__ import annotations
 import random
 
 import numpy as np
+import pandas as pd
 from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
@@ -137,7 +138,7 @@ def sim_model(
         "Ncontour": 0,
         "fr": 1 / dt,
     }
-    from ...process.dataset import LarvaDataset
+    from ..process import LarvaDataset
 
     d = LarvaDataset(**c_kws, load_data=False)
     d.set_data(step=s, end=e)
