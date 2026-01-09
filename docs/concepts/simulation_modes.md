@@ -133,16 +133,21 @@ larvaworld Batch PItest_off -N 10
 
 ### Python Usage
 
+:::{note}
+At the moment, `BatchRun` is under active development and the Python API may fail with:
+
+`TypeError: Constant parameter 'name' cannot be modified`
+
+Until `BatchRun` is stabilized, you can approximate a small parameter sweep by looping over `ExpRun` runs.
+:::
+
 ```python
-from larvaworld.lib import reg
-from larvaworld.lib.sim import BatchRun
+from larvaworld.lib.sim import ExpRun
 
-# Load preconfigured Batch settings from registry
-batch_conf = reg.conf.Batch.getID("PItest_off")
-
-# Launch batch run with parallel execution
-batch = BatchRun(experiment="PItest_off", **batch_conf)
-par_df, figs = batch.simulate(n_jobs=4)
+# Temporary workaround: run a small set of single experiments (headless)
+for run_id in range(3):
+    run = ExpRun(experiment="PItest_off", N=10, duration=0.1, screen_kws={}, store_data=False)
+    run.simulate()
 ```
 
 ### Characteristics
@@ -191,20 +196,31 @@ larvaworld Ga exploration -Ngenerations 50 -duration 3
 ```python
 from larvaworld.lib.sim.genetic_algorithm import GAevaluation, optimize_mID
 
-# Define fitness function against reference dataset
+# Define evaluation against a reference dataset
 evaluator = GAevaluation(
     refID="exploration.30controls",
+    # Keep evaluation metrics aligned with what GAlauncher enriches by default.
+    cycle_curve_metrics=[],
+    eval_metrics={
+        "angular kinematics": ["b", "fov"],
+        "spatial displacement": ["v", "a"],
+    },
 )
 
 # Run genetic algorithm to optimize locomotory model
 results = optimize_mID(
     mID0="explorer",                      # Base model to optimize
+    mID1="explorer_opt",                  # ID for optimized model
     ks=["crawler", "turner"],             # Module names to optimize
     evaluator=evaluator,
-    Ngenerations=50,
+    Ngenerations=1,                       # Increase for real runs
+    Nagents=10,                           # GA population size
+    duration=0.05,                        # minutes per agent (increase for real runs)
+    screen_kws={"show_display": False, "vis_mode": None},
+    store_data=False,
 )
 
-best_conf = results["explorer"]  # Optimized model configuration
+best_conf = results["explorer_opt"]  # Optimized model configuration (AttrDict)
 ```
 
 ### Characteristics
@@ -305,7 +321,7 @@ For detailed workflows, see {doc}`../working_with_larvaworld/model_evaluation`.
 ### Command-Line Usage
 
 ```bash
-larvaworld Replay -refID exploration.30controls -video_name replay.mp4
+larvaworld Replay -refID exploration.30controls -vis_mode video -save_video -video_file replay
 ```
 
 ### Python Usage

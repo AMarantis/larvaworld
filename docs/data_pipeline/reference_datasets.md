@@ -33,6 +33,8 @@ for ref_id in ref_ids:
 ### Load Reference Dataset
 
 ```python
+from larvaworld.lib import reg
+
 dataset = reg.loadRef(id="exploration.30controls", load=True)
 
 print(f"Ref ID: {dataset.config.refID}")
@@ -52,7 +54,9 @@ from larvaworld.lib.sim import EvalRun
 eval_run = EvalRun(
     refID='exploration.30controls',
     modelIDs=['explorer', 'navigator'],
-    duration=5.0
+    duration=0.5,  # minutes (use larger values for full evaluations)
+    N=5,           # agents per model
+    screen_kws={}, # headless
 )
 eval_run.simulate()
 ```
@@ -64,13 +68,18 @@ See {doc}`../working_with_larvaworld/model_evaluation` for details.
 ### Replay Visualization
 
 ```python
+from larvaworld.lib import reg
 from larvaworld.lib.sim import ReplayRun
 
-replay = ReplayRun(
-    refID='exploration.30controls',
-    screen_kws={'vis_mode': 'screen'}
-)
-replay.run()
+# Build replay parameters (select a short slice for a quick run)
+replay_params = reg.gen.Replay(
+    refID="exploration.30controls",
+    time_range=(0, 10),  # seconds
+    agent_ids=[0, 1, 2],
+).nestedConf
+
+replay = ReplayRun(parameters=replay_params, screen_kws={"show_display": False})
+replay.run()  # Reconstructs and visualizes stored trajectories (no simulation)
 ```
 
 See {doc}`../working_with_larvaworld/replay` for details.
@@ -83,15 +92,28 @@ See {doc}`../working_with_larvaworld/replay` for details.
 from larvaworld.lib.sim.genetic_algorithm import GAevaluation, optimize_mID
 
 evaluator = GAevaluation(
-    refID="exploration.30controls"
+    refID="exploration.30controls",
+    # Keep evaluation metrics aligned with what GAlauncher enriches by default.
+    cycle_curve_metrics=[],
+    eval_metrics={
+        "angular kinematics": ["b", "fov"],
+        "spatial displacement": ["v", "a"],
+    },
 )
 
 results = optimize_mID(
     mID0="explorer",
+    mID1="explorer_opt",          # ID for optimized model config
     ks=["crawler", "turner"],  # Module names to optimize
     evaluator=evaluator,
-    Ngenerations=50
+    Ngenerations=1,                # Increase for real runs
+    Nagents=10,                    # GA population size
+    duration=0.05,                 # minutes per agent (increase for real runs)
+    screen_kws={"show_display": False, "vis_mode": None},
+    store_data=False,
 )
+
+best_conf = results["explorer_opt"]  # Optimized model configuration (AttrDict)
 ```
 
 See {doc}`../working_with_larvaworld/ga_optimization_advanced` for details.
@@ -105,7 +127,7 @@ See {doc}`../working_with_larvaworld/ga_optimization_advanced` for details.
 ```python
 from larvaworld.lib import reg
 
-lab = reg.gen.LabFormat(labID="Schleyer")
+lab = reg.gen.LabFormat(**reg.conf.LabFormat.getID("Schleyer"))
 lab.import_dataset(
     parent_dir="exploration",
     merged=True,

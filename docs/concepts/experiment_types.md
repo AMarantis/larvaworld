@@ -1,6 +1,6 @@
 # Experiment Types
 
-Larvaworld provides **57 preconfigured behavioral experiments** spanning **11 categories**, from basic exploration to complex learning tasks and competitive games. This page groups them by behavioral question rather than by internal configuration keys.
+Larvaworld provides **57 preconfigured behavioral experiments** spanning multiple categories, from basic exploration to complex learning tasks and competitive games. This page groups them by behavioral question rather than by internal configuration keys.
 
 ---
 
@@ -78,18 +78,24 @@ mindmap
 
 The following table groups experiments by **behavioral category** (conceptual view):
 
-| Type/Behavior       | Experiment (ID)          | Description                                     | Literature Source                                                       |
-| ------------------- | ------------------------ | ----------------------------------------------- | ----------------------------------------------------------------------- |
-| **exploration**     | focus                    | Single larva in tiny arena (close-view)         | -                                                                       |
-|                     | dish / dispersion        | Petri-dish exploration / dispersion from center | -                                                                       |
-| **chemotaxis**      | chemotaxis / chemorbit   | Navigation up odor gradient / orbital search    | [Gomez-Marin et al. (2012)](https://doi.org/10.1016/j.conb.2011.11.008) |
-| **chemanemotaxis**  | single_puff              | Odor puff + wind integration                    | -                                                                       |
-| **odor preference** | PItrain / PItest_off     | Olfactory associative learning (train/test)     | The Maggot Learning Manual                                              |
-| **foraging**        | patchy_food / patch_grid | Food search in single patch / grid              | -                                                                       |
-| **tactile**         | tactile_detection        | Obstacle/tactile sensing                        | -                                                                       |
-| **growth**          | RvsS / growth            | Rovers vs sitters; long-term rearing            | [Kaun et al. (2007)](https://doi.org/10.1242/jeb.006924)                |
-| **games**           | maze / capture_the_flag  | Maze navigation; team competition               | -                                                                       |
-| **other**           | realistic_imitation      | Multisegment larvae in Box2D                    | -                                                                       |
+| Type/Behavior       | Experiment (ID)     | Description                             | Literature Source                                                       |
+| ------------------- | ------------------- | --------------------------------------- | ----------------------------------------------------------------------- |
+| **exploration**     | focus               | Single larva in tiny arena (close-view) | -                                                                       |
+|                     | dish                | Petri-dish exploration                  | -                                                                       |
+|                     | dispersion          | Dispersion from center                  | -                                                                       |
+| **chemotaxis**      | chemotaxis          | Navigation up odor gradient             | [Gomez-Marin et al. (2012)](https://doi.org/10.1016/j.conb.2011.11.008) |
+|                     | chemorbit           | Odor-source orbital search              | [Gomez-Marin et al. (2012)](https://doi.org/10.1016/j.conb.2011.11.008) |
+| **chemanemotaxis**  | single_puff         | Odor puff + wind integration            | -                                                                       |
+| **odor preference** | PItrain             | Olfactory associative learning (train)  | The Maggot Learning Manual                                              |
+|                     | PItest_off          | Olfactory associative learning (test)   | The Maggot Learning Manual                                              |
+| **foraging**        | patchy_food         | Food search in single patch             | -                                                                       |
+|                     | patch_grid          | Food search in grid of patches          | -                                                                       |
+| **tactile**         | tactile_detection   | Obstacle/tactile sensing                | -                                                                       |
+| **growth**          | RvsS                | Rovers vs sitters; phenotypes           | [Kaun et al. (2007)](https://doi.org/10.1242/jeb.006924)                |
+|                     | growth              | Long-term rearing                       | [Kaun et al. (2007)](https://doi.org/10.1242/jeb.006924)                |
+| **games**           | maze                | Maze navigation                         | -                                                                       |
+|                     | capture_the_flag    | Team competition                        | -                                                                       |
+| **other**           | realistic_imitation | Multisegment larvae in Box2D            | -                                                                       |
 
 ---
 
@@ -272,8 +278,6 @@ larvaworld Exp patchy_food -N 20 -duration 15.0
 - `tactile_detection`: Single obstacle detection
 - `tactile_detection_x4`: Four obstacles
 - `multi_tactile_detection`: Multiple obstacles
-- `tactile_detection_x4`: Four obstacles
-- `multi_tactile_detection`: Multiple obstacles
 
 **Use Cases**:
 
@@ -355,8 +359,8 @@ larvaworld Exp maze -N 5 -duration 10.0
 ### Via CLI
 
 ```bash
-# List all available experiments
-larvaworld Exp --list
+# List all available experiments (via help)
+larvaworld Exp --help
 
 # Run a specific experiment
 larvaworld Exp chemotaxis -N 20 -duration 5.0
@@ -369,10 +373,10 @@ from larvaworld.lib import reg
 from larvaworld.lib.sim import ExpRun
 
 # Load experiment configuration
-exp_conf = reg.conf.Exp.getID("chemotaxis")
+exp_conf = reg.conf.Exp.getID("chemotaxis").get_copy()
 
 # Run experiment
-run = ExpRun(experiment="chemotaxis", duration=5.0)
+run = ExpRun(experiment="chemotaxis", parameters=exp_conf, duration=5.0)
 run.simulate()
 ```
 
@@ -398,33 +402,35 @@ print(exp_conf)
 You can define new experiments by:
 
 1. **Modifying `sim_conf.py`**: Add entries to `Exp_dict()`
-2. **Using Python API**: Pass custom `env_params` and `larva_groups`
+2. **Using Python API**: Start from a template (`exp_params = reg.conf.Exp.getID(...).get_copy()`), override `exp_params.env_params` / `exp_params.larva_groups`, and pass it via `parameters=exp_params`
 
 **Example: Custom Experiment**
 
 ```python
+from larvaworld.lib import reg
 from larvaworld.lib.sim import ExpRun
 
-# Define custom environment
-env_params = {
-    "arena": {"geometry": [0.1, 0.1]},  # 10cm x 10cm
-    "food_params": {
-        "source_groups": [{"group": "patches", "amount": 3}]
-    }
-}
+# Start from an existing experiment template
+exp_params = reg.conf.Exp.getID("dish").get_copy()
+lg = reg.gen.LarvaGroup
 
-# Define larva groups
-larva_groups = [
-    {"model": "explorer", "N": 10},
-    {"model": "navigator", "N": 10}
-]
+# Override environment (use a 200mm arena template and add food patches)
+env_params = reg.conf.Env.getID("arena_200mm").get_copy()
+env_params.food_params.source_groups = {
+    "patches": {"group": "patches", "amount": 3}
+}
+exp_params.env_params = env_params
+
+# Override larva groups
+exp_params.larva_groups = {}
+exp_params.larva_groups.update(lg(mID="explorer", N=10, c="blue").entry("explorer"))
+exp_params.larva_groups.update(lg(mID="navigator", N=10, c="red").entry("navigator"))
 
 # Run custom experiment
 run = ExpRun(
-    experiment="custom",
-    env_params=env_params,
-    larva_groups=larva_groups,
-    duration=10.0
+    experiment="dish",  # base template id
+    parameters=exp_params,
+    duration=5.0,
 )
 run.simulate()
 ```

@@ -35,7 +35,7 @@ graph TB
 
     Compare --> Rank[Rank Genomes<br/>by Fitness Score]
 
-    Rank --> Converge{Converged?<br/>Max gen reached<br/>or fitness plateau}
+    Rank --> Converge{Converged?<br/>Max gen reached}
 
     Converge -->|No| Select[Selection<br/>Keep best genomes]
 
@@ -73,19 +73,30 @@ from larvaworld.lib.sim.genetic_algorithm import GAevaluation, optimize_mID
 # 1. Define evaluation against reference dataset
 evaluator = GAevaluation(
     refID="exploration.30controls",
-    # optionally configure fitness_func_name / exclude_func_name / fit_kws
+    # GA mode currently enriches only `proc_keys=["angular","spatial"]` by default.
+    # Keep evaluation metrics aligned with those processed keys (or extend GAlauncher).
+    cycle_curve_metrics=[],
+    eval_metrics={
+        "angular kinematics": ["b", "fov"],
+        "spatial displacement": ["v", "a"],
+    },
 )
 
 # 2. Run genetic algorithm to optimize locomotory model
 results = optimize_mID(
     mID0="explorer",                      # Base model to optimize
+    mID1="explorer_opt",                  # ID for optimized model (stored in registry)
     ks=["crawler", "turner"],             # Module names to optimize
     evaluator=evaluator,
-    Ngenerations=50,
+    Ngenerations=1,                       # Increase for real runs
+    Nagents=10,                           # Population size
+    duration=0.05,                        # Minutes per agent (increase for real runs)
+    screen_kws={"show_display": False},
+    store_data=False,
 )
 
 # 3. Access optimized configuration
-best_conf = results["explorer"]          # Optimized model config (AttrDict)
+best_conf = results["explorer_opt"]      # Optimized model config (AttrDict)
 ```
 
 ---
@@ -109,28 +120,29 @@ For importing datasets, see {doc}`../data_pipeline/lab_formats_import`.
 
 ### 2. Define Fitness / Evaluation
 
-The `GAevaluation` class configures how genomes are evaluated. You can either:
-
-- use **built-in fitness functions** (e.g. distance-to-source, cumulative distance), ή
-- fall back to dataset-based evaluation logic (see `Evaluation` / `DataEvaluation`).
+The `GAevaluation` class configures how genomes are evaluated against a reference dataset.
+In the current codebase, `GAlauncher` uses **reference-based evaluation** (KS/RSS-style errors over selected metrics).
 
 ```python
 from larvaworld.lib.sim.genetic_algorithm import GAevaluation
 
 evaluator = GAevaluation(
     refID="exploration.30controls",
-    fitness_func_name="dst2source",  # or "cum_dst", or use target-based evaluation
-    fit_kws={},
+    cycle_curve_metrics=[],
+    eval_metrics={
+        "angular kinematics": ["b", "fov"],
+        "spatial displacement": ["v", "a"],
+    },
 )
 ```
 
 **Fitness Calculation**:
 
-$$
-\text{Fitness} = \frac{1}{1 + \overline{D_{KS}}}
-$$
+Larvaworld assigns fitness from the aggregated evaluation errors (higher is better). Internally, each genome produces an evaluation dictionary like `{"KS": {...}, "RSS": {...}}` and fitness is computed as a weighted sum of the **negative mean** errors per group (weights currently: `KS=10`, `RSS=1`).
 
-Where $\overline{D_{KS}}$ is the mean KS D-statistic across all metrics.
+:::{note}
+`GAevaluation` also supports robot-based fitness functions (`fitness_func_name=...`), but the current `Ga` implementation expects reference-based evaluation (`fit_func_arg == "s"`).
+:::
 
 ---
 
@@ -172,50 +184,58 @@ from larvaworld.lib.sim.genetic_algorithm import optimize_mID
 
 results = optimize_mID(
     mID0="explorer",           # Base model
+    mID1="explorer_opt",       # ID for optimized model (stored in registry)
     ks=["crawler", "turner"],  # Module names to optimize
     evaluator=evaluator,
-    Ngenerations=50,           # Number of generations
-    Nagents=20,                # Population size per generation
+    Ngenerations=1,            # Increase for real runs
+    Nagents=10,                # Population size per generation
+    duration=0.05,             # Minutes per agent (increase for real runs)
+    screen_kws={"show_display": False},
+    store_data=False,
 )
 
-best_conf = results["explorer"]   # Optimized model configuration (AttrDict)
+best_conf = results["explorer_opt"]   # Optimized model configuration (AttrDict)
 ```
 
 #### Option B: Custom GA configuration via registry
 
-Για πιο σύνθετες GA ρυθμίσεις μπορείς να χρησιμοποιήσεις το `GAconf` μέσω
-του registry (`reg.conf.Ga`) και να εκτελέσεις GA runs μέσω CLI (`larvaworld Ga ...`)
-ή Python, αντί για χειροκίνητο `GAlauncher` με custom selector. Δες και το
-{doc}`../concepts/experiment_configuration_pipeline` για το πώς δουλεύουν τα
-`Ga` configuration entries.
+For more complex GA settings you can use `GAconf` via the registry (`reg.conf.Ga`) and run GA via the CLI (`larvaworld Ga ...`) or Python, instead of configuring `GAlauncher` manually. See {doc}`../concepts/experiment_configuration_pipeline` for how `Ga` configuration entries work.
 
 ---
 
 ## GA Parameters
 
+**Note**: The defaults listed below match the `optimize_mID(...)` convenience wrapper.
+
 ### Population Parameters
 
 | Parameter      | Default | Description                    |
 | -------------- | ------- | ------------------------------ |
-| `Nagents`      | 20      | Population size per generation |
-| `Ngenerations` | 50      | Number of generations          |
+| `Nagents`      | 10      | Population size per generation |
+| `Ngenerations` | 3       | Number of generations          |
+
+**Note**: `Nagents` is the **GA population size**. This is different from `N` used in `ExpRun`/`EvalRun` (number of larvae per simulation run).
+
+:::{note}
+Keep `Nagents` high enough so the parent pool is at least 2 genomes, otherwise the GA will fail early with a `ValueError`.
+The selection size is computed as `round(Nagents * selection_ratio)` (default `selection_ratio=0.3`).
+:::
 
 ### Evolution Parameters
 
-| Parameter         | Default | Description                                      |
-| ----------------- | ------- | ------------------------------------------------ |
-| `selection_ratio` | 0.3     | Fraction of population kept as parents (top 30%) |
-| `crossover_rate`  | 0.7     | Probability of crossover (70%)                   |
-| `mutation_rate`   | 0.1     | Probability of mutation per gene (10%)           |
-| `mutation_scale`  | 0.2     | Mutation magnitude (±20% of parameter range)     |
+| Parameter         | Default   | Description                                                                |
+| ----------------- | --------- | -------------------------------------------------------------------------- |
+| `Nelits`          | 2         | Number of elite genomes carried over unchanged (when using `optimize_mID`) |
+| `selection_ratio` | 0.3       | Fraction used as the parent pool (`round(Nagents * selection_ratio)`)      |
+| `Pmutation`       | 0.3       | Per-parameter mutation probability (checked for each gene)                 |
+| `Cmutation`       | 0.1       | Mutation scale as a fraction of allowed parameter range                    |
+| `init_mode`       | `"model"` | Initial population mode (when using `optimize_mID`)                        |
 
 ### Convergence Criteria
 
-| Criterion           | Description                                  |
-| ------------------- | -------------------------------------------- |
-| **Max generations** | Stop after `Ngenerations`                    |
-| **Fitness plateau** | Stop if fitness unchanged for 10 generations |
-| **Target fitness**  | Stop if fitness > threshold (e.g., 0.95)     |
+| Criterion           | Description               |
+| ------------------- | ------------------------- |
+| **Max generations** | Stop after `Ngenerations` |
 
 ---
 
@@ -225,7 +245,7 @@ best_conf = results["explorer"]   # Optimized model configuration (AttrDict)
 
 ```python
 results = optimize_mID(...)
-best_conf = results["explorer"]   # Optimized model configuration
+best_conf = results["explorer_opt"]   # Optimized model configuration
 ```
 
 ### Comparing Original vs Optimized
@@ -233,14 +253,14 @@ best_conf = results["explorer"]   # Optimized model configuration
 ```python
 from larvaworld.lib.sim import EvalRun
 
-# Evaluate both models
 eval_run = EvalRun(
     refID='exploration.30controls',
-    modelIDs=['explorer', 'explorer_optimized'],  # Add optimized model to registry
-    duration=5.0
+    modelIDs=['explorer', 'explorer_opt'],  # 'explorer_opt' is created by GA (bestConfID)
+    N=3,
+    screen_kws={},
 )
 eval_run.simulate()
-eval_run.plot_results()
+print(eval_run.error_dicts["pooled"]["end"])
 ```
 
 ---
@@ -254,22 +274,31 @@ A **genome** is a dictionary mapping full configuration paths to values:
 ```python
 genome = {
     "brain.crawler.freq": 1.23,
+    "brain.crawler.stride_dst_mean": 0.25,
     "brain.turner.freq": 0.58,      # Turner oscillation frequency
     "brain.turner.amp": 0.45,       # Turner amplitude
-    "brain.olfactor.gain": 0.78
+    "brain.olfactor.decay_coef": 0.12,
 }
 ```
 
 ### Parameter Ranges
 
-Parameters are constrained to biologically realistic ranges (automatically determined from module parameter definitions):
+Parameter ranges are constrained by the `param` definitions of each module (bounds/step) and are built automatically from the selected model + module modes:
 
-| Configuration Path    | Min | Max | Unit          |
-| --------------------- | --- | --- | ------------- |
-| `brain.crawler.freq`  | 0.5 | 3.0 | Hz            |
-| `brain.turner.freq`   | 0.0 | 2.0 | Hz            |
-| `brain.turner.amp`    | 0.0 | 1.0 | dimensionless |
-| `brain.olfactor.gain` | 0.0 | 2.0 | dimensionless |
+```python
+from larvaworld.lib.sim.genetic_algorithm import GAselector
+
+selector = GAselector(
+    base_model="explorer",
+    space_mkeys=["crawler", "turner", "olfactor"],
+    Nagents=10,
+    Ngenerations=1,
+)
+
+for k, obj in selector.space_objs.items():
+    if hasattr(obj, "bounds") and obj.bounds is not None:
+        print(k, "bounds:", obj.bounds)
+```
 
 **Note**: When you specify module names in `ks` (e.g., `["crawler", "turner"]`), all parameters within those modules are automatically included in the optimization space. The parameter ranges are determined from the module parameter definitions.
 
@@ -282,7 +311,7 @@ Parameters are constrained to biologically realistic ranges (automatically deter
 **Strategy**: **Elitism** (keep top N% as parents)
 
 ```python
-# Top 30% of population survives
+# Top 30% of population becomes the parent pool (and `Nelits` are copied unchanged)
 selection_ratio = 0.3
 ```
 
@@ -291,9 +320,6 @@ selection_ratio = 0.3
 **Strategy**: **Uniform crossover** (randomly mix parent genes)
 
 ```python
-# 70% probability of crossover
-crossover_rate = 0.7
-
 # Example:
 # Parent 1: {brain.crawler.freq: 1.2, brain.turner.freq: 0.58, brain.turner.amp: 0.5}
 # Parent 2: {brain.crawler.freq: 1.5, brain.turner.freq: 0.60, brain.turner.amp: 0.3}
@@ -305,60 +331,76 @@ crossover_rate = 0.7
 **Strategy**: **Gaussian mutation** (add random noise)
 
 ```python
-# 10% probability per gene
-mutation_rate = 0.1
+# Per-parameter mutation probability (checked for each gene)
+Pmutation = 0.3
 
-# ±20% perturbation
-mutation_scale = 0.2
+# Mutation scale as a fraction of allowed parameter range
+Cmutation = 0.1
 
 # Example:
 # Original: brain.crawler.freq = 1.2
-# Mutated: brain.crawler.freq = 1.2 + N(0, 0.2 * 1.2) = 1.35
+# Mutated: brain.crawler.freq = 1.2 + N(0, Cmutation * range) = 1.35
 ```
 
 ## Use Case Examples
 
-### 1. Optimize Chemotaxis Model
+### 1. Optimize a Model Against a Reference Dataset
 
 ```python
 from larvaworld.lib.sim.genetic_algorithm import GAevaluation, optimize_mID
 
-# Reference: Real larvae navigating odor gradient
+# Reference: Use an available reference dataset (replace with your own if needed)
 evaluator = GAevaluation(
-    refID="chemotaxis_real_data",
-    metric_definition="spatial+angular"
+    refID="exploration.30controls",
+    cycle_curve_metrics=[],
+    eval_metrics={
+        "angular kinematics": ["b", "fov"],
+        "spatial displacement": ["v", "a"],
+    },
 )
 
-# Optimize navigator model
+# Optimize navigator model (short demo settings)
 results = optimize_mID(
     mID0="navigator",
-        ks=["crawler", "turner", "olfactor"],
+    mID1="navigator_opt",
+    ks=["crawler", "turner", "olfactor"],
     evaluator=evaluator,
-    Ngenerations=100
+    Ngenerations=1,
+    Nagents=10,
+    duration=0.05,
+    screen_kws={"show_display": False},
+    store_data=False,
 )
 
-best_conf = results["navigator"]
-print(f"Optimized chemotaxis fitness: {best_conf['fitness']:.3f}")
+best_conf = results["navigator_opt"]
+print("Optimized navigator config ready")
 ```
 
 ### 2. Match Rovers vs. Sitters
 
 ```python
-# Optimize foraging phenotypes
-for phenotype in ["RE", "SI"]:
-    evaluator = GAevaluation(
-        refID=f"RvsS_{phenotype}_data",
-        metric_definition="all"
-    )
-
+# Optimize foraging phenotypes (rover vs sitter)
+evaluator = GAevaluation(
+    refID="exploration.30controls",
+    cycle_curve_metrics=[],
+    eval_metrics={
+        "angular kinematics": ["b", "fov"],
+        "spatial displacement": ["v", "a"],
+    },
+)
+for phenotype in ["rover", "sitter"]:
     results = optimize_mID(
         mID0=phenotype,
+        mID1=f"{phenotype}_opt",
         ks=["crawler", "feeder"],
         evaluator=evaluator,
-        Ngenerations=50
+        Ngenerations=1,
+        Nagents=10,
+        duration=0.05,
+        screen_kws={"show_display": False},
+        store_data=False,
     )
-
-    print(f"{phenotype} optimized: {results[phenotype]['fitness']:.3f}")
+    print(f"{phenotype} optimized config ready")  # stored as {phenotype}_opt
 ```
 
 ---

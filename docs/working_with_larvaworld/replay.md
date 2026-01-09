@@ -22,22 +22,27 @@ For mode comparison, see {doc}`../concepts/simulation_modes`.
 ### CLI
 
 ```bash
-larvaworld Replay -refID exploration.30controls -video_name replay.mp4
+larvaworld Replay -refID exploration.30controls --vis_mode video --save_video --video_file exploration_replay
 ```
 
 ### Python
 
 ```python
+from larvaworld.lib import reg
 from larvaworld.lib.sim import ReplayRun
 
+params = reg.gen.Replay(refID="exploration.30controls")
+
 replay = ReplayRun(
-    refID='exploration.30controls',
+    parameters=params.nestedConf,
     screen_kws={
-        'vis_mode': 'video',
-        'video_name': 'exploration_replay.mp4'
-    }
+        "vis_mode": "video",
+        "save_video": True,
+        "video_file": "exploration_replay",
+        "fps": 10
+    },
 )
-replay.run()
+replay.run()  # creates exploration_replay.mp4
 ```
 
 ---
@@ -67,12 +72,12 @@ from larvaworld.lib.sim import ReplayRun
 ref_dataset = reg.loadRef(id="exploration.30controls", load=True)
 print(f"Dataset: {ref_dataset.config.refID}")
 print(f"Agents: {len(ref_dataset.agent_ids)}")
-print(f"Duration: {ref_dataset.config.env_params.duration} min")
+print(f"Duration: {ref_dataset.config.duration} min")
 
 # Replay
 replay = ReplayRun(
-    refID='exploration.30controls',
-    screen_kws={'vis_mode': 'screen'}  # Real-time display
+    parameters=reg.gen.Replay(refID="exploration.30controls").nestedConf,
+    screen_kws={"vis_mode": "video", "show_display": True},  # Real-time display
 )
 replay.run()
 ```
@@ -86,16 +91,18 @@ replay.run()
 If you have a saved simulation:
 
 ```python
-from larvaworld.lib.process.dataset import LarvaDataset
+from larvaworld.lib import reg
+from larvaworld.lib.process import LarvaDataset
 from larvaworld.lib.sim import ReplayRun
 
 # Load dataset from disk
 dataset = LarvaDataset(dir="/path/to/simulation", load=True)
 
-# Replay (requires dataset ID to be in registry)
+# Replay (pass the loaded dataset directly)
 replay = ReplayRun(
-    refID=dataset.config.refID,
-    screen_kws={'vis_mode': 'screen'}
+    parameters=reg.gen.Replay(refID=dataset.config.refID).nestedConf,
+    dataset=dataset,
+    screen_kws={"vis_mode": "video", "show_display": True},
 )
 replay.run()
 ```
@@ -108,10 +115,10 @@ replay.run()
 
 ```python
 replay = ReplayRun(
-    refID='exploration.30controls',
+    parameters=reg.gen.Replay(refID="exploration.30controls").nestedConf,
     screen_kws={
-        'vis_mode': 'screen',
-        'showfps': True  # Show FPS counter
+        "vis_mode": "video",
+        "show_display": True,
     }
 )
 replay.run()
@@ -125,18 +132,18 @@ replay.run()
 
 ```python
 replay = ReplayRun(
-    refID='exploration.30controls',
+    parameters=reg.gen.Replay(refID="exploration.30controls").nestedConf,
     screen_kws={
-        'vis_mode': 'video',
-        'video_name': 'exploration.mp4',
-        'fps': 10,                # Frames per second
-        'video_speed': 2          # 2x speed
+        "vis_mode": "video",
+        "save_video": True,
+        "video_file": "exploration",
+        "fps": 10,  # Frames per second
     }
 )
 replay.run()
 ```
 
-**Supported formats**: MP4, AVI
+**Supported format**: MP4
 
 ---
 
@@ -144,11 +151,11 @@ replay.run()
 
 ```python
 replay = ReplayRun(
-    refID='exploration.30controls',
+    parameters=reg.gen.Replay(refID="exploration.30controls").nestedConf,
     screen_kws={
-        'vis_mode': 'image',
-        'image_mode': 'snapshots',
-        'snapshot_times': [0, 60, 120, 180]  # Times (seconds) to save
+        "vis_mode": "image",
+        "image_mode": "snapshots",
+        "snapshot_interval_in_sec": 60,  # seconds between snapshots
     }
 )
 replay.run()
@@ -181,16 +188,14 @@ dataset.process(proc_keys=["angular", "spatial"])
 
 ```python
 replay = ReplayRun(
-    refID='exploration.30controls',
+    parameters=reg.gen.Replay(refID="exploration.30controls", draw_Nsegs=12).nestedConf,
     screen_kws={
-        'vis_mode': 'screen',
-        'draw_Nsegs': 12,         # Number of body segments
-        'draw_contour': True,     # Draw body contour
-        'draw_midline': True,     # Draw midline
-        'draw_trails': True,      # Draw trajectory trails
-        'trail_dt': 5.0,          # Trail duration (seconds)
-        'color_behavior': True    # Color by behavior state
-    }
+        "vis_mode": "video",
+        "show_display": True,
+        "draw_contour": True,
+        "draw_midline": True,
+        "visible_trails": True,
+    },
 )
 replay.run()
 ```
@@ -199,12 +204,11 @@ replay.run()
 
 ```python
 replay = ReplayRun(
-    refID='exploration.30controls',
+    parameters=reg.gen.Replay(refID="exploration.30controls").nestedConf,
     screen_kws={
-        'vis_mode': 'screen',
-        'draw_odorscape': True,   # Show odor heatmap
-        'draw_foodgrid': True,    # Show food patches
-        'draw_borders': True      # Show arena borders
+        "vis_mode": "video",
+        "show_display": True,
+        "black_background": True,
     }
 )
 replay.run()
@@ -222,12 +226,13 @@ Replay is ideal for **quality control** of imported experimental datasets:
 from larvaworld.lib import reg
 
 # Load dataset
-dataset = reg.loadRef(id="my_imported_data", load=True)
+dataset = reg.loadRef(id="exploration.30controls", load=True)  # replace with your refID
 
 # Replay to visually inspect
 replay = ReplayRun(
-    refID='my_imported_data',
-    screen_kws={'vis_mode': 'screen'}
+    parameters=reg.gen.Replay(refID=dataset.config.refID).nestedConf,
+    dataset=dataset,
+    screen_kws={"vis_mode": "video", "show_display": True},
 )
 replay.run()
 ```
@@ -246,19 +251,20 @@ replay.run()
 Replay multiple datasets side-by-side:
 
 ```python
+from larvaworld.lib import reg
 from larvaworld.lib.sim import ReplayRun
 
 datasets = [
-    'exploration.30controls',
-    'exploration.mutant_A',
-    'exploration.mutant_B'
+    "exploration.30controls",
+    "exploration.dish01",
+    "exploration.dish02",
 ]
 
 for ref_id in datasets:
     print(f"\nReplaying: {ref_id}")
     replay = ReplayRun(
-        refID=ref_id,
-        screen_kws={'vis_mode': 'screen'}
+        parameters=reg.gen.Replay(refID=ref_id).nestedConf,
+        screen_kws={"vis_mode": "video", "show_display": True},
     )
     replay.run()
 ```

@@ -35,7 +35,7 @@ flowchart LR
     ConfigSim{Configure<br/>Simulation} --> Duration[Duration<br/>Minutes]
     ConfigSim --> Epochs[Epochs<br/>Pre/test/post]
     ConfigSim --> Timestep[Timestep<br/>dt = 0.1 s]
-    ConfigSim --> VisMode[Visualization<br/>video/screen/image/none]
+    ConfigSim --> VisMode[Visualization<br/>video/image (export), display (show_display), or headless]
 
     Duration --> Analysis
     Epochs --> Analysis
@@ -95,11 +95,13 @@ exp_conf = reg.conf.Exp.getID("chemotaxis")
 
 ```python
 {
+    "experiment": "...",      # Experiment ID
+    "duration": 5.0,          # Minutes
+    "dt": 0.1,                # Seconds
     "env_params": {...},      # Environment configuration
-    "larva_groups": [...],    # Larva groups
+    "larva_groups": {...},    # Larva groups (dict-like, keyed by group_id)
     "trials": {...},          # Trial structure (epochs)
-    "vis_kwargs": {...},      # Visualization options
-    "enrichment": {...}       # Additional modules
+    "enrichment": {...},      # Additional modules
 }
 ```
 
@@ -110,7 +112,7 @@ from larvaworld.lib import reg
 
 exp_conf = reg.conf.Exp.getID("chemotaxis")
 print(exp_conf.keys())
-# dict_keys(['env_params', 'larva_groups', 'trials', ...])
+# dict_keys(['experiment', 'duration', 'dt', 'env_params', 'larva_groups', 'trials', 'enrichment', ...])
 ```
 
 ---
@@ -210,7 +212,7 @@ Retrieve stored models from the registry:
 from larvaworld.lib import reg
 
 model_conf = reg.conf.Model.getID("explorer")
-larva_groups = [{"model": "explorer", "N": 10}]
+larva_groups = reg.gen.LarvaGroup(mID="explorer", N=10).entry("explorer")
 print("model loaded:", getattr(model_conf, "name", "explorer"))
 ```
 
@@ -219,10 +221,11 @@ print("model loaded:", getattr(model_conf, "name", "explorer"))
 **Parameter**: `N` (default: 10)
 
 ```python
-larva_groups = [
-    {"model": "explorer", "N": 20},
-    {"model": "navigator", "N": 10}
-]
+from larvaworld.lib import reg
+
+larva_groups = {}
+larva_groups.update(reg.gen.LarvaGroup(mID="explorer", N=20).entry("explorer"))
+larva_groups.update(reg.gen.LarvaGroup(mID="navigator", N=10).entry("navigator"))
 ```
 
 #### Initial Positions
@@ -230,43 +233,38 @@ larva_groups = [
 Set initial distribution with registry-compatible keys:
 
 ```python
-from larvaworld.lib import util
+from larvaworld.lib import reg
 
-larva_groups = [
-    {
-        "model": "explorer",
-        "N": 20,
-        "distribution": util.AttrDict(
-            {
-                "mode": "uniform",
-                "loc": (0.0, 0.0),        # center (x,y) in meters
-                "scale": (0.02, 0.02),   # spread in meters
-                "shape": "circle",
-                "orientation_range": (-30.0, 30.0),
-            }
-        ),
-    }
-]
+larva_groups = reg.gen.LarvaGroup(
+    mID="explorer",
+    N=20,
+    mode="uniform",
+    loc=(0.0, 0.0),           # center (x, y) in meters
+    scale=(0.02, 0.02),       # spread in meters
+    sh="circle",
+    ors=(-30.0, 30.0),        # orientation range (degrees)
+).entry("explorer")
 ```
 
 #### Initial State
 
 **Options**:
 
-- `age`: Initial age in hours (default: 72h = 3rd instar)
-- `hunger`: Hunger level (0-1, default: 0.5)
-- `development_stage`: Larval instar (1, 2, or 3)
+- `life_history.age`: Initial age in hours (default: 0.0)
+- `life_history.epochs`: Feeding schedule (optional)
+- `life_history.reach_pupation`: Whether to grow to pupation (optional)
 
 **Example**:
 
 ```python
-larva_groups = [
-    {
-        "model": "explorer",
-        "N": 10,
-        "life_history": {"age": 48.0},  # hours
-    }
-]
+from larvaworld.lib import reg
+from larvaworld.lib.param import Life
+
+larva_groups = reg.gen.LarvaGroup(
+    mID="explorer",
+    N=10,
+    life_history=Life(age=48.0),  # hours
+).entry("explorer")
 ```
 
 For detailed agent options, see {doc}`../agents_environments/larva_agent_architecture`.
@@ -279,10 +277,12 @@ For detailed agent options, see {doc}`../agents_environments/larva_agent_archite
 
 #### Duration
 
-**Parameter**: `duration` (seconds)
+**Parameter**: `duration` (minutes)
 
 ```python
-run = ExpRun(experiment="chemotaxis", duration=600.0)  # 10 minutes
+from larvaworld.lib.sim import ExpRun
+
+run = ExpRun(experiment="chemotaxis", duration=0.2, screen_kws={})  # 0.2 min (~12s)
 ```
 
 #### Epochs
@@ -377,7 +377,9 @@ from larvaworld.lib.sim import EvalRun
 eval_run = EvalRun(
     refID='exploration.30controls',  # Reference dataset
     modelIDs=['explorer', 'navigator'],
-    duration=5.0
+    duration=0.2,   # minutes
+    N=5,            # agents per model
+    screen_kws={},  # headless
 )
 eval_run.simulate()
 ```
@@ -389,9 +391,11 @@ For details, see {doc}`../working_with_larvaworld/model_evaluation`.
 **Storage Location**:
 
 ```python
+from larvaworld.lib.sim import ExpRun
+
 run = ExpRun(
     experiment="chemotaxis",
-    dir="/path/to/output"
+    dir="/path/to/output"  # choose a writable location
 )
 ```
 
@@ -468,35 +472,37 @@ ref_dataset = reg.loadRef(id="exploration.30controls", load=True)
 from larvaworld.lib import reg
 from larvaworld.lib.sim import ExpRun
 
-# 1. Select experiment
-exp_conf = reg.conf.Exp.getID("chemotaxis")
+# 1) Start from an existing experiment template
+exp_params = reg.conf.Exp.getID("chemotaxis").get_copy()
 
-# 2. Customize environment
-env_params = {
-    "arena": {"geometry": [0.15, 0.15]},  # Larger arena
-    "odorscape": {
-        "odor_layers": [
-            {"id": "banana", "peak": [0.075, 0], "intensity": 2.0}
-        ]
-    }
+# 2) Customize environment (start from a predefined arena template)
+env_params = reg.conf.Env.getID("arena_200mm").get_copy()
+if env_params.odorscape is None:
+    from larvaworld.lib import util
+
+    env_params.odorscape = util.AttrDict()
+env_params.odorscape.update({"odorscape": "Gaussian", "grid_dims": (51, 51)})
+if env_params.food_params is None:
+    from larvaworld.lib import util
+
+    env_params.food_params = util.AttrDict()
+if not getattr(env_params.food_params, "source_units", None):
+    env_params.food_params.source_units = {}
+env_params.food_params.source_units["banana_patch"] = {
+    "pos": (0.02, 0.0),
+    "radius": 0.005,  # 5 mm
+    "amount": 3.0,
+    "odor": {"id": "banana", "intensity": 2.0, "spread": 0.02},
+    "color": "yellow",
+    "regeneration": False,
 }
+exp_params.env_params = env_params
 
-# 3. Customize agents
-larva_groups = [
-    {"model": "navigator", "N": 30, "age": 72.0}
-]
+# 3) Customize agents (larva groups keyed by group_id)
+exp_params.larva_groups = reg.gen.LarvaGroup(mID="navigator", N=10).entry("navigator")
 
-# 4. Configure simulation
-screen_kws = {"vis_mode": "video", "video_name": "custom_chemotaxis.mp4"}
-
-# 5. Execute
-run = ExpRun(
-    experiment="chemotaxis",
-    env_params=env_params,
-    larva_groups=larva_groups,
-    duration=10.0,
-    screen_kws=screen_kws
-)
+# 4) Configure simulation + execute (headless quick run)
+run = ExpRun(experiment="chemotaxis", parameters=exp_params, duration=0.2, screen_kws={})
 run.simulate()
 
 # 6. Analyze

@@ -58,32 +58,33 @@ sequenceDiagram
 
 1. **User Command**: User runs `larvaworld Exp chemotaxis -N 20`
 2. **CLI Parsing**: `argparser.py` parses arguments
-3. **SimEngine Setup**: `ExpRun.__init__()` initializes
-4. **Environment Creation**: `Env` object created with arena, food, odorscape
-5. **Agent Creation**: `LarvaSim` objects created (N=20)
-6. **Module Initialization**: Each larva initializes Brain, Locomotor, Sensors
+3. **SimEngine Setup**: `ExpRun.__init__()` configures the run object (parameters, runtime, screen manager)
+4. **Environment Creation**: during `ExpRun.setup()`, `BaseRun.build_env(...)` builds arena, sources, and sensory landscapes
+5. **Agent Creation**: during `ExpRun.setup()`, `ExpRun.build_agents(...)` places `LarvaSim` agents (N=20)
+6. **Module Initialization**: each `LarvaSim` initializes its brain/locomotor/sensors from the selected model configuration
 
 **Code Path**:
 
 ```python
 # cli/main.py
-main() → SimModeParser.parse_args()
+main() → SimModeParser.parse_args() → SimModeParser.configure()
 
 # sim/single_run.py
-ExpRun.__init__() → self.build_env() → self.build_agents()
+ExpRun.simulate() → ABModel.run() → ExpRun.setup()
+ExpRun.setup() → BaseRun.build_env() → ExpRun.build_agents()
 
-# model/envs/env.py
-Env.__init__() → create arena, food_grid, odorscape
+# sim/base_run.py
+BaseRun.build_env() → envs.Arena/Border/FoodGrid + create_odor_layers()
 
-# model/agents/larva_robot.py
-LarvaSim.__init__() → Brain(), Locomotor(), Sensors()
+# model/agents/_larva_sim.py
+LarvaSim.__init__() → LarvaMotile.__init__() → build_brain() → DefaultBrain()
 ```
 
 ---
 
 ### Phase 2: Simulation Loop
 
-The core execution loop runs for `Nsteps` timesteps (typically `duration * 600` for 0.1s timestep).
+The core execution loop runs for `Nsteps` timesteps (computed as `duration * 60 / dt`, where `duration` is in minutes). For `dt=0.1s`, `Nsteps ≈ duration * 600`.
 
 #### 2.1 Timestep Update
 
@@ -92,9 +93,10 @@ The core execution loop runs for `Nsteps` timesteps (typically `duration * 600` 
 **Code**:
 
 ```python
-# sim/base_run.py (BaseRun.simulate)
-for step in range(self.Nsteps):
-    self.model.step()  # Agentpy ABM step
+# sim/ABM_model.py (ABModel.run)
+self.sim_setup(steps, seed)
+while self.running:
+    self.sim_step()  # BaseRun.sim_step: step_env → step → screen_manager.step → update
 ```
 
 #### 2.2 Sensory Input
@@ -130,11 +132,11 @@ lin, ang, self.feeder_motion = self.brain.step(
 **Olfactory Example**:
 
 ```python
-# model/modules/sensor.py (class Olfactor)
+# model/modules/sensor.py (Olfactor)
 from larvaworld.lib.model.modules.sensor import Olfactor
 
-olf = Olfactor(brain=my_brain, decay_coef=0.15, perception="log")
-olf.step(input={"odor_A": 0.6, "odor_B": 0.2})
+olf = Olfactor(decay_coef=0.15, perception="log")
+olf.step({"odor_A": 0.6, "odor_B": 0.2})
 print("First odor:", olf.first_odor_concentration)
 ```
 
@@ -328,13 +330,12 @@ LarvaSim
 ### Environment Dependencies
 
 ```
-Env
-├── Arena (geometry)
-├── FoodGrid (food sources)
-├── Odorscape (odor gradients)
-├── Thermoscape (thermal gradients, optional)
-├── Windscape (wind fields, optional)
-└── Space (collision detection)
+Environment (BaseRun.build_env)
+├── Space/Arena (geometry + collision detection)
+├── FoodGrid (food sources; optional)
+├── Odor layers (GaussianValueLayer / DiffusionValueLayer; optional)
+├── Thermoscape (thermal gradients; optional)
+└── Windscape (wind fields; optional)
 ```
 
 ---
@@ -346,9 +347,9 @@ Env
 **Pattern**: Sensors **pull** data from environment on each timestep.
 
 ```python
-# model/modules/sensor.py (Olfactor.step)
-odor_value = self.model.odorscape.get_value(self.pos)
-self.sensed_odor = self.process_olfaction(odor_value)
+# model/modules/brain.py (Brain.sense_odors)
+odor_input = {id: layer.get_value(pos) for id, layer in self.agent.model.odor_layers.items()}
+A_olf = self.olfactor.step(odor_input)
 ```
 
 ### 2. Brain → Locomotor (Command)
@@ -401,57 +402,56 @@ self.agents.step()  # AgentPy: steps all agents synchronously
 
 **Steps**:
 
-1. Create subclass of `Sensor` in `/lib/model/modules/sensor.py`
-2. Implement `update()` method to process sensory input
-3. Register sensor in `Brain` initialization
-4. Add sensory data to `Brain.step()` integration
+1. Create a subclass of an existing sensor (e.g., `Olfactor`, `Thermosensor`) in your own module.
+2. Register it as a new `mode` in `BrainModuleDB.BrainModuleModes`.
+3. Select that mode in a model configuration (e.g., `mm.brain.olfactor.mode = "custom"`).
+4. Run a simulation using that model configuration.
 
 **Example**:
 
 ```python
-# model/modules/sensor.py
-from larvaworld.lib.model.modules.sensor import Sensor
+from larvaworld.lib import reg
+from larvaworld.lib.model.modules.module_modes import BrainModuleDB
+from larvaworld.lib.model.modules.sensor import Olfactor
 
-class MySensor(Sensor):
+class MyOlfactor(Olfactor):
     def update(self):
-        # Query environment (e.g., odorscape / custom field)
-        value = self.brain.agent.model.odorscape.get_value(self.brain.agent.pos)
-
-        # Provide input and run base Sensor.update (handles decay/gain/dX)
-        self.input = {"my_stimulus": value}
         super().update()
+        self.output *= 0.5  # example custom processing
 
-        # Output is now in self.output (and dX/X for changes)
+# Register a new sensor mode (global for the current Python session)
+BrainModuleDB.BrainModuleModes["olfactor"]["custom"] = MyOlfactor
+
+# Select the new mode in a model configuration
+mm = reg.conf.Model.getID("explorer").get_copy()
+mm.brain.olfactor.mode = "custom"
 ```
 
 ### Adding a New Behavioral Module
 
 **Steps**:
 
-1. Create subclass of `Effector` in `/lib/model/modules/`
-2. Implement `update()` method
-3. Register module in `Locomotor` or `Brain`
-4. Add module output to agent actions
+1. Create a subclass of the appropriate module type (e.g., `Crawler`, `Turner`, `Feeder`).
+2. Register it as a new `mode` in `BrainModuleDB.BrainModuleModes`.
+3. Select that mode in a model configuration (e.g., `mm.brain.turner.mode = "custom"`).
+4. Run a simulation using that model configuration.
 
 **Example**:
 
 ```python
-# model/modules/custom.py
-from larvaworld.lib.model.modules.basic import Effector
-import numpy as np
+from larvaworld.lib import reg
+from larvaworld.lib.model.modules.module_modes import BrainModuleDB
+from larvaworld.lib.model.modules.turner import ConstantTurner
 
-class MyEffector(Effector):
+class MyTurner(ConstantTurner):
     def update(self):
-        # Compute output (e.g., random drive or function of self.input)
-        self.output = float(np.random.rand())
+        super().update()
+        self.output *= 0.0  # example: disable turning
 
-    def act(self, **kwargs):
-        # Apply action when active (e.g., set torque/velocity)
-        pass
+BrainModuleDB.BrainModuleModes["turner"]["custom"] = MyTurner
 
-    def inact(self, **kwargs):
-        # Idle action when inactive
-        pass
+mm = reg.conf.Model.getID("explorer").get_copy()
+mm.brain.turner.mode = "custom"
 ```
 
 For detailed tutorial, see {doc}`../tutorials/custom_module`.
