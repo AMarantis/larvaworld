@@ -39,13 +39,13 @@ from larvaworld.lib.plot import time as timeplot
 
 # Path length / dispersal over time
 timeplot.plot_pathlength(datasets=[dataset])
-timeplot.plot_dispersal(datasets=[dataset], range=(0, 60))
+timeplot.plot_dispersal(datasets=[dataset], range=(0, 60))  # seconds
 ```
 
 **Key Functions / IDs**:
 
 - `timeplot.plot_pathlength(datasets=[...])`: Cumulative distance
-- `timeplot.plot_dispersal(datasets=[...])`: Dispersal over a time window (graph ID `"dispersal"`)
+- `timeplot.plot_dispersal(datasets=[...])`: Dispersal over a time window in seconds (graph ID `"dispersal"`)
 
 ---
 
@@ -78,7 +78,7 @@ hist.plot_distros(
 from larvaworld.lib.plot import bearing
 
 bearing.plot_chunk_Dorient2source(
-    source_ID="CS_plus",
+    source_ID="CS_plus",  # must match the source ID in your experiment/environment
     datasets=[dataset],
     chunk="run",
 )
