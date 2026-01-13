@@ -147,6 +147,104 @@ jobs:
           flags: full-suite
           name: full-linux-py311
 
+  full-linux-py312:
+    name: Full suite (Ubuntu, Python 3.12)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install poetry
+        run: pipx install poetry
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        id: setup-python
+        with:
+          python-version: "3.12"
+          cache: "poetry"
+
+      - name: Install dependencies
+        run: poetry install
+        shell: bash
+
+      - name: Import the package
+        run: poetry run python -c "import larvaworld"
+        shell: bash
+
+      - name: Test venv import
+        shell: bash
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate
+          pip3 install .
+          python3 -c "import larvaworld"
+
+      - name: Initialize datasets for integration tests
+        run: poetry run python tests/init_datasets.py
+        shell: bash
+
+      - name: Run full test suite (parallel + coverage)
+        run: poetry run pytest -n auto --cov=larvaworld --cov-report=term --cov-report=xml
+        shell: bash
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          flags: full-suite-py312
+          name: full-linux-py312
+
+  full-linux-py313:
+    name: Full suite (Ubuntu, Python 3.13)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install poetry
+        run: pipx install poetry
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        id: setup-python
+        with:
+          python-version: "3.13"
+          cache: "poetry"
+
+      - name: Install dependencies
+        run: poetry install
+        shell: bash
+
+      - name: Import the package
+        run: poetry run python -c "import larvaworld"
+        shell: bash
+
+      - name: Test venv import
+        shell: bash
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate
+          pip3 install .
+          python3 -c "import larvaworld"
+
+      - name: Initialize datasets for integration tests
+        run: poetry run python tests/init_datasets.py
+        shell: bash
+
+      - name: Run full test suite (parallel + coverage)
+        run: poetry run pytest -n auto --cov=larvaworld --cov-report=term --cov-report=xml
+        shell: bash
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          flags: full-suite-py313
+          name: full-linux-py313
+
   smoke-matrix:
     name: Full suite (${{ matrix.os }}, Py ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}

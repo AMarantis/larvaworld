@@ -8,22 +8,24 @@ This page covers environment configuration: arena geometry, food sources, odorsc
 
 ### Circular Arena (Petri Dish)
 
-**Default**: 90mm diameter
+**Default**: `dish` (100 mm diameter)
 
 ```python
-env_params = {
-    "arena": {"geometry": 0.09}  # 9cm diameter (circular)
-}
+from larvaworld.lib import reg
+
+# Preconfigured circular arena (dims are in meters)
+env_params = reg.conf.Env.getID("dish").get_copy()
+print(env_params.arena.geometry, env_params.arena.dims)  # circular (0.1, 0.1)
 ```
 
 ### Rectangular Arena
 
 ```python
-env_params = {
-    "arena": {
-        "geometry": [0.15, 0.10]  # 15cm x 10cm (width, height)
-    }
-}
+from larvaworld.lib import reg
+
+# Preconfigured rectangular arena (200 mm x 200 mm)
+env_params = reg.conf.Env.getID("arena_200mm").get_copy()
+print(env_params.arena.geometry, env_params.arena.dims)  # rectangular (0.2, 0.2)
 ```
 
 ### Preconfigured Arenas
@@ -36,7 +38,7 @@ env_ids = reg.conf.Env.confIDs
 print(env_ids)
 
 # Load arena
-env_conf = reg.conf.Env.getID("arena_200mm")
+env_conf = reg.conf.Env.getID("arena_200mm").get_copy()
 ```
 
 ---
@@ -50,16 +52,22 @@ Larvaworld supports three types of food distributions:
 **Purpose**: Localized food sources
 
 ```python
-env_params = {
-    "food_params": {
-        "source_groups": [
-            {
-                "group": "patches",
-                "amount": 3,              # 3 patches
-                "radius": 0.005,          # 5mm radius
-                "distribution": "uniform" # Random placement
-            }
-        ]
+from larvaworld.lib import reg
+
+env_params = reg.conf.Env.getID("arena_200mm").get_copy()
+
+# Create 3 food patches (group generator creates N individual sources)
+env_params.food_params.source_groups = {
+    "patches": {
+        "N": 3,  # number of patches
+        "mode": "uniform",
+        "shape": "rect",
+        "loc": (0.0, 0.0),
+        "scale": (0.07, 0.07),
+        "radius": 0.005,  # 5 mm
+        "amount": 3.0,
+        "substrate": {"type": "standard", "quality": 1.0},
+        "color": "green",
     }
 }
 ```
@@ -69,15 +77,22 @@ env_params = {
 **Purpose**: Regular grid of patches
 
 ```python
-env_params = {
-    "food_params": {
-        "source_groups": [
-            {
-                "group": "grid",
-                "N": [4, 4],  # 4x4 grid
-                "radius": 0.003
-            }
-        ]
+from larvaworld.lib import reg
+
+env_params = reg.conf.Env.getID("arena_200mm").get_copy()
+
+# Place food patches on a regular grid
+env_params.food_params.source_groups = {
+    "grid": {
+        "N": 16,  # total patches (e.g., 4x4)
+        "mode": "grid",
+        "shape": "rect",
+        "loc": (0.0, 0.0),
+        "scale": (0.2, 0.2),
+        "radius": 0.003,
+        "amount": 3.0,
+        "substrate": {"type": "standard", "quality": 1.0},
+        "color": "green",
     }
 }
 ```
@@ -87,15 +102,15 @@ env_params = {
 **Purpose**: Continuous nutritious substrate
 
 ```python
-env_params = {
-    "food_params": {
-        "source_groups": [
-            {
-                "group": "uniform",
-                "quality": 1.0  # Full nutrition
-            }
-        ]
-    }
+from larvaworld.lib import reg
+
+env_params = reg.conf.Env.getID("arena_200mm").get_copy()
+env_params.food_params.source_groups = {}
+env_params.food_params.source_units = {}
+env_params.food_params.food_grid = {
+    "grid_dims": (51, 51),
+    "initial_value": 1e-6,
+    "substrate": {"type": "standard", "quality": 1.0},
 }
 ```
 
@@ -103,7 +118,9 @@ env_params = {
 
 ## Nutritious Substrates
 
-Larvaworld implements real experimental substrates:
+Larvaworld implements real experimental substrates.
+
+The following table reproduces the compound densities reported in the Larvaworld paper (see {doc}`../CITATION`).
 
 | Substrate           | Glucose (μg/ml) | Yeast (μg/ml) | Agar (μg/ml) | Source                 |
 | ------------------- | --------------- | ------------- | ------------ | ---------------------- |
@@ -115,13 +132,23 @@ Larvaworld implements real experimental substrates:
 \*Saccharose instead of glucose
 \*\*Dextrose instead of glucose
 
+In Larvaworld configuration, these correspond to `Substrate.type` values:
+
+- `standard-medium` → `standard`
+- `PED-tracker` → `PED_tracker`
+- `cornmeal` → `cornmeal`
+- `sucrose` → `sucrose`
+
 **Usage**:
 
 ```python
-env_params = {
-    "food_params": {
-        "substrate": "standard-medium"
-    }
+from larvaworld.lib import reg
+
+env_params = reg.conf.Env.getID("arena_200mm").get_copy()
+env_params.food_params.food_grid = {
+    "grid_dims": (51, 51),
+    "initial_value": 1e-6,
+    "substrate": {"type": "standard", "quality": 1.0},
 }
 ```
 
@@ -129,49 +156,25 @@ env_params = {
 
 ## Odorscapes
 
-### Gaussian Plume
+Odor layers are created from **sources** (food patches) that have an `odor.id`.
+To enable odor diffusion, set `env_params.odorscape` to `"Gaussian"` or `"Diffusion"`.
 
 ```python
-env_params = {
-    "odorscape": {
-        "odor_layers": [
-            {
-                "id": "apple",
-                "peak": [0.05, 0],    # Position (x, y)
-                "spread": 0.02,        # Gaussian width (σ)
-                "intensity": 1.0       # Peak concentration
-            }
-        ]
-    }
-}
-```
+from larvaworld.lib import reg
 
-### Linear Gradient
+env_params = reg.conf.Env.getID("arena_200mm").get_copy()
+env_params.odorscape = {"odorscape": "Gaussian", "grid_dims": (51, 51)}
 
-```python
-env_params = {
-    "odorscape": {
-        "odor_layers": [
-            {
-                "id": "banana",
-                "gradient": True,
-                "direction": [1, 0],   # Along x-axis
-                "value_range": [0, 1]  # Concentration range
-            }
-        ]
-    }
-}
-```
-
-### Multiple Odors
-
-```python
-env_params = {
-    "odorscape": {
-        "odor_layers": [
-            {"id": "odorA", "peak": [-0.03, 0], "spread": 0.02},
-            {"id": "odorB", "peak": [0.03, 0], "spread": 0.02}
-        ]
+# One odorized food patch produces an odor layer with id="apple"
+env_params.food_params.source_units = {
+    "apple_patch": {
+        "pos": (0.02, 0.0),
+        "radius": 0.005,
+        "amount": 3.0,
+        "odor": {"id": "apple", "intensity": 1.0, "spread": 0.02},
+        "substrate": {"type": "standard", "quality": 1.0},
+        "color": "green",
+        "regeneration": False,
     }
 }
 ```
@@ -183,27 +186,17 @@ env_params = {
 ### Arena Borders
 
 ```python
-env_params = {
-    "arena": {
-        "geometry": [0.15, 0.10],
-        "border_list": [
-            {"vertices": [[0, 0], [0.15, 0], [0.15, 0.10], [0, 0.10]]}
-        ]
-    }
-}
-```
+from larvaworld.lib import reg
 
-### Internal Obstacles
+env_params = reg.conf.Env.getID("arena_200mm").get_copy()
 
-```python
-env_params = {
-    "arena": {
-        "obstacles": [
-            {
-                "vertices": [[0.05, 0.04], [0.10, 0.04], [0.10, 0.06], [0.05, 0.06]],
-                "type": "wall"
-            }
-        ]
+# Borders are configured via env_params.border_list.
+# Vertices are interpreted as pairs of points (p0,p1), (p1,p2), ... (p3,p0):
+p0, p1, p2, p3 = (-0.1, -0.1), (0.1, -0.1), (0.1, 0.1), (-0.1, 0.1)
+env_params.border_list = {
+    "wall0": {
+        "vertices": [p0, p1, p1, p2, p2, p3, p3, p0],
+        "width": 0.001,
     }
 }
 ```
@@ -215,18 +208,18 @@ env_params = {
 Control where larvae start:
 
 ```python
-larva_groups = [
-    {
+larva_groups = {
+    "explorers": {
         "model": "explorer",
-        "N": 20,
         "distribution": {
+            "N": 20,
             "mode": "uniform",       # Distribution mode
-            "loc": [0, 0],           # Center position
-            "s": 0.01,               # Spread radius (1cm)
-            "shape": "circle"        # Shape
-        }
+            "loc": (0.0, 0.0),       # center (meters)
+            "scale": (0.01, 0.01),   # spread (meters)
+            "shape": "circle",
+        },
     }
-]
+}
 ```
 
 ### Distribution Modes
@@ -245,33 +238,45 @@ See [Table 4](../figures_tables_from_paper/tables/table4_larva_placement.md) for
 ## Complete Example
 
 ```python
+from larvaworld.lib import reg
 from larvaworld.lib.sim import ExpRun
+from larvaworld.lib.util import AttrDict
 
-run = ExpRun(
-    experiment="custom_foraging",
-    env_params={
-        "arena": {"geometry": [0.2, 0.2]},
-        "food_params": {
-            "source_groups": [
-                {"group": "patches", "amount": 5, "radius": 0.008}
-            ],
-            "substrate": "standard-medium"
-        },
-        "odorscape": {
-            "odor_layers": [
-                {"id": "food_odor", "peak": [0.05, 0.05], "spread": 0.03}
-            ]
-        }
-    },
-    larva_groups=[
-        {
-            "model": "forager",
-            "N": 30,
-            "distribution": {"mode": "periphery", "s": 0.08}
-        }
-    ],
-    duration=15.0
+# Start from a built-in experiment template and override env/larvae
+exp_params = reg.conf.Exp.getID("dish").get_copy()
+
+env_params = reg.conf.Env.getID("arena_200mm").get_copy()
+env_params.odorscape = {"odorscape": "Gaussian", "grid_dims": (51, 51)}
+env_params.food_params.source_units = {
+    "food_patch": {
+        "pos": (0.02, 0.0),
+        "radius": 0.008,
+        "amount": 3.0,
+        "odor": {"id": "food_odor", "intensity": 1.0, "spread": 0.03},
+        "substrate": {"type": "standard", "quality": 1.0},
+        "color": "green",
+    }
+}
+
+exp_params.env_params = env_params
+exp_params.larva_groups = AttrDict(
+    {
+        "foragers": AttrDict(
+            {
+                "model": "forager",
+                "distribution": {
+                    "N": 5,
+                    "mode": "periphery",
+                    "shape": "circle",
+                    "loc": (0.0, 0.0),
+                    "scale": (0.08, 0.08),
+                },
+            }
+        )
+    }
 )
+
+run = ExpRun(experiment="dish", parameters=exp_params, duration=0.2, screen_kws={})
 run.simulate()
 ```
 

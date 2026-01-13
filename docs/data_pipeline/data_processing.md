@@ -18,7 +18,8 @@ Raw Data → Preprocess → Process → Annotate → Plot/Analyze
 
 ```python
 dataset.preprocess(
-    drop_collisions=True,      # Remove collision frames
+    # Note: drop_collisions requires a "collision_flag" column (typically present in imported datasets)
+    drop_collisions=False,
     interpolate_nans=True,     # Fill missing data
     filter_f=3.0,              # Low-pass filter at 3 Hz
     rescale_by=0.001,          # Scale (e.g., mm to m)
@@ -28,13 +29,13 @@ dataset.preprocess(
 
 ### Available Options
 
-| Parameter          | Description                             | Default |
-| ------------------ | --------------------------------------- | ------- |
-| `drop_collisions`  | Remove frames with collisions           | `False` |
-| `interpolate_nans` | Interpolate missing values              | `False` |
-| `filter_f`         | Low-pass filter cutoff (Hz)             | `None`  |
-| `rescale_by`       | Scale factor                            | `None`  |
-| `transposition`    | Alignment mode (`"center"`, `"origin"`) | `None`  |
+| Parameter          | Description                                        | Default |
+| ------------------ | -------------------------------------------------- | ------- |
+| `drop_collisions`  | Remove frames with collisions                      | `False` |
+| `interpolate_nans` | Interpolate missing values                         | `False` |
+| `filter_f`         | Low-pass filter cutoff (Hz)                        | `None`  |
+| `rescale_by`       | Scale factor                                       | `None`  |
+| `transposition`    | Alignment mode (`"center"`, `"origin"`, `"arena"`) | `None`  |
 
 ---
 
@@ -92,13 +93,13 @@ Dispersal metrics are always computed for the combinations of
 ```python
 dataset.process(
     proc_keys=["angular", "spatial"],
-    dsp_starts=[0, 60],   # Start times (s)
-    dsp_stops=[60, 120],  # Stop times (s)
+    dsp_starts=[0],       # Start times (s)
+    dsp_stops=[40, 60],   # Stop times (s)
 )
 ```
 
-This adds columns such as `dispersion_0_60`, `dispersion_60_120`, and their
-scaled counterparts.
+This adds endpoint columns such as `dispersion_0_60_mean` / `std` / `max` and
+their scaled counterparts (e.g. `scaled_dispersion_0_60_mean`).
 
 #### Tortuosity
 
@@ -111,8 +112,8 @@ dataset.process(
 )
 ```
 
-This adds columns such as `tortuosity_5`, `tortuosity_10`, `tortuosity_20`
-and their scaled variants.
+This adds endpoint columns such as `tortuosity_5_mean` / `std`,
+`tortuosity_10_mean` / `std`, etc.
 
 ---
 
@@ -195,12 +196,9 @@ dataset.e.columns
 **Available**:
 
 - `cum_dur`: Total duration (s)
-- `cum_sd`: Total distance (m)
-- `v_mu`: Mean velocity (mm/s)
-- `a_mu`: Mean acceleration (mm/s²)
-- `pau_N`: Number of pauses
-- `str_N`: Number of strides
-- `run_N`: Number of runs
+- `velocity_mean`, `scaled_velocity_mean`: Mean speed (and scaled variant)
+- `dispersion_0_60_mean`: Example dispersal metric (if computed)
+- `tortuosity_5_mean`: Example tortuosity metric (if computed)
 
 ### Step-wise Data
 
@@ -211,21 +209,18 @@ dataset.s.columns
 **Available**:
 
 - `x`, `y`: Position
-- `orientation`: Body angle (rad)
-- `linear_velocity`: Speed (mm/s)
-- `angular_velocity`: Turning rate (rad/s)
-- `forward_velocity`: Component along body axis
+- `bend`, `front_orientation`, `rear_orientation`: Angular kinematics
+- `velocity`, `scaled_velocity`: Speed (and scaled variant)
 
 ---
 
 ## Example Workflow
 
 ```python
-from larvaworld.lib import reg
 from larvaworld.lib.sim import ExpRun
 
 # Run experiment
-run = ExpRun(experiment="dish", N=10, duration=5.0)
+run = ExpRun(experiment="dish", N=3, duration=1.0, screen_kws={}, store_data=False)
 run.simulate()
 
 # Get dataset
@@ -233,7 +228,7 @@ dataset = run.datasets[0]
 
 # 1. Preprocess
 dataset.preprocess(
-    drop_collisions=True,
+    interpolate_nans=True,
     filter_f=3.0,
     transposition="center"
 )
@@ -242,7 +237,8 @@ dataset.preprocess(
 dataset.process(
     proc_keys=["angular", "spatial"],
     dsp_starts=[0],
-    dsp_stops=[60]
+    dsp_stops=[40, 60],
+    tor_durs=[5, 10],
 )
 
 # 3. Annotate
@@ -252,11 +248,8 @@ dataset.annotate(
 
 # 4. Analyze
 print("=== Summary Statistics ===")
-print(dataset.e[["cum_sd", "v_mu", "str_N"]].describe())
-
-print("\n=== Bout Statistics ===")
-print(f"Average stride duration: {dataset.e['str_t_mu'].mean():.2f} s")
-print(f"Average run distance: {dataset.e['run_d_mu'].mean():.3f} m")
+cols = [c for c in ["cum_dur", "velocity_mean", "dispersion_0_60_mean", "tortuosity_5_mean"] if c in dataset.e.columns]
+print(dataset.e[cols].describe() if cols else dataset.e.describe())
 ```
 
 ---
@@ -264,8 +257,10 @@ print(f"Average run distance: {dataset.e['run_d_mu'].mean():.3f} m")
 ## Saving Processed Data
 
 ```python
-# Save to HDF5
-run.store()
+from larvaworld.lib import reg
+
+# Save dataset to HDF5 and register as a reference ID
+dataset.save(refID="my_experiment")
 
 # Load later
 dataset = reg.loadRef(id="my_experiment", load=True)

@@ -33,11 +33,11 @@ from larvaworld.lib.sim import EvalRun
 eval_run = EvalRun(
     refID='exploration.30controls',
     modelIDs=['explorer', 'navigator', 'forager'],
-    duration=5.0,
-    Nagents=20
+    N=3,                  # agents per model (use larger N for real runs)
+    screen_kws={},        # headless
 )
 eval_run.simulate()
-eval_run.plot_results()
+eval_run.plot_results(show=False)
 ```
 
 ---
@@ -70,7 +70,7 @@ from larvaworld.lib import reg
 ref_dataset = reg.loadRef(id="exploration.30controls", load=True)
 print(f"Reference: {ref_dataset.config.refID}")
 print(f"Agents: {len(ref_dataset.agent_ids)}")
-print(f"Duration: {ref_dataset.config.env_params.duration} min")
+print(f"Duration: {ref_dataset.config.duration} min")
 ```
 
 For details on importing datasets, see {doc}`../data_pipeline/lab_formats_import`.
@@ -81,15 +81,17 @@ For details on importing datasets, see {doc}`../data_pipeline/lab_formats_import
 
 **Predefined models**:
 
-| Model ID      | Description                   |
-| ------------- | ----------------------------- |
-| `'explorer'`  | Basic navigation              |
-| `'navigator'` | Odor-guided navigation        |
-| `'forager'`   | Feeding behavior              |
-| `'RE'`        | Rover forager (high activity) |
-| `'SI'`        | Sitter forager (low activity) |
-| `'RL_model'`  | Reinforcement learning        |
-| `'nengo'`     | Neural network controller     |
+| Model ID         | Description                     |
+| ---------------- | ------------------------------- |
+| `'explorer'`     | Baseline exploration            |
+| `'navigator'`    | Odor-guided navigation          |
+| `'forager'`      | Feeding/foraging                |
+| `'rover'`        | High-activity forager phenotype |
+| `'sitter'`       | Low-activity forager phenotype  |
+| `'max_forager'`  | Maximal feeding rate            |
+| `'max_feeder'`   | Feeder-focused behavior         |
+| `'RLnavigator'`  | RL-enhanced navigation          |
+| `'OSNnavigator'` | OSN-based navigation            |
 
 **Inspect models**:
 
@@ -115,9 +117,8 @@ from larvaworld.lib.sim import EvalRun
 eval_run = EvalRun(
     refID='exploration.30controls',          # Reference dataset
     modelIDs=['explorer', 'navigator'],      # Models to compare
-    duration=5.0,                            # Match reference duration
-    Nagents=20,                              # Agents per model
-    Nruns=5                                  # Repetitions for robustness
+    N=3,                                     # Agents per model (increase for real)
+    screen_kws={},                           # headless
 )
 
 # Run simulations
@@ -128,10 +129,9 @@ eval_run.simulate()
 
 1. Load reference dataset
 2. For each model:
-   - Run `Nruns` simulations with `Nagents` larvae
+   - Run one simulation with `N` larvae (per model)
    - Compute 40+ behavioral metrics
 3. Compare model distributions to reference using **Kolmogorov-Smirnov (KS) tests**
-4. Aggregate results across runs
 
 ---
 
@@ -139,10 +139,10 @@ eval_run.simulate()
 
 ```python
 # Statistical comparison (endpoint metrics)
-print(eval_run.error_dict['end'])
+print(eval_run.error_dicts["pooled"]["end"])
 
 # Statistical comparison (distribution metrics)
-print(eval_run.error_dict['step'])
+print(eval_run.error_dicts["pooled"]["step"])
 
 # Raw datasets per model
 for model_id, datasets in eval_run.model_datasets.items():
@@ -265,13 +265,12 @@ print(ks_results['step'])  # Distribution metrics
 ```python
 from larvaworld.lib.sim import EvalRun
 
-# Compare foraging phenotypes
+# Compare rover vs sitter models (short demo)
 eval_run = EvalRun(
-    refID='RvsS_data',               # Rover vs Sitter reference
-    modelIDs=['RE', 'SI'],           # Rover (RE) and Sitter (SI)
-    duration=15.0,                   # Foraging assay duration
-    Nagents=30,
-    Nruns=10
+    refID='exploration.30controls',
+    modelIDs=['rover', 'sitter'],
+    N=3,
+    screen_kws={},
 )
 
 eval_run.simulate()
@@ -280,7 +279,7 @@ eval_run.simulate()
 eval_run.plot_results()
 
 # Access D-statistics
-ks_end = eval_run.error_dict['end']
+ks_end = eval_run.error_dicts["pooled"]['end']
 print("Endpoint KS D-statistics:")
 for model, metrics in ks_end.items():
     print(f"\n{model}:")
@@ -303,7 +302,9 @@ from larvaworld.lib.sim import EvalRun
 eval_run = EvalRun(
     refID='exploration.30controls',
     modelIDs=['explorer'],
-    duration=5.0,
+    duration=1.0,  # short demo
+    N=5,
+    screen_kws={},
 
     # Custom metric selection
     metric_definition="angular"  # Only angular metrics
@@ -317,20 +318,7 @@ eval_run.simulate()
 
 ## Parallelization
 
-`Eval` mode supports **parallel execution** for faster evaluation:
-
-```python
-eval_run = EvalRun(
-    refID='exploration.30controls',
-    modelIDs=['explorer', 'navigator', 'forager'],
-    duration=5.0,
-    Nagents=20,
-    Nruns=10  # 10 runs per model = 30 total simulations
-)
-
-# Run in parallel (4 cores)
-eval_run.simulate(n_jobs=4)
-```
+Currently `EvalRun.simulate()` runs single-process. For parallel runs, launch multiple `EvalRun` instances via your own batching (e.g., shell/xargs or a task runner) and combine results manually.
 
 ---
 

@@ -9,12 +9,11 @@ Larvaworld can import experimental datasets from diverse tracking systems. Each 
 | Lab          | Framerate (Hz) | Midline (#) | Contour (#) | Source                   |
 | ------------ | -------------- | ----------- | ----------- | ------------------------ |
 | **Schleyer** | 16             | 12          | 22          | Paisios et al. (2017)    |
-| **Jovanic**  | 11.27\*        | 11          | 30\*\*      | de Tredern et al. (2024) |
+| **Jovanic**  | 14.29\*        | 11          | 0           | de Tredern et al. (2024) |
 | **Berni**    | 2              | 1           | 0           | Sims et al. (2019)       |
 | **Arguello** | 10             | 5           | 0           | Kafle et al. (2025)      |
 
-\*Variable, average framerate
-\*\*Variable, convex hull used
+\*Nominal timestep is 0.07s; variable framerate supported via interpolation.
 
 ---
 
@@ -25,31 +24,52 @@ Larvaworld can import experimental datasets from diverse tracking systems. Each 
 ```python
 from larvaworld.lib import reg
 
-lab = reg.gen.LabFormat(labID="Schleyer")
+# Use the preconfigured lab format from the registry
+lab = reg.gen.LabFormat(**reg.conf.LabFormat.getID("Schleyer"))
+print("raw:", lab.raw_folder)
+print("processed:", lab.processed_folder)
 ```
 
 ### 2. Import Single Dataset
 
 ```python
-dataset = lab.import_dataset(
-    parent_dir="exploration",        # Folder under the lab's raw data root
-    merged=True,                     # Merge all larvae in this folder
-    max_Nagents=30,                  # Optional: limit number of larvae
-    min_duration_in_sec=60,          # Optional: minimum track duration
-    id="exploration.30controls",     # Dataset ID on disk
-    refID="exploration.30controls",  # Reference ID in the registry
-    save_dataset=True,               # Store processed dataset
-)
+from pathlib import Path
+
+raw_folder = Path("/path/to/raw")  # optional override (defaults to lab.raw_folder)
+parent_dir = "exploration/dish"    # path relative to raw_folder
+
+source_dir = raw_folder / parent_dir
+if not source_dir.exists():
+    print(f"Missing raw data folder: {source_dir} (skipping import)")
+else:
+    dataset = lab.import_dataset(
+        parent_dir=parent_dir,
+        raw_folder=str(raw_folder),
+        merged=True,                     # Schleyer: merge multiple subfolders (e.g. boxes)
+        max_Nagents=30,                  # Optional: limit number of larvae
+        min_duration_in_sec=60,          # Optional: minimum track duration
+        id="exploration.30controls",     # Dataset ID on disk
+        refID="exploration.30controls",  # Reference ID in the registry
+        save_dataset=True,               # Store processed dataset
+    )
 ```
 
 ### 3. Import Multiple Datasets
 
 ```python
+from pathlib import Path
+from larvaworld.lib import reg
+
+lab = reg.gen.LabFormat(**reg.conf.LabFormat.getID("Schleyer"))
+raw_folder = Path("/path/to/raw")
+
 datasets = lab.import_datasets(
-    source_ids=["30controls", "30mutants"],
-    ids=["exploration.30controls", "exploration.30mutants"],
-    refIDs=["exploration.30controls", "exploration.30mutants"],
+    source_ids=["dish01", "dish02"],
+    ids=["exploration.dish01", "exploration.dish02"],
+    refIDs=["exploration.dish01", "exploration.dish02"],
     parent_dir="exploration",        # Common parent folder under raw/
+    raw_folder=str(raw_folder),
+    merged=True,
     save_dataset=True,
 )
 ```
@@ -57,7 +77,9 @@ datasets = lab.import_datasets(
 ### 4. Load Imported Dataset
 
 ```python
-dataset = reg.loadRef(id="my_experiment", load=True)
+from larvaworld.lib import reg
+
+dataset = reg.loadRef(id="exploration.30controls", load=True)
 print(dataset.e)  # Endpoint data
 print(dataset.s.head())  # Step-wise data
 ```
@@ -79,7 +101,9 @@ print(dataset.s.head())  # Step-wise data
 **Example**:
 
 ```python
-lab = reg.gen.LabFormat(labID="Schleyer")
+from larvaworld.lib import reg
+
+lab = reg.gen.LabFormat(**reg.conf.LabFormat.getID("Schleyer"))
 lab.import_dataset(
     parent_dir="chemotaxis/exp1",
     raw_folder="/data/schleyer/raw",
@@ -104,12 +128,14 @@ lab.import_dataset(
 **Example**:
 
 ```python
-lab = reg.gen.LabFormat(labID="Jovanic")
+from larvaworld.lib import reg
+
+lab = reg.gen.LabFormat(**reg.conf.LabFormat.getID("Jovanic"))
 lab.import_datasets(
     source_ids=["Fed", "Sucrose", "Starved"],  # Folder names under parent_dir
     ids=["Jovanic_Fed", "Jovanic_Sucrose", "Jovanic_Starved"],
     refIDs=["Jovanic.Fed", "Jovanic.Sucrose", "Jovanic.Starved"],
-    parent_dir="feeding_state",
+    parent_dir="AttP2",
     raw_folder="/data/jovanic/raw",
     save_dataset=True,
 )
@@ -129,14 +155,13 @@ lab.import_datasets(
 **Example**:
 
 ```python
-lab = reg.gen.LabFormat(labID="Berni")
-lab.import_dataset(
-    parent_dir="exploration/dish",
-    raw_folder="/data/berni/raw",
-    id="berni_exploration",
-    refID="berni.exploration",
-    save_dataset=True,
-)
+from larvaworld.lib import reg
+
+lab = reg.gen.LabFormat(**reg.conf.LabFormat.getID("Berni"))
+
+# Note: the Berni importer currently expects an explicit list of raw files.
+# LabFormat.import_dataset is not yet wired for this lab format.
+# (See: larvaworld.lib.process.importing.import_Berni)
 ```
 
 ---
@@ -153,14 +178,13 @@ lab.import_dataset(
 **Example**:
 
 ```python
-lab = reg.gen.LabFormat(labID="Arguello")
-lab.import_dataset(
-    parent_dir="thermotaxis/temperature_preference",
-    raw_folder="/data/arguello/raw",
-    id="arguello_thermotaxis",
-    refID="arguello.thermotaxis",
-    save_dataset=True,
-)
+from larvaworld.lib import reg
+
+lab = reg.gen.LabFormat(**reg.conf.LabFormat.getID("Arguello"))
+
+# Note: the Arguello importer currently expects an explicit list of raw files.
+# LabFormat.import_dataset is not yet wired for this lab format.
+# (See: larvaworld.lib.process.importing.import_Arguello)
 ```
 
 ---
@@ -168,8 +192,10 @@ lab.import_dataset(
 ## Data Processing After Import
 
 ```python
+from larvaworld.lib import reg
+
 # Load dataset
-dataset = reg.loadRef(id="my_experiment", load=True)
+dataset = reg.loadRef(id="exploration.30controls", load=True)
 
 # Preprocess
 dataset.preprocess(
@@ -202,23 +228,24 @@ See {doc}`data_processing` for details.
 
 ## Custom Lab Format
 
-To add a new lab format, create a subclass of `LabFormat`:
+To add a new lab format, you typically need:
+
+1. A parser/import function in `larvaworld.lib.process.importing` (and register it in `lab_specific_import_functions`).
+2. A `LabFormat` entry in the registry (see `larvaworld.lib.reg.stored_confs.data_conf.LabFormat_dict`) defining:
+   - `tracker` (`TrackerOps`)
+   - `filesystem` (`Filesystem`)
+   - `env_params` (`EnvConf`)
+   - `preprocess` (`PreprocessConf`)
 
 ```python
-from larvaworld.lib.reg.generators import LabFormat
+from larvaworld.lib.process.importing import lab_specific_import_functions
 
-class MyLabFormat(LabFormat):
-    def __init__(self):
-        super().__init__(
-            labID="MyLab",
-            Npoints=10,     # Midline points
-            Ncontour=0,     # No contour
-            fr=15           # 15 Hz
-        )
+def import_MyLab(source_dir, tracker, filesystem, **kwargs):
+    # Custom raw data parsing logic
+    # Return (step_df, end_df)
+    ...
 
-    def read_data(self, filepath):
-        # Custom data reading logic
-        pass
+lab_specific_import_functions["MyLab"] = import_MyLab
 ```
 
 ---

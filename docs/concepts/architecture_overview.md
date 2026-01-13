@@ -104,12 +104,13 @@ The simulation engine provides **five specialized modes**, each optimized for di
 | **Eval**   | `EvalRun`    | `model_evaluation.py`  | Model evaluation vs. real data |
 | **Replay** | `ReplayRun`  | `dataset_replay.py`    | Replay recorded trajectories   |
 
-**Common Base**:
+**Common base classes**:
 
-- **BaseRun**: Base class for all simulation modes
-- **ABModel**: Agentpy-based agent-based model
+- `BaseRun`: Base class for `ExpRun`, `GAlauncher`, and `ReplayRun`
+- `SimConfiguration` / AgentPy `Experiment`: Used by modes like `EvalRun` and `BatchRun`
+- `ABModel`: AgentPy-based agent-based model implementation used by `BaseRun`
 
-**Key Methods**:
+**Key entry points** (vary by mode):
 
 - `simulate()`: Run the simulation loop
 - `store()`: Save results to HDF5
@@ -138,8 +139,8 @@ This layer contains the **agent models** (larvae) and **environment models** (ar
 
 **Modules** (in `modules/`):
 
-- **Sensors**: Olfactor, Touch, Windsensor, Thermo, Feeder
-- **Brain**: DefaultBrain, NengoBrain, Brian2Brain
+- **Sensors**: `Olfactor`, `Toucher`, `Windsensor`, `Thermosensor` (and variants, e.g. OSN olfaction via remote Brian2)
+- **Brain**: `DefaultBrain`, `NengoBrain`
 - **Locomotor**: Crawler, Turner, Feeder, Interference
 - **Energetics**: DEB (Dynamic Energy Budget)
 
@@ -190,7 +191,12 @@ For detailed workflows, see {doc}`../data_pipeline/data_processing`.
 **LabFormat** (`reg/generators.py`):
 
 - Import experimental datasets from diverse tracking systems
-- **Supported lab-specific formats**: Schleyer, Jovanic, Berni, Arguello
+- **Registered lab-specific formats**: Schleyer, Jovanic, Berni, Arguello
+
+:::{note}
+At the moment, `LabFormat.import_dataset()` is fully supported for the Schleyer and Jovanic formats.
+Berni and Arguello formats are registered in the configuration system but are not yet wired via `import_dataset()`.
+:::
 
 For details, see {doc}`../data_pipeline/lab_formats_import`.
 
@@ -263,9 +269,9 @@ For keyboard controls, see {doc}`../visualization/keyboard_controls`.
    ↓
 4. Agent Creation (LarvaSim × N)
    ↓
-5. Simulation Loop (BaseRun.simulate())
+5. Simulation Loop (AgentPy `Model.run()` / `BaseRun.sim_step()`)
    ↓
-6. Data Collection (LarvaDataset)
+6. Data Collection (`LarvaDatasetCollection` → `LarvaDataset`)
    ↓
 7. Storage (HDF5)
    ↓

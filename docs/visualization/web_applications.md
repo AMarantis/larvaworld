@@ -12,17 +12,24 @@ larvaworld-app
 
 **Access**: `http://localhost:5006`
 
+:::{note}
+The current `larvaworld-app` launcher serves the dashboards on port **5006** (hardcoded in `larvaworld.dashboards.main`).
+Stop the server with **Ctrl+C**.
+:::
+
 ---
 
 ## Available Dashboards
 
-| Dashboard                       | Purpose                               |
-| ------------------------------- | ------------------------------------- |
-| **Experiment Viewer**           | View experiment results interactively |
-| **Track Viewer**                | Inspect trajectories                  |
-| **Model Inspector**             | Explore locomotory models             |
-| **Module Inspector**            | Inspect behavioral modules            |
-| **Neural Oscillator Inspector** | Visualize neural oscillators          |
+All dashboards are served from a single Panel/Bokeh process. The Panel index page lists the following apps (IDs shown in parentheses):
+
+| Dashboard              | App ID               | Purpose                                |
+| ---------------------- | -------------------- | -------------------------------------- |
+| **Experiment Viewer**  | `experiment_viewer`  | View experiment results interactively  |
+| **Track Viewer**       | `track_viewer`       | Inspect trajectories                   |
+| **Model Inspector**    | `larva_models`       | Explore locomotory models              |
+| **Module Inspector**   | `locomotory_modules` | Inspect behavioral modules             |
+| **Lateral Oscillator** | `lateral_oscillator` | Visualize the neural oscillator module |
 
 ---
 
@@ -79,9 +86,9 @@ larvaworld-app
 
 ---
 
-## Neural Oscillator Inspector
+## Lateral Oscillator Inspector
 
-**Purpose**: Visualize neural oscillators (CPG)
+**Purpose**: Visualize the neural oscillator (CPG) module
 
 **Features**:
 

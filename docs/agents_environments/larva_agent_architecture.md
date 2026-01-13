@@ -119,8 +119,8 @@ class LarvaSim(LarvaMotile, BaseController):
 **Attributes**:
 
 - `Nsegs`: Number of segments (11-13)
-- `length`: Body length (mm)
-- `radius`: Body radius (mm)
+- `length`: Body length (m)
+- `radius`: Body radius (m)
 - `segs`: Collection of body segments
 - `sensors`: Mapping of sensors defined on the body (from `SegmentedBodySensored`)
 
@@ -138,7 +138,7 @@ See {doc}`brain_module_architecture` for details.
 
 - **Sensors**: `Olfactor`, `Toucher`, `Windsensor`, `Thermosensor`
 - **Modalities**: Sensory processing channels
-- **Memory** (optional): `RLmemory` or `RemoteBrianModelMemory` (MB remote Brian2)
+- **Memory** (optional): `RLOlfMemory` / `RLTouchMemory` (RL) or `RemoteBrianModelMemory` (MB remote Brian2)
 
 ---
 
@@ -206,20 +206,58 @@ model_conf = reg.conf.Model.getID("explorer")
 ### Custom Agent
 
 ```python
+from larvaworld.lib import reg
 from larvaworld.lib.sim import ExpRun
+from larvaworld.lib.util import AttrDict
+from larvaworld.lib.model.modules.module_modes import moduleDB
+
+# Start from a built-in experiment template
+exp_params = reg.conf.Exp.getID("dish").get_copy()
+
+# Build a custom model config by modifying an existing one
+custom_model = reg.conf.Model.getID("explorer").get_copy()
+custom_model.body.Nsegs = 11
+custom_model.body.length = 0.0035  # meters
+
+# Override locomotor params (example)
+custom_model.brain.crawler.freq = 1.2
+custom_model.brain.turner = moduleDB.module_conf(
+    mID="turner",
+    mode="sinusoidal",
+    as_entry=False,
+    amp=0.5,
+    freq=0.58,
+)
+
+# Override larva groups (single custom group)
+exp_params.larva_groups = AttrDict(
+    {
+        "custom": AttrDict(
+            {
+                "model": custom_model,
+                "distribution": AttrDict(
+                    {
+                        "shape": "circle",
+                        "mode": "uniform",
+                        "N": 10,
+                        "scale": (0.02, 0.02),  # meters
+                        "orientation_range": (0.0, 360.0),
+                    }
+                ),
+            }
+        )
+    }
+)
 
 run = ExpRun(
     experiment="dish",
-    larva_groups=[
-        {
-            "model": "custom",
-            "N": 10,
-            "brain": {"modalities": ["olfaction", "touch"]},
-            "body": {"Nsegs": 11, "length": 3.5},
-            "locomotor": {"crawler": {"f": 1.2}, "turner": {"ang_v": 0.5}}
-        }
-    ]
+    parameters=exp_params,
+    duration=0.5,  # seconds (short demo)
+    screen_kws={"show_display": False, "vis_mode": None},  # headless
+    store_data=False,
 )
+run.simulate()
+print("datasets:", len(run.datasets))
 ```
 
 ---

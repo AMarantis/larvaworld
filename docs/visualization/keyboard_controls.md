@@ -6,14 +6,16 @@ Larvaworld's visualization window supports interactive keyboard and mouse contro
 
 ## Quick Reference
 
-| **Screen**    |      | **Drawing**    |     | **Color**  |     | **Interaction** |     | **Simulation/Storage** |       |
-| ------------- | ---- | -------------- | --- | ---------- | --- | --------------- | --- | ---------------------- | ----- |
-| State text    | s    | midline        | m   | random     | r   | select          | L\* | snapshot               | i     |
-| Timer         | t    | contour        | c   | behavior   | b   | lock screen     | f   | odorscape overlay      | o     |
-| IDs           | TAB  | head           | h   | background | g   | delete          | del | pause                  | space |
-| Scale bar     | n    | centroid       | e   | odorscape  | 0-9 | add             | L\* |                        |       |
-| Screen Motion | ↑↓↔ | trail          | p   |            |     | inspect         | R\* |                        |       |
-| Zoom          | M\*  | trail duration | +/- |            |     | dynamic graph   | q   |                        |       |
+| **Overlay**         |      | **Drawing**      |     | **Color**         |     | **Environment** |     | **Inspect**         |     | **Simulation**    |       |
+| ------------------- | ---- | ---------------- | --- | ----------------- | --- | --------------- | --- | ------------------- | --- | ----------------- | ----- |
+| State (status text) | s    | Midline          | m   | Random colors     | r   | Odor aura       | u   | Focus / follow      | f   | Snapshot          | i     |
+| Clock (time)        | t    | Contour          | c   | Color by behavior | b   | Windscape       | w   | Dynamic graph (GUI) | q   | Pause             | space |
+| Scale bar           | n    | Head             | h   | Black background  | g   | Plot odorscapes | o   | Odor gains (GUI)    | z   | Delete item (GUI) | del   |
+| IDs                 | TAB  | Centroid         | e   |                   |     | Odorscape 0–9   | 0-9 |                     |     | Larva collisions  | y     |
+| Camera pan          | ↑↓←→ | Trails           | p   |                   |     |                 |     |                     |     |                   |       |
+| Trail duration      | +/-  | Trail color mode | x   |                   |     |                 |     |                     |     |                   |       |
+| Sensors             | j    | Orientations     | k   |                   |     |                 |     |                     |     |                   |       |
+| Segments            | l    |                  |     |                   |     |                 |     |                     |     |                   |       |
 
 **Legend**:
 
@@ -25,62 +27,79 @@ Larvaworld's visualization window supports interactive keyboard and mouse contro
 
 ## Screen Controls
 
-| Key      | Action     | Description                                  |
-| -------- | ---------- | -------------------------------------------- |
-| **s**    | State text | Toggle status overlay (simulation time, fps) |
-| **t**    | Timer      | Show/hide elapsed time                       |
-| **TAB**  | IDs        | Show/hide larva IDs                          |
-| **n**    | Scale bar  | Toggle scale bar                             |
-| **↑↓←→** | Pan        | Move viewport                                |
-| **M\***  | Zoom       | Scroll to zoom in/out                        |
+| Key      | Action     | Description                              |
+| -------- | ---------- | ---------------------------------------- |
+| **s**    | State text | Toggle status overlay (simulation state) |
+| **t**    | Clock      | Show/hide simulation clock               |
+| **TAB**  | IDs        | Show/hide larva IDs                      |
+| **n**    | Scale bar  | Toggle scale bar                         |
+| **↑↓←→** | Pan        | Move viewport                            |
+| **M\***  | Zoom       | Scroll to zoom in/out                    |
 
 ---
 
 ## Drawing Controls
 
-| Key     | Action         | Description              |
-| ------- | -------------- | ------------------------ |
-| **m**   | Midline        | Toggle 12-point midline  |
-| **c**   | Contour        | Toggle body contour      |
-| **h**   | Head           | Highlight head segment   |
-| **e**   | Centroid       | Show body centroid       |
-| **p**   | Trail          | Toggle trajectory trails |
-| **+/-** | Trail duration | Adjust trail length      |
+| Key     | Action         | Description                |
+| ------- | -------------- | -------------------------- |
+| **m**   | Midline        | Toggle 12-point midline    |
+| **c**   | Contour        | Toggle body contour        |
+| **h**   | Head           | Highlight head segment     |
+| **e**   | Centroid       | Show body centroid         |
+| **p**   | Trail          | Toggle trajectory trails   |
+| **+/-** | Trail duration | Adjust trail length        |
+| **x**   | Trail color    | Cycle trail color modes    |
+| **j**   | Sensors        | Toggle sensor rendering    |
+| **k**   | Orientations   | Toggle orientation vectors |
+| **l**   | Segments       | Toggle body segments       |
 
 ---
 
 ## Color Modes
 
-| Key     | Action     | Description                                    |
-| ------- | ---------- | ---------------------------------------------- |
-| **r**   | Random     | Random colors per larva                        |
-| **b**   | Behavior   | Color by behavior state (run/pause/turn)       |
-| **g**   | Background | Toggle background color                        |
-| **0-9** | Odorscape  | Show odor concentration (0=off, 1-9=intensity) |
+| Key   | Action     | Description                              |
+| ----- | ---------- | ---------------------------------------- |
+| **r** | Random     | Random colors per larva                  |
+| **b** | Behavior   | Color by behavior state (run/pause/turn) |
+| **g** | Background | Toggle black background                  |
 
 ---
 
-## Interaction
+## Environment / Landscapes
 
-| Key     | Action        | Description                    |
-| ------- | ------------- | ------------------------------ |
-| **L\*** | Select/Add    | Left-click to select/add larva |
-| **R\*** | Inspect       | Right-click for detailed info  |
-| **del** | Delete        | Remove selected larva          |
-| **f**   | Lock screen   | Lock camera to follow larva    |
-| **q**   | Dynamic graph | Show real-time metrics plot    |
+| Key     | Action          | Description                                                |
+| ------- | --------------- | ---------------------------------------------------------- |
+| **u**   | Odor aura       | Toggle odor aura around odor sources                       |
+| **w**   | Windscape       | Toggle windscape rendering (if the environment has wind)   |
+| **o**   | Plot odorscapes | Export odorscape plot (uses the current odor layers)       |
+| **0-9** | Odorscape N     | Toggle visibility of odorscape layer by index (if present) |
 
 ---
 
 ## Simulation Control
 
-| Key       | Action    | Description                 |
-| --------- | --------- | --------------------------- |
-| **space** | Pause     | Pause/resume simulation     |
-| **i**     | Snapshot  | Save current frame as image |
-| **o**     | Odorscape | Toggle odorscape overlay    |
+| Key       | Action     | Description                 |
+| --------- | ---------- | --------------------------- |
+| **space** | Pause      | Pause/resume simulation     |
+| **i**     | Snapshot   | Save current frame as image |
+| **y**     | Collisions | Toggle larva overlap mode   |
 
 ---
+
+## Mouse & GUI Actions
+
+| Input   | Action        | Notes                                               |
+| ------- | ------------- | --------------------------------------------------- |
+| **L\*** | Select item   | Ctrl+click toggles multi-select                     |
+| **M\*** | Zoom          | Scroll wheel                                        |
+| **R\*** | Context menu  | Requires optional GUI dependencies (see note below) |
+| **del** | Delete item   | Requires optional GUI dependencies                  |
+| **q**   | Dynamic graph | Requires optional GUI dependencies                  |
+| **z**   | Odor gains    | Requires optional GUI dependencies                  |
+
+:::{note}
+Some interactive GUI features (right-click menus, delete dialogs, dynamic graphs, odor-gain editor) depend on optional GUI dependencies (e.g. `PySimpleGUI`). If they are not installed, Larvaworld will print a message and skip those actions.
+:::
 
 ## Usage Examples
 
@@ -93,16 +112,16 @@ Larvaworld's visualization window supports interactive keyboard and mouse contro
 
 ### Creating a Video
 
-1. Run experiment with `screen_kws={'vis_mode': 'video'}`
+1. Run experiment with `screen_kws={'vis_mode': 'video', 'save_video': True, 'video_file': 'my_video'}`
 2. Adjust drawing options (**m**, **c**, **p**)
 3. Select color mode (**r** or **b**)
 4. Simulation auto-exports to MP4
 
 ### Inspecting Behavior
 
-1. **Right-click** on a larva
-2. View detailed metrics in popup
-3. Press **q** for real-time plots
+1. **Right-click** on a larva (if GUI dependencies are installed)
+2. View detailed metrics in the popup
+3. Press **q** for real-time plots (if available)
 
 ---
 

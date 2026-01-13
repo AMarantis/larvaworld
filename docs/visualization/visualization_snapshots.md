@@ -42,7 +42,8 @@ from larvaworld.lib.sim import ExpRun
 run = ExpRun(
     experiment="dish",
     N=10,
-    screen_kws={"vis_mode": "video"}
+    duration=0.1,  # minutes (short demo)
+    screen_kws={"vis_mode": "video"},
 )
 run.simulate()
 ```
@@ -63,16 +64,19 @@ run.simulate()
 run = ExpRun(
     experiment="chemotaxis",
     N=20,
+    duration=0.1,  # minutes (short demo)
     screen_kws={
-        'vis_mode': 'video',
-        'video_name': 'chemotaxis.mp4',
-        'fps': 10
-    }
+        "vis_mode": "video",
+        "save_video": True,
+        "video_file": "chemotaxis",  # saved as {media_dir}/chemotaxis.mp4
+        "fps": 10,
+        # "media_dir": ".cache/docs_media",  # optional override (defaults to run.dir)
+    },
 )
 run.simulate()
 ```
 
-**Supported Formats**: MP4, AVI
+**Supported Formats**: MP4
 
 ---
 
@@ -84,10 +88,13 @@ run.simulate()
 run = ExpRun(
     experiment="dish",
     N=5,
+    duration=0.1,  # minutes (short demo)
     screen_kws={
-        'vis_mode': 'image',
-        'snapshot_times': [0, 60, 120]  # Times in seconds
-    }
+        "vis_mode": "image",
+        "image_mode": "snapshots",
+        "snapshot_interval_in_sec": 60,  # seconds between snapshots
+        # "media_dir": ".cache/docs_media",  # optional override (defaults to run.dir)
+    },
 )
 run.simulate()
 ```
@@ -98,10 +105,10 @@ run.simulate()
 
 ### Midline
 
-Shows 12-point body posture:
+Shows the body midline:
 
 ```python
-screen_kws = {"draw_midline": True, "Nsegs": 12}
+screen_kws = {"draw_midline": True}
 ```
 
 ### Contour
@@ -117,7 +124,7 @@ screen_kws = {"draw_contour": True}
 Shows trajectory history:
 
 ```python
-screen_kws = {"draw_trails": True, "trail_dt": 5.0}  # 5 seconds
+screen_kws = {"visible_trails": True, "trail_dt": 5.0}  # 5 seconds
 ```
 
 ### Color by Behavior

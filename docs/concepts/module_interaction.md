@@ -58,32 +58,33 @@ sequenceDiagram
 
 1. **User Command**: User runs `larvaworld Exp chemotaxis -N 20`
 2. **CLI Parsing**: `argparser.py` parses arguments
-3. **SimEngine Setup**: `ExpRun.__init__()` initializes
-4. **Environment Creation**: `Env` object created with arena, food, odorscape
-5. **Agent Creation**: `LarvaSim` objects created (N=20)
-6. **Module Initialization**: Each larva initializes Brain, Locomotor, Sensors
+3. **SimEngine Setup**: `ExpRun.__init__()` configures the run object (parameters, runtime, screen manager)
+4. **Environment Creation**: during `ExpRun.setup()`, `BaseRun.build_env(...)` builds arena, sources, and sensory landscapes
+5. **Agent Creation**: during `ExpRun.setup()`, `ExpRun.build_agents(...)` places `LarvaSim` agents (N=20)
+6. **Module Initialization**: each `LarvaSim` initializes its brain/locomotor/sensors from the selected model configuration
 
 **Code Path**:
 
 ```python
 # cli/main.py
-main() → SimModeParser.parse_args()
+main() → SimModeParser.parse_args() → SimModeParser.configure()
 
 # sim/single_run.py
-ExpRun.__init__() → self.build_env() → self.build_agents()
+ExpRun.simulate() → ABModel.run() → ExpRun.setup()
+ExpRun.setup() → BaseRun.build_env() → ExpRun.build_agents()
 
-# model/envs/env.py
-Env.__init__() → create arena, food_grid, odorscape
+# sim/base_run.py
+BaseRun.build_env() → envs.Arena/Border/FoodGrid + create_odor_layers()
 
-# model/agents/larva_robot.py
-LarvaSim.__init__() → Brain(), Locomotor(), Sensors()
+# model/agents/_larva_sim.py
+LarvaSim.__init__() → LarvaMotile.__init__() → build_brain() → DefaultBrain()
 ```
 
 ---
 
 ### Phase 2: Simulation Loop
 
-The core execution loop runs for `Nsteps` timesteps (typically `duration * 600` for 0.1s timestep).
+The core execution loop runs for `Nsteps` timesteps (computed as `duration * 60 / dt`, where `duration` is in minutes). For `dt=0.1s`, `Nsteps ≈ duration * 600`.
 
 #### 2.1 Timestep Update
 
@@ -92,9 +93,10 @@ The core execution loop runs for `Nsteps` timesteps (typically `duration * 600` 
 **Code**:
 
 ```python
-# sim/base_run.py (BaseRun.simulate)
-for step in range(self.Nsteps):
-    self.model.step()  # Agentpy ABM step
+# sim/ABM_model.py (ABModel.run)
+self.sim_setup(steps, seed)
+while self.running:
+    self.sim_step()  # BaseRun.sim_step: step_env → step → screen_manager.step → update
 ```
 
 #### 2.2 Sensory Input
@@ -108,34 +110,34 @@ for step in range(self.Nsteps):
 3. Environment returns sensory data
 4. Sensors process and return to larva
 
-**Code**:
+**Code (excerpt)**:
 
 ```python
-# model/agents/_larva.py (LarvaMotile.sense)
-def sense(self):
-    # Olfactory sensing
-    if self.olfactor is not None:
-        self.olfactor.step()  # Read odorscape
-
-    # Touch sensing
-    if self.toucher is not None:
-        self.toucher.step()  # Detect contacts
-
-    # Feeding sensing
-    if self.feeder is not None:
-        self.feeder.sense()  # Detect food
+# model/agents/_larva.py (LarvaMotile.step)
+self.cum_dur += m.dt
+self.sense()                      # placeholder; subclasses/robots can override
+pos = self.olfactor_pos
+if m.space.accessible_sources:
+    self.food_detected = m.space.accessible_sources[self]
+elif self.brain.locomotor.feeder or self.brain.toucher:
+    self.food_detected = util.sense_food(
+        pos, sources=m.sources, grid=m.food_grid, radius=self.radius
+    )
+self.resolve_carrying(self.food_detected)
+lin, ang, self.feeder_motion = self.brain.step(
+    pos, length=self.length, on_food=self.on_food
+)
 ```
 
 **Olfactory Example**:
 
 ```python
-# model/modules/sensors/olfactor.py
-def step(self):
-    # Get odor concentration at larva position
-    odor_value = self.model.odorscape.get_value(self.pos)
+# model/modules/sensor.py (Olfactor)
+from larvaworld.lib.model.modules.sensor import Olfactor
 
-    # Apply sensory processing (Weber-Fechner law)
-    self.sensed_odor = self.process_olfaction(odor_value)
+olf = Olfactor(decay_coef=0.15, perception="log")
+olf.step({"odor_A": 0.6, "odor_B": 0.2})
+print("First odor:", olf.first_odor_concentration)
 ```
 
 #### 2.3 Neural Processing
@@ -152,29 +154,12 @@ def step(self):
 
 ```python
 # model/modules/brain.py (DefaultBrain.step)
-def step(self):
-    # 1. Collect sensory input
-    olf = self.olfactor.sensed_odor if self.olfactor else 0
-    touch = self.toucher.contacts if self.toucher else []
+def step(self, pos, on_food: bool = False, **kwargs):
+    # 1. Sense environment and update neural drive
+    self.sense(pos=pos, reward=on_food)
 
-    # 2. Update memory/learning
-    if self.memory is not None:
-        self.memory.step(reward=self.feeder.amount_eaten)
-
-    # 3. Generate locomotor commands
-    self.locomotor.compute()  # Activates crawler, turner, feeder
-```
-
-**NengoBrain** (neural network alternative):
-
-```python
-# model/modules/brain.py (NengoBrain.step)
-def step(self):
-    # Run Nengo neural simulation
-    self.sim.run_steps(1)
-
-    # Extract motor commands from output neurons
-    self.locomotor.compute()
+    # 2. Compute locomotor commands (crawler/turner/feeder)
+    return self.locomotor.step(A_in=self.A_in, on_food=on_food, **kwargs)
 ```
 
 #### 2.4 Motor Command Generation
@@ -184,53 +169,39 @@ def step(self):
 **Locomotor Coordination**:
 
 ```python
-# model/modules/locomotor.py (Locomotor.compute)
-def compute(self):
-    # Crawling
-    if self.crawler is not None:
-        self.crawler.step()  # Generate stride
+# model/modules/locomotor.py (Locomotor.step)
+def step(self, A_in=0, length=1, on_food=False):
+    C, F, T, If = self.crawler, self.feeder, self.turner, self.interference
+    if If:
+        If.cur_attenuation = 1
+    if F:
+        F.step()
+        if F.active and If:
+            If.check_module(F, "Feeder")
+    if C:
+        lin = C.step() * length
+        if C.active and If:
+            If.check_module(C, "Crawler")
+    else:
+        lin = 0
 
-    # Turning
-    if self.turner is not None:
-        self.turner.step()  # Compute angular velocity
+    # Run/pause/feed state machine
+    self.step_intermitter(
+        stride_completed=self.stride_completed,
+        feed_motion=self.feed_motion,
+        on_food=on_food,
+    )
 
-    # Feeding
-    if self.feeder is not None:
-        self.feeder.step()  # Attempt to feed
-
-    # Interference (crawl-turn coupling)
-    if self.interference is not None:
-        self.interference.step()  # Modulate crawler based on turner
-```
-
-**Crawler Step**:
-
-```python
-# model/modules/locomotor.py (Crawler.step)
-def step(self):
-    # Check if stride should initiate
-    if self.ready_to_stride():
-        self.initiate_stride()
-
-    # Update stride phase
-    if self.striding:
-        self.update_stride_phase()
-
-        # Compute forward velocity
-        self.fov = self.compute_velocity()
-```
-
-**Turner Step**:
-
-```python
-# model/modules/locomotor.py (Turner.step)
-def step(self):
-    # Compute angular velocity based on:
-    # - Sensory input (odor gradient)
-    # - Interference from crawler
-    # - Random exploration
-
-    self.ang_v = self.compute_angular_velocity()
+    # Turning with optional crawl–turn interference
+    if T:
+        if If:
+            cur_att_in, cur_att_out = If.apply_attenuation(If.cur_attenuation)
+        else:
+            cur_att_in, cur_att_out = 1, 1
+        ang = T.step(A_in=A_in * cur_att_in) * cur_att_out
+    else:
+        ang = 0
+    return lin, ang, self.feed_motion
 ```
 
 #### 2.5 Action Execution
@@ -240,52 +211,41 @@ def step(self):
 **Physics Update**:
 
 ```python
-# model/agents/_larva.py (LarvaMotile.move)
-def move(self):
-    # Get locomotor output
-    fov = self.locomotor.crawler.fov  # Forward velocity
-    ang_v = self.locomotor.turner.ang_v  # Angular velocity
-
-    # Update orientation
-    self.orientation += ang_v * self.dt
-
-    # Update position
-    dx = fov * np.cos(self.orientation) * self.dt
-    dy = fov * np.sin(self.orientation) * self.dt
-    self.pos[0] += dx
-    self.pos[1] += dy
-
-    # Check collisions
-    self.model.space.check_collisions(self)
+# model/agents/_larva.py (LarvaMotile.step)
+lin, ang, self.feeder_motion = self.brain.step(
+    pos, length=self.length, on_food=self.on_food
+)
+self.prepare_motion(lin=lin, ang=ang)
 ```
 
 **Feeding Action**:
 
 ```python
-# model/modules/locomotor.py (Feeder.step)
-def step(self):
-    if self.on_food():
-        # Consume food
-        amount = self.intake_rate * self.dt
-        self.model.food_grid.consume(self.pos, amount)
+# model/agents/_larva.py (LarvaMotile.feed)
+def feed(self, source, motion):
+    def get_max_V_bite():
+        return self.brain.locomotor.feeder.V_bite * self.V * 1000
 
-        # Update DEB model
-        self.deb.feed(amount)
+    if motion and source is not None:
+        grid = self.model.food_grid
+        a_max = get_max_V_bite()
+        if grid:
+            V = -grid.add_cell_value(source, -a_max)
+        else:
+            V = source.subtract_amount(a_max)
+        return V
+    return 0
 ```
 
 **DEB Update** (energetics):
 
 ```python
-# model/modules/energetics.py (DEB.step)
-def step(self):
-    # Dynamic Energy Budget model
-    # Update reserves, structure, maturity
-    self.update_reserves()
-    self.update_structure()
-    self.update_maturity()
-
-    # Compute body mass
-    self.body_mass = self.compute_mass()
+# model/agents/_larva.py (LarvaMotile.run_energetics)
+def run_energetics(self, V_eaten):
+    self.deb.run_check(dt=self.model.dt, X_V=V_eaten)
+    self.length = self.deb.Lw * 10 / 1000
+    self.mass = self.deb.Ww
+    self.V = self.deb.V
 ```
 
 #### 2.6 State Recording
@@ -295,24 +255,17 @@ def step(self):
 **Data Collection**:
 
 ```python
-# sim/base_run.py (BaseRun.store_data)
-def store_data(self):
-    for larva in self.model.agents:
-        # Record pose
-        self.data["position"].append(larva.pos)
-        self.data["orientation"].append(larva.orientation)
+# sim/base_run.py (BaseRun.set_collectors)
+self.collectors = reg.par.get_reporters(cs=cs, agents=self.agents)
 
-        # Record velocities
-        self.data["linear_velocity"].append(larva.locomotor.crawler.fov)
-        self.data["angular_velocity"].append(larva.locomotor.turner.ang_v)
+# sim/single_run.py (update/end)
+self.agents.nest_record(self.collectors["step"])  # per-step variables
+...
+self.agents.nest_record(self.collectors["end"])   # endpoint variables
 
-        # Record brain state
-        if larva.brain.memory:
-            self.data["gain"].append(larva.brain.memory.gain)
-
-        # Record energetics
-        if larva.deb:
-            self.data["body_mass"].append(larva.deb.body_mass)
+# sim/single_run.py (simulate)
+self.data_collection = LarvaDatasetCollection.from_agentpy_output(self.output)
+self.datasets = self.data_collection.datasets
 ```
 
 ---
@@ -330,18 +283,23 @@ def store_data(self):
 **Code**:
 
 ```python
-# sim/base_run.py (BaseRun.simulate)
-def simulate(self):
-    # Run simulation loop
-    self.model.setup()
-    for step in range(self.Nsteps):
-        self.model.step()
-        self.store_data()
+# sim/single_run.py (ExpRun.simulate)
+def simulate(self, **kwargs):
+    self.run(**kwargs)  # AgentPy run loop
+    if getattr(self, "aborted", False):
+        self.datasets = []
+        return self.datasets
 
-    # Finalize
-    self.finalize()  # Convert to datasets
-    self.store()     # Save HDF5
-    self.plot()      # Generate plots (if requested)
+    # Collect into datasets
+    self.data_collection = LarvaDatasetCollection.from_agentpy_output(self.output)
+    self.datasets = self.data_collection.datasets
+
+    # Optional enrichment and storage
+    if self.p.enrichment:
+        for d in self.datasets:
+            d.enrich(**self.p.enrichment, is_last=False)
+    if self.store_data and not getattr(self, "aborted", False):
+        self.store()
 ```
 
 ---
@@ -361,6 +319,7 @@ LarvaSim
 │   │       ├── Crawler
 │   │       ├── Turner
 │   │       ├── Feeder
+│   │       ├── Intermitter
 │   │       └── Interference
 │   ├── DEB (energetics)
 │   └── Body (morphology)
@@ -371,13 +330,12 @@ LarvaSim
 ### Environment Dependencies
 
 ```
-Env
-├── Arena (geometry)
-├── FoodGrid (food sources)
-├── Odorscape (odor gradients)
-├── Thermoscape (thermal gradients, optional)
-├── Windscape (wind fields, optional)
-└── Space (collision detection)
+Environment (BaseRun.build_env)
+├── Space/Arena (geometry + collision detection)
+├── FoodGrid (food sources; optional)
+├── Odor layers (GaussianValueLayer / DiffusionValueLayer; optional)
+├── Thermoscape (thermal gradients; optional)
+└── Windscape (wind fields; optional)
 ```
 
 ---
@@ -389,8 +347,9 @@ Env
 **Pattern**: Sensors **pull** data from environment on each timestep.
 
 ```python
-# Sensor queries environment
-odor_value = self.model.odorscape.get_value(self.pos)
+# model/modules/brain.py (Brain.sense_odors)
+odor_input = {id: layer.get_value(pos) for id, layer in self.agent.model.odor_layers.items()}
+A_olf = self.olfactor.step(odor_input)
 ```
 
 ### 2. Brain → Locomotor (Command)
@@ -398,8 +357,10 @@ odor_value = self.model.odorscape.get_value(self.pos)
 **Pattern**: Brain **commands** locomotor modules.
 
 ```python
-# Brain activates locomotor
-self.locomotor.compute()  # Brain triggers locomotor computation
+# model/modules/brain.py (DefaultBrain.step)
+def step(self, pos, on_food=False, **kwargs):
+    self.sense(pos=pos, reward=on_food)
+    return self.locomotor.step(A_in=self.A_in, on_food=on_food, **kwargs)
 ```
 
 ### 3. Locomotor → Agent (Update)
@@ -407,11 +368,11 @@ self.locomotor.compute()  # Brain triggers locomotor computation
 **Pattern**: Locomotor modules **update** agent state.
 
 ```python
-# Crawler updates forward velocity
-self.locomotor.crawler.fov = computed_velocity
-
-# Turner updates angular velocity
-self.locomotor.turner.ang_v = computed_angular_velocity
+# model/agents/_larva.py (LarvaMotile.step)
+lin, ang, self.feeder_motion = self.brain.step(
+    pos, length=self.length, on_food=self.on_food
+)
+self.prepare_motion(lin=lin, ang=ang)  # applies lin/ang to body pose
 ```
 
 ### 4. Agent → Environment (Modify)
@@ -419,8 +380,11 @@ self.locomotor.turner.ang_v = computed_angular_velocity
 **Pattern**: Agents **modify** environment state (feeding, collisions).
 
 ```python
-# Agent consumes food
-self.model.food_grid.consume(self.pos, amount)
+# model/agents/_larva.py (LarvaMotile.feed)
+if motion and source is not None:
+    a_max = self.brain.locomotor.feeder.V_bite * self.V * 1000
+    grid = self.model.food_grid
+    V = -grid.add_cell_value(source, -a_max) if grid else source.subtract_amount(a_max)
 ```
 
 ### 5. SimEngine → Agent (Broadcast)
@@ -428,9 +392,8 @@ self.model.food_grid.consume(self.pos, amount)
 **Pattern**: SimEngine **broadcasts** timestep update to all agents.
 
 ```python
-# Agentpy ABM loop
-for agent in self.model.agents:
-    agent.step()  # All agents step synchronously
+# sim/single_run.py (ExpRun.step)
+self.agents.step()  # AgentPy: steps all agents synchronously
 ```
 
 ## Extending the Platform
@@ -439,37 +402,57 @@ for agent in self.model.agents:
 
 **Steps**:
 
-1. Create subclass of `Sensor` in `/lib/model/modules/sensor.py`
-2. Implement `update()` method to process sensory input
-3. Register sensor in `Brain` initialization
-4. Add sensory data to `Brain.step()` integration
+1. Create a subclass of an existing sensor (e.g., `Olfactor`, `Thermosensor`) in your own module.
+2. Register it as a new `mode` in `BrainModuleDB.BrainModuleModes`.
+3. Select that mode in a model configuration (e.g., `mm.brain.olfactor.mode = "custom"`).
+4. Run a simulation using that model configuration.
 
 **Example**:
 
 ```python
-# model/modules/sensor.py
-from larvaworld.lib.model.modules.sensor import Sensor
+from larvaworld.lib import reg
+from larvaworld.lib.model.modules.module_modes import BrainModuleDB
+from larvaworld.lib.model.modules.sensor import Olfactor
 
-class MySensor(Sensor):
+class MyOlfactor(Olfactor):
     def update(self):
-        # Query environment
-        value = self.brain.agent.model.environment.get_my_stimulus(self.brain.agent.pos)
+        super().update()
+        self.output *= 0.5  # example custom processing
 
-        # Process sensory input
-        input_dict = {'my_stimulus': value}
-        self.step(input=input_dict)
+# Register a new sensor mode (global for the current Python session)
+BrainModuleDB.BrainModuleModes["olfactor"]["custom"] = MyOlfactor
 
-        # Output is automatically available via self.output
+# Select the new mode in a model configuration
+mm = reg.conf.Model.getID("explorer").get_copy()
+mm.brain.olfactor.mode = "custom"
 ```
 
 ### Adding a New Behavioral Module
 
 **Steps**:
 
-1. Create subclass of `Effector` in `/lib/model/modules/`
-2. Implement `update()` method
-3. Register module in `Locomotor` or `Brain`
-4. Add module output to agent actions
+1. Create a subclass of the appropriate module type (e.g., `Crawler`, `Turner`, `Feeder`).
+2. Register it as a new `mode` in `BrainModuleDB.BrainModuleModes`.
+3. Select that mode in a model configuration (e.g., `mm.brain.turner.mode = "custom"`).
+4. Run a simulation using that model configuration.
+
+**Example**:
+
+```python
+from larvaworld.lib import reg
+from larvaworld.lib.model.modules.module_modes import BrainModuleDB
+from larvaworld.lib.model.modules.turner import ConstantTurner
+
+class MyTurner(ConstantTurner):
+    def update(self):
+        super().update()
+        self.output *= 0.0  # example: disable turning
+
+BrainModuleDB.BrainModuleModes["turner"]["custom"] = MyTurner
+
+mm = reg.conf.Model.getID("explorer").get_copy()
+mm.brain.turner.mode = "custom"
+```
 
 For detailed tutorial, see {doc}`../tutorials/custom_module`.
 

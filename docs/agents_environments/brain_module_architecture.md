@@ -29,11 +29,11 @@ graph TD
     %% Sensors
     OlfSensor["Olfactor"<br/>odor sensor]:::sensor
     TouchSensor["Toucher"<br/>contact/food sensor]:::sensor
-    ThermoSensor["Thermo"<br/>temperature sensor]:::sensor
+    ThermoSensor["Thermosensor"<br/>temperature sensor]:::sensor
     WindSensor["Windsensor"<br/>wind sensor]:::sensor
 
     %% Memory modules
-    RLmem["RLmemory"<br/>reinforcement learning]:::memory
+    RLmem["RLOlfMemory / RLTouchMemory"<br/>reinforcement learning]:::memory
     NullMem["No memory"]:::memory
 
     %% Locomotor interface
@@ -97,11 +97,12 @@ The brain organizes sensors into **modalities**, each processing a specific sens
 ### Modality Structure
 
 ```python
+# This mirrors `Brain.modalities` (see `larvaworld/lib/model/modules/brain.py`)
 modality = {
-    "sensor": Olfactor(),           # Sensor instance
-    "func": sense_odors,            # Processing function
-    "A": 0.0,                       # Sensory signal (output)
-    "mem": Memory() or None         # Optional memory
+    "sensor": self.olfactor,        # Sensor instance (or None)
+    "func": self.sense_odors,       # Processing function
+    "A": 0.0,                       # Sensory drive from this modality
+    "mem": None,                    # Optional memory module (per modality)
 }
 ```
 
@@ -115,14 +116,16 @@ modality = {
 
 **Key Attributes**:
 
-- `gain`: Sensory gain (modulated by memory)
-- `sensed_odor`: Processed odor concentration
+- `gain_dict` / `gain`: Gain per odor ID (memory can update this per step)
+- `X`: Current odor concentrations per odor ID
+- `dX`: Perceived change per odor ID (depends on `perception`: `log`/`linear`/`null`)
+- `output`: Integrated sensory drive (used as modality `A`)
 
 **Processing**:
 
-1. Query odorscape at larva position
-2. Apply Weber-Fechner law
-3. Modulate by gain (if learning enabled)
+1. Query odorscape value layers at larva position (via `Brain.sense_odors`)
+2. Compute `dX` from current/previous `X` based on `perception`
+3. Integrate `output` using `gain[id] * dX[id]` with exponential decay (`decay_coef`)
 
 **Code Location**: `/lib/model/modules/sensor.py` (class `Olfactor`)
 
@@ -130,17 +133,19 @@ modality = {
 
 ### Toucher
 
-**Purpose**: Contact and food sensing
+**Purpose**: Tactile sensing (touch sensors around the body contour)
 
 **Key Attributes**:
 
-- `contacts`: List of detected contacts
-- `on_food`: Boolean (food contact)
+- `touch_sensors`: Indices of touch sensors on the body contour
+- `gain_dict` / `gain`: Gain per touch sensor ID
+- `X` / `dX` / `output`: Same Sensor state variables as above
 
 **Processing**:
 
-1. Check collisions with obstacles
-2. Detect food patches at position
+1. `Brain.init_sensors()` registers touch sensors on the agent body
+2. `Brain.sense_food_multi()` converts touch sensor positions to a `dict` of `0/1` activations
+3. `Toucher.step(input=...)` integrates these into a tactile drive `A`
 
 **Code Location**: `/lib/model/modules/sensor.py` (class `Toucher`)
 
@@ -152,20 +157,22 @@ modality = {
 
 **Key Attributes**:
 
-- `wind_direction`: Vector (x, y)
-- `wind_speed`: Magnitude
+- `weights`: Wind response weights (passed from brain config)
+- `gain_dict` / `gain`: Gain for the `"windsensor"` channel (default `{"windsensor": 1.0}`)
+- `perception`: Fixed to `"null"` (direct transduction)
 
 **Code Location**: `/lib/model/modules/sensor.py` (class `Windsensor`)
 
 ---
 
-### Thermo
+### Thermosensor
 
 **Purpose**: Temperature sensing
 
 **Key Attributes**:
 
-- `temperature`: Current temperature (°C)
+- `gain_dict` / `gain`: Gains for warm/cool channels
+- `X` / `dX` / `output`: Same Sensor state variables as above
 
 **Code Location**: `/lib/model/modules/sensor.py` (class `Thermosensor`)
 
@@ -177,21 +184,11 @@ Memory modules **attach to sensory modalities** and modulate their gain through 
 
 ### RLmemory
 
-**Algorithm**: Q-learning (reinforcement learning)
+**Algorithm**: Q-learning (reinforcement learning) via a Q-table over discretized sensory change states.
 
 **Mechanism**:
 
-- Increase gain for rewarded stimuli
-- Decrease gain for non-rewarded stimuli
-
-**Update Rule**:
-
-```python
-if reward > 0:
-    gain[odor] += α * reward
-else:
-    gain[odor] -= β * punishment
-```
+- Uses `rewardSum` + `dx` to update the Q-table and choose gain actions from `gain_space`.
 
 **Code Location**: `/lib/model/modules/memory.py` (`RLmemory` class)
 
@@ -225,10 +222,9 @@ graph LR
 
 ### Brain → Locomotor Flow
 
-1. **Brain.step()**: Process sensory input
-2. **Brain.compute()**: Generate motor commands
-3. **Locomotor.compute()**: Coordinate modules
-4. **Modules.step()**: Execute behaviors
+1. **Brain.sense()**: Update each enabled sensor module and its modality drive `A`
+2. **Brain.step()**: Call `Locomotor.step(A_in=..., on_food=...)`
+3. **Locomotor.step()**: Run crawler/turner/feeder (+ interference + intermitter state machine)
 
 ---
 
@@ -239,18 +235,9 @@ graph LR
 **Step Sequence**:
 
 ```python
-def step(self):
-    # 1. Collect sensory input
-    for modality in self.modalities.values():
-        modality["func"]()  # e.g., sense_odors()
-
-    # 2. Update memory (if present)
-    for modality in self.modalities.values():
-        if modality["mem"] is not None:
-            modality["mem"].step(reward=self.feeder.amount_eaten)
-
-    # 3. Generate locomotor commands
-    self.locomotor.compute()
+def step(self, pos, on_food=False, **kwargs):
+    self.sense(pos=pos, reward=on_food)
+    return self.locomotor.step(A_in=self.A_in, on_food=on_food, **kwargs)
 ```
 
 ---
@@ -258,6 +245,11 @@ def step(self):
 ## NengoBrain
 
 **Implementation**: Spiking neural network (Nengo)
+
+:::{warning}
+`NengoBrain` is experimental. In the current codebase it may fail at runtime with newer `nengo` versions (e.g. `nengo.exceptions.ReadonlyError: probes is read-only`) when initializing internal probes.
+If you hit this, use `DefaultBrain` models until `NengoBrain` is updated for the installed `nengo` API.
+:::
 
 **Architecture**:
 
@@ -269,15 +261,9 @@ def step(self):
 
 ```python
 def step(self):
-    # 1. Map sensors to input neurons
-    self.sim.data[self.input_neurons] = self.get_sensory_input()
-
-    # 2. Run Nengo simulation (1 timestep)
-    self.sim.run_steps(1)
-
-    # 3. Map output neurons to locomotor
-    self.locomotor.crawler.fov = self.sim.data[self.forward_neuron]
-    self.locomotor.turner.ang_v = self.sim.data[self.turn_neuron]
+    # See `larvaworld/lib/model/modules/nengobrain.py` for the real implementation.
+    # NengoBrain runs an internal Nengo Simulator and maps probe outputs to (lin, ang, feed_motion).
+    ...
 ```
 
 ---
@@ -287,43 +273,59 @@ def step(self):
 ### Enable Specific Modalities
 
 ```python
-larva_groups = [
+from larvaworld.lib import reg
+from larvaworld.lib.sim import ExpRun
+from larvaworld.lib.util import AttrDict
+
+exp_params = reg.conf.Exp.getID("dish").get_copy()
+model_conf = reg.conf.Model.getID("navigator").get_copy()
+
+# Disable modalities by disabling their sensor modules in the brain config
+model_conf.brain.windsensor = None
+model_conf.brain.thermosensor = None
+
+exp_params.larva_groups = AttrDict(
     {
-        "model": "custom",
-        "N": 10,
-        "brain": {
-            "modalities": ["olfaction", "touch"]  # Only these two
-        }
+        "nav": AttrDict(
+            {
+                "model": model_conf,
+                "distribution": AttrDict({"shape": "circle", "mode": "uniform", "N": 5}),
+            }
+        )
     }
-]
+)
+
+run = ExpRun(
+    experiment="dish",
+    parameters=exp_params,
+    duration=0.5,
+    screen_kws={"show_display": False, "vis_mode": None},
+    store_data=False,
+)
+run.simulate()
 ```
 
 ### Attach Memory
 
 ```python
-larva_groups = [
-    {
-        "model": "RL_model",
-        "N": 10,
-        "brain": {
-            "modalities": {
-                "olfaction": {"memory": "RL"}  # RL memory on olfaction
-            }
-        }
-    }
-]
+from larvaworld.lib import reg
+from larvaworld.lib.model.modules.module_modes import moduleDB
+
+model_conf = reg.conf.Model.getID("navigator").get_copy()
+model_conf.brain.memory = moduleDB.memory_kws(
+    mode="RL", modality="olfaction", as_entry=False
+)
 ```
 
 ### Use NengoBrain
 
 ```python
-larva_groups = [
-    {
-        "model": "nengo",
-        "N": 10,
-        "brain": {"brain_class": "NengoBrain"}
-    }
-]
+from larvaworld.lib import reg
+
+# NengoBrain is used when the model's crawler module has mode "nengo".
+# Built-in model IDs include many `nengo_*` variants:
+nengo_ids = [m for m in reg.conf.Model.confIDs if m.startswith("nengo_")]
+print(nengo_ids[:20])
 ```
 
 ---
