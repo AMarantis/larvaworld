@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.1.1 (2026-01-13)
+
+### Documentation
+
+- Update tutorials and visualization guides ([`89af527`](https://github.com/nawrotlab/larvaworld/commit/89af527dae6c6824200f36f1647e0d2b78bf63a8))
+- Align docs examples with v2.1.0 api ([`8030d2c`](https://github.com/nawrotlab/larvaworld/commit/8030d2caeaf50d43cf80a21384d0f4ddf0ff7e98))
+
+### Fix
+
+- Sync examples with code and harden eval plots ([`c6b8cc5`](https://github.com/nawrotlab/larvaworld/commit/c6b8cc5adb89985d842e3ead23863de078a43e56))
+
 ## v2.1.0 (2025-12-21)
 
 ### Documentation
