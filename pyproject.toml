@@ -31,6 +31,7 @@ larvaworld = "larvaworld.cli.main:main"
 # Currently GUI is not functional
 # larvaworld-gui = "larvaworld.gui.main:main"
 larvaworld-app = "larvaworld.dashboards.main:main"
+larvaworld-portal = "larvaworld.portal.serve:main"
 
 [tool.setuptools.package-data]
 "*" = ["*.sh", "*.png", "*.pdf", "*.txt", "*.csv"]
