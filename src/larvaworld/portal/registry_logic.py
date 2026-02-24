@@ -38,13 +38,19 @@ def validate_registry(*, strict: bool = True) -> None:
         _err(f"Hidden items must not be referenced in lanes/pinned: {hidden_in_refs}")
 
     # Validate that each item listed in a lane matches the lane enum in the item itself.
+    lane_item_counts: dict[str, int] = {}
     for lane in LANES:
         for item_id in lane.item_ids:
+            lane_item_counts[item_id] = lane_item_counts.get(item_id, 0) + 1
             item = ITEMS[item_id]
             if item.lane != lane.lane:
                 _err(
                     f"Item '{item_id}' has lane='{item.lane}' but is listed under lane='{lane.lane}'"
                 )
+
+    duplicate_lane_items = [item_id for item_id, n in lane_item_counts.items() if n > 1]
+    if duplicate_lane_items:
+        _err(f"Items must not appear in multiple lanes: {duplicate_lane_items}")
 
     for item in ITEMS.values():
         # Basic non-empty copy checks.
@@ -135,4 +141,3 @@ def compute_primary_action(item: LandingItem, *, showcase_mode: bool) -> Primary
         return PrimaryAction(label="Learn more", href=href, enabled=True)
 
     return PrimaryAction(label="Planned", href=None, enabled=False)
-
