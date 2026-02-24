@@ -70,8 +70,7 @@ PORTAL_RAW_CSS = """
 }
 
 .lw-portal-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  /* Let Panel control layout; we only suggest spacing. */
   gap: 14px;
 }
 
@@ -284,4 +283,3 @@ def render_lane(lane: LaneSpec, *, showcase_mode: bool, items: list[LandingItem]
 
     # Collapsed lane (demo/tutorials) uses an accordion to avoid distracting the main workflows.
     return pn.Accordion((lane.title, content), active=[], sizing_mode="stretch_width")
-
