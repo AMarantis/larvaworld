@@ -41,3 +41,6 @@ def main() -> None:
 
     pn.serve(apps, port=port, show=False)
 
+
+if __name__ == "__main__":
+    main()
