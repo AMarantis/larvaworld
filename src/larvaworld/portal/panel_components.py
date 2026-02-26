@@ -9,7 +9,7 @@ from typing import Callable
 import panel as pn
 
 from larvaworld.portal.landing_registry import DOCS_ROOT, GITHUB_ROOT
-from larvaworld.portal.registry_logic import compute_badges, compute_primary_action
+from larvaworld.portal.registry_logic import compute_badges, compute_primary_action, resolve_target
 from larvaworld.portal.registry_types import LandingItem, LaneSpec
 
 
@@ -329,12 +329,29 @@ PORTAL_RAW_CSS = """
 }
 
 .lw-portal-card {
+  position: relative;
   border: 1px solid rgba(0,0,0,0.12);
   border-radius: 14px;
   padding: 14px 14px 12px 14px;
   background: rgba(255,255,255,0.96);
   box-shadow: 0 1px 8px rgba(0,0,0,0.05);
   min-height: 140px;
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.lw-portal-card:hover {
+  transform: scale(1.015);
+  box-shadow: 0 10px 18px rgba(0,0,0,0.10);
+}
+
+.lw-portal-card-link-overlay {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 14px;
+  text-decoration: none;
+  cursor: pointer;
 }
 
 .lw-portal-card--planned {
@@ -382,6 +399,8 @@ PORTAL_RAW_CSS = """
 }
 
 .lw-portal-actions {
+  position: relative;
+  z-index: 4;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -625,6 +644,7 @@ def render_card(item: LandingItem, *, showcase_mode: bool) -> pn.viewable.Viewab
     # English comments inside code.
     action = compute_primary_action(item, showcase_mode=showcase_mode)
     badges = compute_badges(item)
+    card_href = resolve_target(item) or f"/{item.id}"
 
     card_classes = ["lw-portal-card"]
     if item.status == "planned" or item.kind == "placeholder":
@@ -639,11 +659,45 @@ def render_card(item: LandingItem, *, showcase_mode: bool) -> pn.viewable.Viewab
     if action.label.lower() == "learn more" and item.learn_more and item.learn_more.issue_url:
         secondary = _secondary_docs_link(item)
 
+    primary_action_html = ""
+    if not (item.kind == "panel_app" and item.status == "ready"):
+        primary_action_html = _button_html(label=action.label, href=action.href, enabled=action.enabled)
+
     actions_html = (
-        '<div class="lw-portal-actions">'
-        + _button_html(label=action.label, href=action.href, enabled=action.enabled)
-        + secondary
-        + "</div>"
+        '<div class="lw-portal-actions">' + primary_action_html + secondary + "</div>"
+    )
+    show_actions = bool(primary_action_html or secondary)
+
+    overlay_attrs = ""
+    if card_href.startswith("http://") or card_href.startswith("https://"):
+        overlay_attrs = ' target="_blank" rel="noopener noreferrer"'
+    overlay_style = (
+        "position:absolute;inset:0;display:block;width:100%;height:100%;"
+        "border-radius:14px;text-decoration:none;cursor:pointer;"
+    )
+    overlay_html = (
+        f'<a class="lw-portal-card-link-overlay" style="{overlay_style}" '
+        f'href="{escape(card_href)}"{overlay_attrs} '
+        f'aria-label="Open {escape(item.title)}"></a>'
+    )
+    actions_pane = pn.pane.HTML(
+        actions_html,
+        margin=0,
+        visible=show_actions,
+        styles={"position": "relative", "z-index": "4"},
+    )
+    overlay_pane = pn.pane.HTML(
+        overlay_html,
+        margin=0,
+        visible=bool(card_href),
+        styles={
+            "position": "absolute",
+            "inset": "0",
+            "width": "100%",
+            "height": "100%",
+            "z-index": "3",
+            "pointer-events": "auto",
+        },
     )
 
     body = pn.Column(
@@ -657,8 +711,10 @@ def render_card(item: LandingItem, *, showcase_mode: bool) -> pn.viewable.Viewab
             margin=0,
             visible=show_hint,
         ),
-        pn.pane.HTML(actions_html, margin=0),
+        actions_pane,
+        overlay_pane,
         css_classes=card_classes,
+        styles={"position": "relative"},
         margin=0,
         sizing_mode="stretch_width",
     )
