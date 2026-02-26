@@ -2,20 +2,20 @@ from __future__ import annotations
 
 import panel as pn
 
-from larvaworld.portal.landing_registry import ITEMS
-from larvaworld.portal.panel_components import PORTAL_RAW_CSS, render_header
+from larvaworld.portal.landing_registry import ITEMS, LANES
+from larvaworld.portal.panel_components import PORTAL_RAW_CSS, build_template_header
 from larvaworld.portal.registry_logic import read_showcase_mode, validate_registry
 
 
 def _preview_ids() -> list[str]:
     # English comments inside code.
-    return sorted(
-        [
-            item.id
-            for item in ITEMS.values()
-            if item.status == "planned" and item.preview_md
-        ]
-    )
+    ids: list[str] = []
+    for lane in LANES:
+        for item_id in lane.item_ids:
+            item = ITEMS[item_id]
+            if item.status == "planned" and item.preview_md:
+                ids.append(item_id)
+    return ids
 
 
 def preview_app(preview_id: str | None = None) -> pn.viewable.Viewable:
@@ -37,9 +37,24 @@ def preview_app(preview_id: str | None = None) -> pn.viewable.Viewable:
 
     item = ITEMS.get(preview_id) if preview_id else None
 
-    template = pn.template.MaterialTemplate(title="Larvaworld Portal — Preview")
+    template = pn.template.MaterialTemplate(
+        title="Larvaworld Portal — Preview",
+        header_background="#f5a142",
+        header_color="#111111",
+    )
     root = pn.Column(css_classes=["lw-portal-root"], sizing_mode="stretch_width")
-    root.append(render_header(showcase_mode=showcase_mode))
+
+    def _set_dark_mode(enabled: bool) -> None:
+        classes = [cls for cls in root.css_classes if cls != "lw-portal-dark"]
+        if enabled:
+            classes.append("lw-portal-dark")
+        root.css_classes = classes
+
+    topbar = build_template_header(
+        showcase_mode=showcase_mode,
+        on_dark_mode_change=_set_dark_mode,
+    )
+    template.header.append(topbar)
 
     back = "[Back to landing](/landing)"
 

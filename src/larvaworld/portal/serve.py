@@ -8,6 +8,7 @@ from typing import Any, Callable
 # String-only mapping to keep unit tests free of heavy imports.
 APP_ID_TO_FACTORY_PATH: dict[str, str] = {
     # Portal apps
+    "/": "larvaworld.portal.landing_app:landing_app",
     "landing": "larvaworld.portal.landing_app:landing_app",
     "preview": "larvaworld.portal.preview_app:preview_app",
     # Legacy destinations (served as-is)
