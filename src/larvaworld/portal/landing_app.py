@@ -46,7 +46,7 @@ def landing_app() -> pn.viewable.Viewable:
             *[
                 # No special logic: pinned renders the same items by ID.
                 # (Guided-only rendering; deterministic order).
-                render_card(item, showcase_mode=showcase_mode)
+                render_card(item, showcase_mode=showcase_mode, show_lane_accent=False)
                 for item in pinned_items
             ],
             ncols=4,

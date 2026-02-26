@@ -358,6 +358,38 @@ PORTAL_RAW_CSS = """
   opacity: 0.86;
 }
 
+.lw-portal-card--lane-simulate {
+  border-top: 3px solid #b5c2b0;
+}
+
+.lw-portal-card--lane-data {
+  border-top: 3px solid #b0b4c2;
+}
+
+.lw-portal-card--lane-models {
+  border-top: 3px solid #c1b0c2;
+}
+
+.lw-portal-card--lane-eval {
+  border-top: 3px solid #c2b0b1;
+}
+
+.lw-portal-card--lane-simulate:hover {
+  box-shadow: 0 10px 18px rgba(0,0,0,0.08), 0 0 0 9999px rgba(181,194,176,0.10) inset;
+}
+
+.lw-portal-card--lane-data:hover {
+  box-shadow: 0 10px 18px rgba(0,0,0,0.08), 0 0 0 9999px rgba(176,180,194,0.10) inset;
+}
+
+.lw-portal-card--lane-models:hover {
+  box-shadow: 0 10px 18px rgba(0,0,0,0.08), 0 0 0 9999px rgba(193,176,194,0.10) inset;
+}
+
+.lw-portal-card--lane-eval:hover {
+  box-shadow: 0 10px 18px rgba(0,0,0,0.08), 0 0 0 9999px rgba(194,176,177,0.10) inset;
+}
+
 .lw-portal-card-badges {
   display: flex;
   flex-wrap: wrap;
@@ -640,13 +672,24 @@ def build_template_header(
     return header_row
 
 
-def render_card(item: LandingItem, *, showcase_mode: bool) -> pn.viewable.Viewable:
+def render_card(
+    item: LandingItem, *, showcase_mode: bool, show_lane_accent: bool = True
+) -> pn.viewable.Viewable:
     # English comments inside code.
     action = compute_primary_action(item, showcase_mode=showcase_mode)
     badges = compute_badges(item)
     card_href = resolve_target(item) or f"/{item.id}"
 
     card_classes = ["lw-portal-card"]
+    lane_classes = {
+        "simulate": "lw-portal-card--lane-simulate",
+        "data": "lw-portal-card--lane-data",
+        "models": "lw-portal-card--lane-models",
+        "eval": "lw-portal-card--lane-eval",
+    }
+    lane_class = lane_classes.get(item.lane)
+    if lane_class and show_lane_accent:
+        card_classes.append(lane_class)
     if item.status == "planned" or item.kind == "placeholder":
         card_classes.append("lw-portal-card--planned")
 
