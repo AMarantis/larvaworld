@@ -1,19 +1,9 @@
 from __future__ import annotations
 
-import os
 import warnings
 
 from larvaworld.portal.landing_registry import ITEMS, LANES, PINNED_QUICK_START
 from larvaworld.portal.registry_types import LandingItem, PrimaryAction
-
-
-_TRUTHY = {"1", "true", "yes", "on"}
-
-
-def read_showcase_mode() -> bool:
-    # English comments inside code.
-    value = os.getenv("LARVAWORLD_SHOWCASE", "").strip().lower()
-    return value in _TRUTHY
 
 
 def validate_registry(*, strict: bool = True) -> None:
@@ -119,7 +109,7 @@ def compute_badges(item: LandingItem) -> list[str]:
     return badges
 
 
-def compute_primary_action(item: LandingItem, *, showcase_mode: bool) -> PrimaryAction:
+def compute_primary_action(item: LandingItem) -> PrimaryAction:
     # English comments inside code.
     if item.status == "hidden":
         return PrimaryAction(label="Hidden", href=None, enabled=False)
@@ -131,11 +121,6 @@ def compute_primary_action(item: LandingItem, *, showcase_mode: bool) -> Primary
         return PrimaryAction(label=item.cta, href=item.url, enabled=True)
 
     # Placeholders / planned workflows.
-    if showcase_mode and item.preview_md:
-        return PrimaryAction(
-            label="Preview", href=f"/preview?id={item.id}", enabled=True
-        )
-
     if item.learn_more and (item.learn_more.issue_url or item.learn_more.docs_url):
         href = item.learn_more.issue_url or item.learn_more.docs_url
         return PrimaryAction(label="Learn more", href=href, enabled=True)

@@ -9,15 +9,13 @@ from larvaworld.portal.panel_components import (
     render_card,
     render_lane,
 )
-from larvaworld.portal.registry_logic import read_showcase_mode, validate_registry
+from larvaworld.portal.registry_logic import validate_registry
 
 
 def landing_app() -> pn.viewable.Viewable:
     # English comments inside code.
     pn.extension(raw_css=[PORTAL_RAW_CSS])
     validate_registry(strict=True)
-
-    showcase_mode = read_showcase_mode()
 
     template = pn.template.MaterialTemplate(
         title="Larvaworld Portal",
@@ -33,7 +31,6 @@ def landing_app() -> pn.viewable.Viewable:
         root.css_classes = classes
 
     topbar = build_template_header(
-        showcase_mode=showcase_mode,
         on_dark_mode_change=_set_dark_mode,
     )
     template.header.append(topbar)
@@ -46,7 +43,7 @@ def landing_app() -> pn.viewable.Viewable:
             *[
                 # No special logic: pinned renders the same items by ID.
                 # (Guided-only rendering; deterministic order).
-                render_card(item, showcase_mode=showcase_mode, show_lane_accent=False)
+                render_card(item, show_lane_accent=False)
                 for item in pinned_items
             ],
             ncols=4,
@@ -62,7 +59,7 @@ def landing_app() -> pn.viewable.Viewable:
     # Lanes
     for lane in LANES:
         lane_items = [ITEMS[item_id] for item_id in lane.item_ids if ITEMS[item_id].status != "hidden"]
-        root.append(render_lane(lane, showcase_mode=showcase_mode, items=lane_items))
+        root.append(render_lane(lane, items=lane_items))
 
     template.main.append(root)
     return template

@@ -106,27 +106,6 @@ PORTAL_RAW_CSS = """
   color: rgba(255,255,255,0.96);
 }
 
-.lw-portal-pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  border: 1px solid rgba(0,0,0,0.15);
-  background: rgba(0,0,0,0.04);
-}
-
-.lw-portal-pill--showcase {
-  border-color: rgba(239,108,0,0.55);
-  background: rgba(239,108,0,0.10);
-}
-
-.lw-portal-topbar .lw-portal-pill--showcase {
-  border-color: rgba(255,255,255,0.45);
-  background: rgba(255,255,255,0.2);
-  color: rgba(255,255,255,0.96);
-}
-
 .lw-portal-header-right-wrap {
   display: flex;
   align-items: center;
@@ -371,23 +350,23 @@ PORTAL_RAW_CSS = """
 }
 
 .lw-portal-card--lane-eval {
-  border-top: 3px solid #c2b0b1;
+  border-top: 3px solid #b1b2de;
 }
 
 .lw-portal-card--lane-simulate:hover {
-  box-shadow: 0 10px 18px rgba(0,0,0,0.08), 0 0 0 9999px rgba(181,194,176,0.10) inset;
+  box-shadow: 0 10px 18px rgba(0,0,0,0.08), 0 0 0 9999px rgba(181,194,176,0.14) inset;
 }
 
 .lw-portal-card--lane-data:hover {
-  box-shadow: 0 10px 18px rgba(0,0,0,0.08), 0 0 0 9999px rgba(176,180,194,0.10) inset;
+  box-shadow: 0 10px 18px rgba(0,0,0,0.08), 0 0 0 9999px rgba(176,180,194,0.14) inset;
 }
 
 .lw-portal-card--lane-models:hover {
-  box-shadow: 0 10px 18px rgba(0,0,0,0.08), 0 0 0 9999px rgba(193,176,194,0.10) inset;
+  box-shadow: 0 10px 18px rgba(0,0,0,0.08), 0 0 0 9999px rgba(193,176,194,0.14) inset;
 }
 
 .lw-portal-card--lane-eval:hover {
-  box-shadow: 0 10px 18px rgba(0,0,0,0.08), 0 0 0 9999px rgba(194,176,177,0.10) inset;
+  box-shadow: 0 10px 18px rgba(0,0,0,0.08), 0 0 0 9999px rgba(177,178,222,0.14) inset;
 }
 
 .lw-portal-card-badges {
@@ -494,17 +473,13 @@ _GITHUB_ICON_DATA_URI = _load_icon_data_uri("github_logo.svg", "image/svg+xml")
 _PORTAL_VERSION = _resolve_portal_version()
 
 
-def _portal_logo_html(*, version: str, showcase_mode: bool) -> str:
+def _portal_logo_html(*, version: str) -> str:
     # English comments inside code.
     logo_img = ""
     if _LOGO_DATA_URI:
         logo_img = (
             f'<img class="lw-portal-logo-img" src="{_LOGO_DATA_URI}" alt="Larvaworld logo"/>'
         )
-
-    showcase_pill = ""
-    if showcase_mode:
-        showcase_pill = '<span class="lw-portal-pill lw-portal-pill--showcase">Showcase mode</span>'
 
     return (
         '<a class="lw-portal-logo" href="/landing" '
@@ -515,7 +490,6 @@ def _portal_logo_html(*, version: str, showcase_mode: bool) -> str:
         f"{logo_img}"
         '<span class="lw-portal-logo-text">Larvaworld</span>'
         f'<span class="lw-portal-version-badge">v{escape(version)}</span>'
-        f"{showcase_pill}"
         "</a>"
     )
 
@@ -583,12 +557,11 @@ def _secondary_docs_link(item: LandingItem) -> str:
 
 def build_template_header(
     *,
-    showcase_mode: bool,
     on_dark_mode_change: Callable[[bool], None] | None = None,
 ) -> pn.viewable.Viewable:
     # English comments inside code.
     left = pn.pane.HTML(
-        _portal_logo_html(version=_PORTAL_VERSION, showcase_mode=showcase_mode),
+        _portal_logo_html(version=_PORTAL_VERSION),
         margin=0,
         css_classes=["lw-portal-header-left"],
     )
@@ -613,15 +586,9 @@ def build_template_header(
         margin=0,
     )
     dark_mode_toggle = pn.widgets.Switch(name="Dark mode", value=False, margin=0)
-    showcase_status = "ON" if showcase_mode else "OFF"
-    showcase_info = pn.pane.HTML(
-        f'<div class="lw-portal-settings-row">Showcase mode: <b>{showcase_status}</b></div>',
-        margin=0,
-    )
     settings_body = pn.Column(
         advanced_toggle,
         dark_mode_toggle,
-        showcase_info,
         css_classes=["lw-portal-settings-body"],
         sizing_mode="stretch_width",
         margin=0,
@@ -673,10 +640,10 @@ def build_template_header(
 
 
 def render_card(
-    item: LandingItem, *, showcase_mode: bool, show_lane_accent: bool = True
+    item: LandingItem, *, show_lane_accent: bool = True
 ) -> pn.viewable.Viewable:
     # English comments inside code.
-    action = compute_primary_action(item, showcase_mode=showcase_mode)
+    action = compute_primary_action(item)
     badges = compute_badges(item)
     card_href = resolve_target(item) or f"/{item.id}"
 
@@ -764,12 +731,12 @@ def render_card(
     return body
 
 
-def render_lane(lane: LaneSpec, *, showcase_mode: bool, items: list[LandingItem]) -> pn.viewable.Viewable:
+def render_lane(lane: LaneSpec, *, items: list[LandingItem]) -> pn.viewable.Viewable:
     # English comments inside code.
     title = pn.pane.HTML(
         f'<div class="lw-portal-section-title">{escape(lane.title)}</div>', margin=0
     )
-    cards = [render_card(item, showcase_mode=showcase_mode) for item in items]
+    cards = [render_card(item) for item in items]
     grid = pn.pane.HTML("", visible=False)  # placeholder to keep types simple
     if cards:
         grid = pn.GridBox(*cards, ncols=4, css_classes=["lw-portal-grid"], sizing_mode="stretch_width")
