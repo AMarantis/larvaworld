@@ -5,8 +5,8 @@ import panel as pn
 from larvaworld.portal.landing_registry import ITEMS, LANES, PINNED_QUICK_START
 from larvaworld.portal.panel_components import (
     PORTAL_RAW_CSS,
+    build_template_header,
     render_card,
-    render_header,
     render_lane,
 )
 from larvaworld.portal.registry_logic import read_showcase_mode, validate_registry
@@ -19,15 +19,29 @@ def landing_app() -> pn.viewable.Viewable:
 
     showcase_mode = read_showcase_mode()
 
-    template = pn.template.MaterialTemplate(title="Larvaworld Portal")
+    template = pn.template.MaterialTemplate(
+        title="Larvaworld Portal",
+        header_background="#f5a142",
+        header_color="#111111",
+    )
     root = pn.Column(css_classes=["lw-portal-root"], sizing_mode="stretch_width")
 
-    root.append(render_header(showcase_mode=showcase_mode))
+    def _set_dark_mode(enabled: bool) -> None:
+        classes = [cls for cls in root.css_classes if cls != "lw-portal-dark"]
+        if enabled:
+            classes.append("lw-portal-dark")
+        root.css_classes = classes
+
+    topbar = build_template_header(
+        showcase_mode=showcase_mode,
+        on_dark_mode_change=_set_dark_mode,
+    )
+    template.header.append(topbar)
 
     # Quick Start (pinned)
     pinned_items = [ITEMS[item_id] for item_id in PINNED_QUICK_START]
-    root.append(pn.pane.HTML('<div class="lw-portal-section-title">Quick Start</div>', margin=0))
-    root.append(
+    quick_start = pn.Column(
+        pn.pane.HTML('<div class="lw-portal-section-title">Quick Start</div>', margin=0),
         pn.GridBox(
             *[
                 # No special logic: pinned renders the same items by ID.
@@ -38,8 +52,12 @@ def landing_app() -> pn.viewable.Viewable:
             ncols=4,
             css_classes=["lw-portal-grid"],
             sizing_mode="stretch_width",
-        )
+        ),
+        css_classes=["lw-portal-quick-start"],
+        sizing_mode="stretch_width",
+        margin=0,
     )
+    root.append(quick_start)
 
     # Lanes
     for lane in LANES:
