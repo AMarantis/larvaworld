@@ -5,6 +5,7 @@ import panel as pn
 from larvaworld.portal.landing_registry import ITEMS, LANES, PINNED_QUICK_START
 from larvaworld.portal.panel_components import (
     PORTAL_RAW_CSS,
+    build_footer,
     build_template_header,
     render_card,
     render_lane,
@@ -64,4 +65,5 @@ def landing_app() -> pn.viewable.Viewable:
         root.append(render_lane(lane, items=lane_items, notebook_urls=notebook_urls))
 
     template.main.append(root)
+    template.main.append(build_footer())
     return template

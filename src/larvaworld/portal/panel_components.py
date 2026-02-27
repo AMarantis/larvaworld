@@ -8,7 +8,7 @@ from typing import Callable
 
 import panel as pn
 
-from larvaworld.portal.landing_registry import DOCS_ROOT, GITHUB_ROOT
+from larvaworld.portal.landing_registry import DOCS_ROOT, GITHUB_ISSUES, GITHUB_ROOT
 from larvaworld.portal.registry_logic import compute_badges, compute_primary_action, resolve_target
 from larvaworld.portal.registry_types import LandingItem, LaneSpec
 
@@ -18,7 +18,7 @@ PORTAL_RAW_CSS = """
 .lw-portal-root {
   max-width: 1240px;
   margin: 0 auto;
-  padding: 16px 16px 48px 16px;
+  padding: 16px 16px 56px 16px;
 }
 
 .lw-portal-root.lw-portal-dark {
@@ -487,6 +487,37 @@ PORTAL_RAW_CSS = """
   color: rgba(0,0,0,0.38);
   pointer-events: none;
 }
+
+.lw-portal-footer-shell {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+}
+
+.lw-portal-footer-bar {
+  width: 100%;
+  min-height: 24px;
+  padding: 4px 10px;
+  background: #f5a142;
+  color: #111111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 11px;
+  box-sizing: border-box;
+}
+
+.lw-portal-footer-link {
+  color: #111111;
+  text-decoration: underline;
+}
+
+.lw-portal-footer-link:hover {
+  color: #111111;
+}
 """.strip()
 
 
@@ -608,6 +639,26 @@ def _subtitle_html(text: str) -> str:
     if not lines:
         lines = [""]
     return "<br/>".join(escape(line) for line in lines[:3])
+
+
+def build_footer() -> pn.viewable.Viewable:
+    # English comments inside code.
+    html = (
+        '<div class="lw-portal-footer-shell"><div class="lw-portal-footer-bar">'
+        '<span>&copy; Larvaworld</span>'
+        f'<span>v{escape(_PORTAL_VERSION)}</span>'
+        '<span>University of Cologne</span>'
+        f'<a class="lw-portal-footer-link" href="{escape(DOCS_ROOT)}" '
+        'target="_blank" rel="noopener noreferrer">Docs</a>'
+        f'<a class="lw-portal-footer-link" href="{escape(GITHUB_ROOT)}" '
+        'target="_blank" rel="noopener noreferrer">GitHub</a>'
+        f'<a class="lw-portal-footer-link" href="{escape(GITHUB_ISSUES)}" '
+        'target="_blank" rel="noopener noreferrer">Issues</a>'
+        '<a class="lw-portal-footer-link" href="mailto:p.sakagiannis@uni-koeln.de">'
+        'Contact</a>'
+        "</div></div>"
+    )
+    return pn.pane.HTML(html, margin=0, sizing_mode="stretch_width")
 
 
 def build_template_header(

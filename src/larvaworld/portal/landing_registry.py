@@ -93,16 +93,6 @@ LANES: list[LaneSpec] = [
             "wf.compare_datasets",
         ],
     ),
-    LaneSpec(
-        title="Demos & Tutorials",
-        lane="demos",
-        item_ids=[
-            "lateral_oscillator",
-            "link.docs",
-            "link.github",
-        ],
-        collapsed_by_default=True,
-    ),
 ]
 
 
