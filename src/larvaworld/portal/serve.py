@@ -10,6 +10,7 @@ APP_ID_TO_FACTORY_PATH: dict[str, str] = {
     # Portal apps
     "/": "larvaworld.portal.landing_app:landing_app",
     "landing": "larvaworld.portal.landing_app:landing_app",
+    "notebook": "larvaworld.portal.notebook_launch_app:notebook_launch_app",
     # Legacy destinations (served as-is)
     "track_viewer": "larvaworld.dashboards.track_viewer:track_viewer_app",
     "experiment_viewer": "larvaworld.dashboards.experiment_viewer:experiment_viewer_app",
