@@ -9,6 +9,7 @@ from larvaworld.portal.panel_components import (
     render_card,
     render_lane,
 )
+from larvaworld.portal.notebook_workspace import notebook_urls_by_item
 from larvaworld.portal.registry_logic import validate_registry
 
 
@@ -34,6 +35,7 @@ def landing_app() -> pn.viewable.Viewable:
         on_dark_mode_change=_set_dark_mode,
     )
     template.header.append(topbar)
+    notebook_urls = notebook_urls_by_item()
 
     # Quick Start (pinned)
     pinned_items = [ITEMS[item_id] for item_id in PINNED_QUICK_START]
@@ -43,7 +45,7 @@ def landing_app() -> pn.viewable.Viewable:
             *[
                 # No special logic: pinned renders the same items by ID.
                 # (Guided-only rendering; deterministic order).
-                render_card(item, show_lane_accent=False)
+                render_card(item, show_lane_accent=False, notebook_urls=notebook_urls)
                 for item in pinned_items
             ],
             ncols=4,
@@ -59,7 +61,7 @@ def landing_app() -> pn.viewable.Viewable:
     # Lanes
     for lane in LANES:
         lane_items = [ITEMS[item_id] for item_id in lane.item_ids if ITEMS[item_id].status != "hidden"]
-        root.append(render_lane(lane, items=lane_items))
+        root.append(render_lane(lane, items=lane_items, notebook_urls=notebook_urls))
 
     template.main.append(root)
     return template

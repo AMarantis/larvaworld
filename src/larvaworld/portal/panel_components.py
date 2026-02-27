@@ -272,7 +272,6 @@ PORTAL_RAW_CSS = """
 }
 
 .lw-portal-root.lw-portal-dark .lw-portal-card-subtitle,
-.lw-portal-root.lw-portal-dark .lw-portal-card-hint,
 .lw-portal-root.lw-portal-dark .lw-portal-settings-row {
   color: rgba(203, 213, 225, 0.9);
 }
@@ -309,12 +308,15 @@ PORTAL_RAW_CSS = """
 
 .lw-portal-card {
   position: relative;
+  display: flex;
+  flex-direction: column;
   border: 1px solid rgba(0,0,0,0.12);
   border-radius: 14px;
-  padding: 14px 14px 12px 14px;
+  padding: 14px 14px 4px 14px;
   background: rgba(255,255,255,0.96);
   box-shadow: 0 1px 8px rgba(0,0,0,0.05);
-  min-height: 140px;
+  height: 186px;
+  overflow: hidden;
   cursor: pointer;
   transition: transform 140ms ease, box-shadow 140ms ease;
 }
@@ -399,14 +401,12 @@ PORTAL_RAW_CSS = """
 
 .lw-portal-card-subtitle {
   font-size: 13px;
-  margin: 0 0 10px 0;
+  line-height: 1.35;
+  margin: 0 0 8px 0;
+  min-height: calc(1.35em * 3);
+  max-height: calc(1.35em * 3);
+  overflow: hidden;
   color: rgba(0,0,0,0.72);
-}
-
-.lw-portal-card-hint {
-  font-size: 12px;
-  margin: 0 0 12px 0;
-  color: rgba(0,0,0,0.62);
 }
 
 .lw-portal-actions {
@@ -414,6 +414,7 @@ PORTAL_RAW_CSS = """
   z-index: 4;
   display: flex;
   align-items: center;
+  margin-top: auto;
   gap: 10px;
 }
 
@@ -435,16 +436,16 @@ PORTAL_RAW_CSS = """
   background: rgba(25,118,210,0.14);
 }
 
+.lw-portal-btn--learn-more {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
 .lw-portal-btn--disabled {
   border-color: rgba(0,0,0,0.14);
   background: rgba(0,0,0,0.04);
   color: rgba(0,0,0,0.38);
   pointer-events: none;
-}
-
-.lw-portal-secondary {
-  font-size: 12px;
-  text-decoration: none;
 }
 """.strip()
 
@@ -534,25 +535,27 @@ def _badge_html(badge: str) -> str:
 
 def _button_html(*, label: str, href: str | None, enabled: bool) -> str:
     # English comments inside code.
+    button_classes = ["lw-portal-btn"]
+    if label.strip().lower() in {"learn more", "notebook"}:
+        button_classes.append("lw-portal-btn--learn-more")
+    class_attr = " ".join(button_classes)
+
     if not enabled or not href:
-        return f'<span class="lw-portal-btn lw-portal-btn--disabled">{escape(label)}</span>'
+        return f'<span class="{class_attr} lw-portal-btn--disabled">{escape(label)}</span>'
 
     attrs = ""
     if href.startswith("http://") or href.startswith("https://"):
         attrs = ' target="_blank" rel="noopener noreferrer"'
 
-    return f'<a class="lw-portal-btn" href="{escape(href)}"{attrs}>{escape(label)}</a>'
+    return f'<a class="{class_attr}" href="{escape(href)}"{attrs}>{escape(label)}</a>'
 
 
-def _secondary_docs_link(item: LandingItem) -> str:
+def _subtitle_html(text: str) -> str:
     # English comments inside code.
-    if not item.learn_more or not item.learn_more.docs_url:
-        return ""
-    url = item.learn_more.docs_url
-    return (
-        f'<a class="lw-portal-secondary" href="{escape(url)}" '
-        'target="_blank" rel="noopener noreferrer">Docs</a>'
-    )
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    if not lines:
+        lines = [""]
+    return "<br/>".join(escape(line) for line in lines[:3])
 
 
 def build_template_header(
@@ -640,7 +643,10 @@ def build_template_header(
 
 
 def render_card(
-    item: LandingItem, *, show_lane_accent: bool = True
+    item: LandingItem,
+    *,
+    show_lane_accent: bool = True,
+    notebook_urls: dict[str, str] | None = None,
 ) -> pn.viewable.Viewable:
     # English comments inside code.
     action = compute_primary_action(item)
@@ -661,22 +667,28 @@ def render_card(
         card_classes.append("lw-portal-card--planned")
 
     badges_html = "".join(_badge_html(b) for b in badges)
-    hint = item.prereq_hint or "Planned."
-    show_hint = item.status == "planned" or item.kind == "placeholder"
 
-    # Secondary docs link appears when Learn more points to an issue and docs_url exists.
-    secondary = ""
-    if action.label.lower() == "learn more" and item.learn_more and item.learn_more.issue_url:
-        secondary = _secondary_docs_link(item)
-
-    primary_action_html = ""
-    if not (item.kind == "panel_app" and item.status == "ready"):
-        primary_action_html = _button_html(label=action.label, href=action.href, enabled=action.enabled)
+    primary_action_html = _button_html(
+        label="Learn more",
+        href=action.href,
+        enabled=action.enabled,
+    )
+    notebook_href = notebook_urls.get(item.id) if notebook_urls else None
+    notebook_action_html = ""
+    if notebook_href:
+        notebook_action_html = _button_html(
+            label="Notebook",
+            href=notebook_href,
+            enabled=True,
+        )
 
     actions_html = (
-        '<div class="lw-portal-actions">' + primary_action_html + secondary + "</div>"
+        '<div class="lw-portal-actions">'
+        + primary_action_html
+        + notebook_action_html
+        + "</div>"
     )
-    show_actions = bool(primary_action_html or secondary)
+    show_actions = bool(primary_action_html or notebook_action_html)
 
     overlay_attrs = ""
     if card_href.startswith("http://") or card_href.startswith("https://"):
@@ -714,12 +726,7 @@ def render_card(
         pn.pane.HTML(f'<div class="lw-portal-card-badges">{badges_html}</div>', margin=0),
         pn.pane.HTML(f'<div class="lw-portal-card-title">{escape(item.title)}</div>', margin=0),
         pn.pane.HTML(
-            f'<div class="lw-portal-card-subtitle">{escape(item.subtitle)}</div>', margin=0
-        ),
-        pn.pane.HTML(
-            f'<div class="lw-portal-card-hint">{escape(hint)}</div>',
-            margin=0,
-            visible=show_hint,
+            f'<div class="lw-portal-card-subtitle">{_subtitle_html(item.subtitle)}</div>', margin=0
         ),
         actions_pane,
         overlay_pane,
@@ -731,12 +738,17 @@ def render_card(
     return body
 
 
-def render_lane(lane: LaneSpec, *, items: list[LandingItem]) -> pn.viewable.Viewable:
+def render_lane(
+    lane: LaneSpec,
+    *,
+    items: list[LandingItem],
+    notebook_urls: dict[str, str] | None = None,
+) -> pn.viewable.Viewable:
     # English comments inside code.
     title = pn.pane.HTML(
         f'<div class="lw-portal-section-title">{escape(lane.title)}</div>', margin=0
     )
-    cards = [render_card(item) for item in items]
+    cards = [render_card(item, notebook_urls=notebook_urls) for item in items]
     grid = pn.pane.HTML("", visible=False)  # placeholder to keep types simple
     if cards:
         grid = pn.GridBox(*cards, ncols=4, css_classes=["lw-portal-grid"], sizing_mode="stretch_width")

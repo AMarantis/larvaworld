@@ -6,6 +6,43 @@ DOCS_ROOT = "https://larvaworld.readthedocs.io/en/latest/"
 GITHUB_ROOT = "https://github.com/nawrotlab/larvaworld"
 GITHUB_ISSUES = f"{GITHUB_ROOT}/issues"
 
+DOCS_WEB_APPS = f"{DOCS_ROOT}visualization/web_applications.html"
+DOCS_EXPERIMENT_VIEWER = f"{DOCS_WEB_APPS}#experiment-viewer"
+DOCS_TRACK_VIEWER = f"{DOCS_WEB_APPS}#track-viewer"
+DOCS_MODEL_INSPECTOR = f"{DOCS_WEB_APPS}#model-inspector"
+DOCS_MODULE_INSPECTOR = f"{DOCS_WEB_APPS}#module-inspector"
+DOCS_LATERAL_OSCILLATOR = f"{DOCS_WEB_APPS}#lateral-oscillator-inspector"
+
+DOCS_SINGLE_EXPERIMENTS = f"{DOCS_ROOT}working_with_larvaworld/single_experiments.html"
+DOCS_EXPERIMENT_TYPES = f"{DOCS_ROOT}concepts/experiment_types.html"
+DOCS_BATCH_RUNS = f"{DOCS_ROOT}working_with_larvaworld/batch_runs_advanced.html"
+
+DOCS_REFERENCE_DATASETS = f"{DOCS_ROOT}data_pipeline/reference_datasets.html"
+DOCS_DATA_PROCESSING = f"{DOCS_ROOT}data_pipeline/data_processing.html"
+DOCS_PLOTTING_API = f"{DOCS_ROOT}visualization/plotting_api.html"
+
+DOCS_ARENAS_SUBSTRATES = f"{DOCS_ROOT}agents_environments/arenas_and_substrates.html"
+DOCS_AGENT_ARCHITECTURE = f"{DOCS_ROOT}agents_environments/larva_agent_architecture.html"
+
+DOCS_MODEL_EVALUATION = f"{DOCS_ROOT}working_with_larvaworld/model_evaluation.html"
+DOCS_GA_OPTIMIZATION = f"{DOCS_ROOT}working_with_larvaworld/ga_optimization_advanced.html"
+DOCS_COMPARE_DATASETS = f"{DOCS_MODEL_EVALUATION}#statistical-comparison-plots"
+
+NOTEBOOK_TUTORIAL_BY_ITEM_ID: dict[str, str] = {
+    "experiment_viewer": "single_simulation.ipynb",
+    "wf.run_experiment": "single_simulation.ipynb",
+    "wf.experiment_catalog": "CONFTYPES.ipynb",
+    "wf.open_dataset": "import_datasets.ipynb",
+    "track_viewer": "replay.ipynb",
+    "wf.dataset_manager": "import_datasets.ipynb",
+    "larva_models": "library_interface.ipynb",
+    "locomotory_modules": "custom_module.ipynb",
+    "wf.environment_builder": "environment_configuration.ipynb",
+    "wf.model_evaluation": "model_evaluation.ipynb",
+    "wf.ga_optimization": "genetic_algorithm_optimization.ipynb",
+    "wf.compare_datasets": "model_evaluation.ipynb",
+}
+
 
 # ---- Deterministic ordering: these lists define display order. ----
 
@@ -78,9 +115,14 @@ ITEMS: dict[str, LandingItem] = {
         lane="data",
         level="core",
         title="Track Viewer",
-        subtitle="Replay trajectories and perform quick QC.",
+        subtitle=(
+            "Replay larval trajectories frame-by-frame.\n"
+            "Inspect motion quality and path structure.\n"
+            "Quickly compare individuals in one view."
+        ),
         cta="Replay",
         panel_app_id="track_viewer",
+        learn_more=LearnMore(docs_url=DOCS_TRACK_VIEWER),
     ),
     "experiment_viewer": LandingItem(
         id="experiment_viewer",
@@ -89,9 +131,14 @@ ITEMS: dict[str, LandingItem] = {
         lane="simulate",
         level="core",
         title="Experiment Viewer",
-        subtitle="Preview an experiment run and step through time.",
+        subtitle=(
+            "Step through a completed experiment run.\n"
+            "Inspect state changes across time.\n"
+            "Review outputs before deeper analysis."
+        ),
         cta="Preview",
         panel_app_id="experiment_viewer",
+        learn_more=LearnMore(docs_url=DOCS_EXPERIMENT_VIEWER),
     ),
     "larva_models": LandingItem(
         id="larva_models",
@@ -100,9 +147,14 @@ ITEMS: dict[str, LandingItem] = {
         lane="models",
         level="core",
         title="Model Inspector",
-        subtitle="Inspect larva model presets and parameters.",
+        subtitle=(
+            "Browse available larva model presets.\n"
+            "Inspect key parameters and defaults.\n"
+            "Compare configurations before simulation."
+        ),
         cta="Inspect",
         panel_app_id="larva_models",
+        learn_more=LearnMore(docs_url=DOCS_MODEL_INSPECTOR),
     ),
     "locomotory_modules": LandingItem(
         id="locomotory_modules",
@@ -111,9 +163,14 @@ ITEMS: dict[str, LandingItem] = {
         lane="models",
         level="core",
         title="Module Inspector",
-        subtitle="Inspect locomotion/sensorimotor modules.",
+        subtitle=(
+            "Inspect locomotory and sensorimotor modules.\n"
+            "Review module parameters and behavior roles.\n"
+            "Understand how modules combine in control."
+        ),
         cta="Inspect",
         panel_app_id="locomotory_modules",
+        learn_more=LearnMore(docs_url=DOCS_MODULE_INSPECTOR),
     ),
     "lateral_oscillator": LandingItem(
         id="lateral_oscillator",
@@ -122,9 +179,14 @@ ITEMS: dict[str, LandingItem] = {
         lane="demos",
         level="demo",
         title="Lateral Oscillator",
-        subtitle="Interactive demo for oscillatory control components.",
+        subtitle=(
+            "Explore the lateral oscillator controller.\n"
+            "Visualize oscillation and coupling behavior.\n"
+            "Inspect parameters for rhythmic motion."
+        ),
         cta="Open",
         panel_app_id="lateral_oscillator",
+        learn_more=LearnMore(docs_url=DOCS_LATERAL_OSCILLATOR),
     ),
     # ---- External links ----
     "link.docs": LandingItem(
@@ -134,9 +196,14 @@ ITEMS: dict[str, LandingItem] = {
         lane="demos",
         level="demo",
         title="Docs",
-        subtitle="Open the Larvaworld documentation.",
+        subtitle=(
+            "Open the Larvaworld documentation portal.\n"
+            "Browse guides, tutorials, and references.\n"
+            "Find details for each workflow."
+        ),
         cta="Open",
         url=DOCS_ROOT,
+        learn_more=LearnMore(docs_url=DOCS_ROOT),
     ),
     "link.github": LandingItem(
         id="link.github",
@@ -145,9 +212,14 @@ ITEMS: dict[str, LandingItem] = {
         lane="demos",
         level="demo",
         title="GitHub",
-        subtitle="Open the repository and issues.",
+        subtitle=(
+            "Open the Larvaworld GitHub repository.\n"
+            "Track issues, roadmap, and development.\n"
+            "Follow implementation progress."
+        ),
         cta="Open",
         url=GITHUB_ROOT,
+        learn_more=LearnMore(docs_url=f"{DOCS_ROOT}contributing.html"),
     ),
     # ---- Planned workflows / placeholders ----
     "wf.run_experiment": LandingItem(
@@ -157,12 +229,16 @@ ITEMS: dict[str, LandingItem] = {
         lane="simulate",
         level="core",
         title="Run Experiment",
-        subtitle="Choose a preset and run a single simulation.",
+        subtitle=(
+            "Select a preset and configure key options.\n"
+            "Run one simulation from the web workflow.\n"
+            "Store outputs for immediate follow-up."
+        ),
         cta="Run",
         prereq_hint="Not available yet in the web UI.",
         learn_more=LearnMore(
             issue_url=GITHUB_ISSUES,
-            docs_url=f"{DOCS_ROOT}working_with_larvaworld/single_experiments.html",
+            docs_url=DOCS_SINGLE_EXPERIMENTS,
         ),
         preview_md=(
             "### Run Experiment (Planned)\n"
@@ -179,10 +255,17 @@ ITEMS: dict[str, LandingItem] = {
         lane="data",
         level="core",
         title="Open Dataset",
-        subtitle="Select an existing dataset and set it as active.",
+        subtitle=(
+            "Browse available datasets in your workspace.\n"
+            "Select one dataset as the active context.\n"
+            "Reuse it across viewers and analysis."
+        ),
         cta="Open",
         prereq_hint="Dataset selection is currently handled inside each app.",
-        learn_more=LearnMore(issue_url=GITHUB_ISSUES),
+        learn_more=LearnMore(
+            issue_url=GITHUB_ISSUES,
+            docs_url=DOCS_REFERENCE_DATASETS,
+        ),
         preview_md=(
             "### Open Dataset (Planned)\n"
             "- Browse datasets under the configured data directory\n"
@@ -197,12 +280,16 @@ ITEMS: dict[str, LandingItem] = {
         lane="eval",
         level="core",
         title="Model Evaluation",
-        subtitle="Compare outputs to reference data and score models.",
+        subtitle=(
+            "Compare model outputs against references.\n"
+            "Compute metrics and summary scores.\n"
+            "Generate plots for model validation."
+        ),
         cta="Evaluate",
         prereq_hint="Not available yet in the web UI.",
         learn_more=LearnMore(
             issue_url=GITHUB_ISSUES,
-            docs_url=f"{DOCS_ROOT}working_with_larvaworld/model_evaluation.html",
+            docs_url=DOCS_MODEL_EVALUATION,
         ),
         preview_md=(
             "### Model Evaluation (Planned)\n"
@@ -218,10 +305,17 @@ ITEMS: dict[str, LandingItem] = {
         lane="simulate",
         level="core",
         title="Experiment Catalog",
-        subtitle="Browse curated experiment presets.",
+        subtitle=(
+            "Browse the curated experiment library.\n"
+            "Filter presets by purpose and complexity.\n"
+            "Open one preset to start quickly."
+        ),
         cta="Browse",
         prereq_hint="Not available yet in the web UI.",
-        learn_more=LearnMore(issue_url=GITHUB_ISSUES),
+        learn_more=LearnMore(
+            issue_url=GITHUB_ISSUES,
+            docs_url=DOCS_EXPERIMENT_TYPES,
+        ),
         preview_md=(
             "### Experiment Catalog (Planned)\n"
             "- Search and filter experiment presets\n"
@@ -236,12 +330,16 @@ ITEMS: dict[str, LandingItem] = {
         lane="simulate",
         level="advanced",
         title="Batch Runs",
-        subtitle="Run many configs and manage outputs.",
+        subtitle=(
+            "Launch many configurations in parallel.\n"
+            "Track status, logs, and produced outputs.\n"
+            "Rerun failed jobs with minimal effort."
+        ),
         cta="Open",
         prereq_hint="Not available yet in the web UI.",
         learn_more=LearnMore(
             issue_url=GITHUB_ISSUES,
-            docs_url=f"{DOCS_ROOT}working_with_larvaworld/batch_runs_advanced.html",
+            docs_url=DOCS_BATCH_RUNS,
         ),
         preview_md=(
             "### Batch Runs (Planned)\n"
@@ -257,10 +355,17 @@ ITEMS: dict[str, LandingItem] = {
         lane="data",
         level="core",
         title="Dataset Manager",
-        subtitle="Organize, tag, and preview dataset metadata.",
+        subtitle=(
+            "Organize datasets and attach metadata.\n"
+            "Tag runs for easier filtering and reuse.\n"
+            "Inspect summary info before analysis."
+        ),
         cta="Manage",
         prereq_hint="Not available yet in the web UI.",
-        learn_more=LearnMore(issue_url=GITHUB_ISSUES),
+        learn_more=LearnMore(
+            issue_url=GITHUB_ISSUES,
+            docs_url=DOCS_DATA_PROCESSING,
+        ),
         preview_md=(
             "### Dataset Manager (Planned)\n"
             "- View datasets in a workspace\n"
@@ -275,10 +380,17 @@ ITEMS: dict[str, LandingItem] = {
         lane="data",
         level="advanced",
         title="Export Center",
-        subtitle="Export plots, tables, and videos from a dataset.",
+        subtitle=(
+            "Export plots, tables, and media outputs.\n"
+            "Package selected results for sharing.\n"
+            "Create reproducible report artifacts."
+        ),
         cta="Export",
         prereq_hint="Not available yet in the web UI.",
-        learn_more=LearnMore(issue_url=GITHUB_ISSUES),
+        learn_more=LearnMore(
+            issue_url=GITHUB_ISSUES,
+            docs_url=DOCS_PLOTTING_API,
+        ),
         preview_md=(
             "### Export Center (Planned)\n"
             "- Export plots/tables/videos\n"
@@ -292,10 +404,17 @@ ITEMS: dict[str, LandingItem] = {
         lane="models",
         level="core",
         title="Environment Builder",
-        subtitle="Create arenas, obstacles, and sensory landscapes.",
+        subtitle=(
+            "Design arenas, borders, and obstacles.\n"
+            "Compose sensory and substrate landscapes.\n"
+            "Save reusable environment presets."
+        ),
         cta="Create",
         prereq_hint="Not available yet in the web UI.",
-        learn_more=LearnMore(issue_url=GITHUB_ISSUES),
+        learn_more=LearnMore(
+            issue_url=GITHUB_ISSUES,
+            docs_url=DOCS_ARENAS_SUBSTRATES,
+        ),
         preview_md=(
             "### Environment Builder (Planned)\n"
             "- Configure arena geometry and obstacles\n"
@@ -310,10 +429,17 @@ ITEMS: dict[str, LandingItem] = {
         lane="models",
         level="advanced",
         title="DEB Explorer",
-        subtitle="Explore energetics constraints and DEB parameters.",
+        subtitle=(
+            "Inspect DEB energetics assumptions.\n"
+            "Explore metabolic parameter effects.\n"
+            "Relate energy state to behavior."
+        ),
         cta="Explore",
         prereq_hint="Not available yet in the web UI.",
-        learn_more=LearnMore(issue_url=GITHUB_ISSUES),
+        learn_more=LearnMore(
+            issue_url=GITHUB_ISSUES,
+            docs_url=f"{DOCS_AGENT_ARCHITECTURE}#4-energy-system",
+        ),
         preview_md=(
             "### DEB Explorer (Planned)\n"
             "- Inspect energetics assumptions and constraints\n"
@@ -327,12 +453,16 @@ ITEMS: dict[str, LandingItem] = {
         lane="eval",
         level="advanced",
         title="GA Optimization",
-        subtitle="Optimize model parameters via genetic algorithms.",
+        subtitle=(
+            "Tune model parameters with GA search.\n"
+            "Optimize against reference objectives.\n"
+            "Compare candidate solutions and fitness."
+        ),
         cta="Optimize",
         prereq_hint="Not available yet in the web UI.",
         learn_more=LearnMore(
             issue_url=GITHUB_ISSUES,
-            docs_url=f"{DOCS_ROOT}working_with_larvaworld/ga_optimization_advanced.html",
+            docs_url=DOCS_GA_OPTIMIZATION,
         ),
         preview_md=(
             "### GA Optimization (Planned)\n"
@@ -348,10 +478,17 @@ ITEMS: dict[str, LandingItem] = {
         lane="eval",
         level="advanced",
         title="Compare Datasets",
-        subtitle="Compare multiple runs and conditions side-by-side.",
+        subtitle=(
+            "Compare multiple runs side by side.\n"
+            "Inspect metric differences across conditions.\n"
+            "Summarize effects with common plots."
+        ),
         cta="Compare",
         prereq_hint="Not available yet in the web UI.",
-        learn_more=LearnMore(issue_url=GITHUB_ISSUES),
+        learn_more=LearnMore(
+            issue_url=GITHUB_ISSUES,
+            docs_url=DOCS_COMPARE_DATASETS,
+        ),
         preview_md=(
             "### Compare Datasets (Planned)\n"
             "- Select multiple runs or conditions\n"
@@ -359,4 +496,3 @@ ITEMS: dict[str, LandingItem] = {
         ),
     ),
 }
-

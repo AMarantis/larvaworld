@@ -158,6 +158,7 @@ cython_debug/
 
 # Test output media files
 /media/
+/.portal_notebooks/
 
 #Poetry
 # poetry.lock

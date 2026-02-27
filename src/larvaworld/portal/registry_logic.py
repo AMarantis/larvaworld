@@ -114,6 +114,9 @@ def compute_primary_action(item: LandingItem) -> PrimaryAction:
     if item.status == "hidden":
         return PrimaryAction(label="Hidden", href=None, enabled=False)
 
+    if item.learn_more and item.learn_more.docs_url:
+        return PrimaryAction(label=item.cta, href=item.learn_more.docs_url, enabled=True)
+
     if item.kind == "panel_app":
         return PrimaryAction(label=item.cta, href=resolve_target(item), enabled=True)
 
