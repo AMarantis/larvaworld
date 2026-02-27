@@ -48,6 +48,8 @@ holoviews = ">=1.17,<2.0"
 hvplot = ">=0.10,<1.0"
 imageio = {extras = ["ffmpeg"], version = ">=2.35,<3.0"}
 #importlib = "1.0.*"
+ipykernel = ">=6.0,<7.0"
+jupyterlab = ">=4.0,<5.0"
 matplotlib = ">=3.7,<4.0"
 movingpandas = ">=0.19,<1.0"
 numpy = ">=1.24,<2.0"

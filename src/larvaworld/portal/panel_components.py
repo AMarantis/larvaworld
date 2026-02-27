@@ -441,6 +441,46 @@ PORTAL_RAW_CSS = """
   font-size: 11px;
 }
 
+.lw-portal-btn--notebook-simulate {
+  border-color: rgba(181,194,176,0.92);
+  background: rgba(181,194,176,0.24);
+  color: rgb(46, 60, 42);
+}
+
+.lw-portal-btn--notebook-data {
+  border-color: rgba(176,180,194,0.92);
+  background: rgba(176,180,194,0.24);
+  color: rgb(44, 48, 61);
+}
+
+.lw-portal-btn--notebook-models {
+  border-color: rgba(193,176,194,0.92);
+  background: rgba(193,176,194,0.24);
+  color: rgb(64, 47, 66);
+}
+
+.lw-portal-btn--notebook-eval {
+  border-color: rgba(177,178,222,0.92);
+  background: rgba(177,178,222,0.24);
+  color: rgb(43, 44, 84);
+}
+
+.lw-portal-btn--notebook-simulate:hover {
+  background: rgba(181,194,176,0.34);
+}
+
+.lw-portal-btn--notebook-data:hover {
+  background: rgba(176,180,194,0.34);
+}
+
+.lw-portal-btn--notebook-models:hover {
+  background: rgba(193,176,194,0.34);
+}
+
+.lw-portal-btn--notebook-eval:hover {
+  background: rgba(177,178,222,0.34);
+}
+
 .lw-portal-btn--disabled {
   border-color: rgba(0,0,0,0.14);
   background: rgba(0,0,0,0.04);
@@ -533,18 +573,30 @@ def _badge_html(badge: str) -> str:
     return f'<span class="{cls}">{escape(badge)}</span>'
 
 
-def _button_html(*, label: str, href: str | None, enabled: bool) -> str:
+def _button_html(
+    *,
+    label: str,
+    href: str | None,
+    enabled: bool,
+    extra_classes: tuple[str, ...] = (),
+) -> str:
     # English comments inside code.
+    normalized_label = label.strip().lower()
     button_classes = ["lw-portal-btn"]
-    if label.strip().lower() in {"learn more", "notebook"}:
+    if normalized_label in {"learn more", "notebook"}:
         button_classes.append("lw-portal-btn--learn-more")
+    if normalized_label == "notebook":
+        button_classes.append("lw-portal-btn--notebook")
+    button_classes.extend(extra_classes)
     class_attr = " ".join(button_classes)
 
     if not enabled or not href:
         return f'<span class="{class_attr} lw-portal-btn--disabled">{escape(label)}</span>'
 
     attrs = ""
-    if href.startswith("http://") or href.startswith("https://"):
+    if normalized_label == "notebook":
+        attrs = ' target="_blank" rel="noopener noreferrer"'
+    elif href.startswith("http://") or href.startswith("https://"):
         attrs = ' target="_blank" rel="noopener noreferrer"'
 
     return f'<a class="{class_attr}" href="{escape(href)}"{attrs}>{escape(label)}</a>'
@@ -676,10 +728,21 @@ def render_card(
     notebook_href = notebook_urls.get(item.id) if notebook_urls else None
     notebook_action_html = ""
     if notebook_href:
+        notebook_lane_classes = {
+            "simulate": "lw-portal-btn--notebook-simulate",
+            "data": "lw-portal-btn--notebook-data",
+            "models": "lw-portal-btn--notebook-models",
+            "eval": "lw-portal-btn--notebook-eval",
+        }
+        notebook_lane_class = notebook_lane_classes.get(item.lane)
+        extra_classes: tuple[str, ...] = ()
+        if notebook_lane_class:
+            extra_classes = (notebook_lane_class,)
         notebook_action_html = _button_html(
             label="Notebook",
             href=notebook_href,
             enabled=True,
+            extra_classes=extra_classes,
         )
 
     actions_html = (
