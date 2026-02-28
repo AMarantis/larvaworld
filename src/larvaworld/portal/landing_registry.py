@@ -389,8 +389,8 @@ ITEMS: dict[str, LandingItem] = {
     ),
     "wf.environment_builder": LandingItem(
         id="wf.environment_builder",
-        kind="placeholder",
-        status="planned",
+        kind="panel_app",
+        status="ready",
         lane="models",
         level="core",
         title="Environment Builder",
@@ -400,7 +400,7 @@ ITEMS: dict[str, LandingItem] = {
             "Save reusable environment presets."
         ),
         cta="Create",
-        prereq_hint="Not available yet in the web UI.",
+        panel_app_id="wf.environment_builder",
         learn_more=LearnMore(
             issue_url=GITHUB_ISSUES,
             docs_url=DOCS_ARENAS_SUBSTRATES,
