@@ -407,6 +407,15 @@ def notebook_urls_by_item() -> dict[str, str]:
     return _NOTEBOOK_BUTTON_URLS_CACHE
 
 
+def notebook_names_by_item() -> dict[str, str]:
+    # English comments inside code.
+    names: dict[str, str] = {}
+    for item_id, notebook_name in NOTEBOOK_TUTORIAL_BY_ITEM_ID.items():
+        if (_TUTORIALS_DIR / notebook_name).exists():
+            names[item_id] = notebook_name
+    return names
+
+
 def launch_notebook_for_item(item_id: str) -> tuple[str | None, str | None]:
     # English comments inside code.
     notebook_name = NOTEBOOK_TUTORIAL_BY_ITEM_ID.get(item_id)

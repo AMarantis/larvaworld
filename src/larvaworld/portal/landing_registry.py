@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from larvaworld.portal.registry_types import LaneSpec, LandingItem, LearnMore
+from larvaworld.portal.registry_types import (
+    LaneSpec,
+    LandingItem,
+    LearnMore,
+    QuickStartModeSpec,
+)
 
 DOCS_ROOT = "https://larvaworld.readthedocs.io/en/latest/"
 GITHUB_ROOT = "https://github.com/nawrotlab/larvaworld"
@@ -29,9 +34,7 @@ DOCS_GA_OPTIMIZATION = f"{DOCS_ROOT}working_with_larvaworld/ga_optimization_adva
 DOCS_COMPARE_DATASETS = f"{DOCS_MODEL_EVALUATION}#statistical-comparison-plots"
 
 NOTEBOOK_TUTORIAL_BY_ITEM_ID: dict[str, str] = {
-    "experiment_viewer": "single_simulation.ipynb",
     "wf.run_experiment": "single_simulation.ipynb",
-    "wf.experiment_catalog": "CONFTYPES.ipynb",
     "wf.open_dataset": "import_datasets.ipynb",
     "track_viewer": "replay.ipynb",
     "wf.dataset_manager": "import_datasets.ipynb",
@@ -48,20 +51,55 @@ NOTEBOOK_TUTORIAL_BY_ITEM_ID: dict[str, str] = {
 
 PINNED_QUICK_START: list[str] = [
     "wf.run_experiment",
-    "wf.open_dataset",
-    "track_viewer",
-    "wf.model_evaluation",
+    "wf.export_center",
+    "wf.deb_explorer",
 ]
+
+QUICK_START_MODES: list[QuickStartModeSpec] = [
+    QuickStartModeSpec(
+        mode_id="user",
+        title="User mode",
+        color="#e7c575",
+        item_ids=[
+            "wf.run_experiment",
+            "wf.export_center",
+            "wf.deb_explorer",
+        ],
+    ),
+    QuickStartModeSpec(
+        mode_id="modeler",
+        title="Modeler mode",
+        color="#c1b0c2",
+        item_ids=[
+            "wf.environment_builder",
+            "larva_models",
+            "wf.ga_optimization",
+        ],
+    ),
+    QuickStartModeSpec(
+        mode_id="experimentalist",
+        title="Experimentalist mode",
+        color="#b0b4c2",
+        item_ids=[
+            "wf.open_dataset",
+            "track_viewer",
+            "wf.model_evaluation",
+        ],
+    ),
+]
+
+QUICK_START_DEFAULT_MODE = "user"
 
 LANES: list[LaneSpec] = [
     LaneSpec(
-        title="Simulate",
+        title="Simulation & Optimization",
         lane="simulate",
         item_ids=[
-            "experiment_viewer",
             "wf.run_experiment",
-            "wf.experiment_catalog",
+            "wf.model_evaluation",
+            "wf.ga_optimization",
             "wf.batch_runs",
+            "wf.essay",
         ],
     ),
     LaneSpec(
@@ -75,22 +113,13 @@ LANES: list[LaneSpec] = [
         ],
     ),
     LaneSpec(
-        title="Models & Architecture",
+        title="Models & Environments",
         lane="models",
         item_ids=[
             "larva_models",
             "locomotory_modules",
             "wf.environment_builder",
             "wf.deb_explorer",
-        ],
-    ),
-    LaneSpec(
-        title="Evaluation & Optimization",
-        lane="eval",
-        item_ids=[
-            "wf.model_evaluation",
-            "wf.ga_optimization",
-            "wf.compare_datasets",
         ],
     ),
 ]
@@ -104,20 +133,20 @@ ITEMS: dict[str, LandingItem] = {
         status="ready",
         lane="data",
         level="core",
-        title="Track Viewer",
+        title="Dataset Replay",
         subtitle=(
             "Replay larval trajectories frame-by-frame.\n"
             "Inspect motion quality and path structure.\n"
             "Quickly compare individuals in one view."
         ),
-        cta="Replay",
+        cta="Open",
         panel_app_id="track_viewer",
         learn_more=LearnMore(docs_url=DOCS_TRACK_VIEWER),
     ),
     "experiment_viewer": LandingItem(
         id="experiment_viewer",
         kind="panel_app",
-        status="ready",
+        status="hidden",
         lane="simulate",
         level="core",
         title="Experiment Viewer",
@@ -165,7 +194,7 @@ ITEMS: dict[str, LandingItem] = {
     "lateral_oscillator": LandingItem(
         id="lateral_oscillator",
         kind="panel_app",
-        status="ready",
+        status="hidden",
         lane="demos",
         level="demo",
         title="Lateral Oscillator",
@@ -218,7 +247,7 @@ ITEMS: dict[str, LandingItem] = {
         status="planned",
         lane="simulate",
         level="core",
-        title="Run Experiment",
+        title="Single Experiment",
         subtitle=(
             "Select a preset and configure key options.\n"
             "Run one simulation from the web workflow.\n"
@@ -230,8 +259,9 @@ ITEMS: dict[str, LandingItem] = {
             issue_url=GITHUB_ISSUES,
             docs_url=DOCS_SINGLE_EXPERIMENTS,
         ),
+        badges=["Developer"],
         preview_md=(
-            "### Run Experiment (Planned)\n"
+            "### Single Experiment (Planned)\n"
             "- Pick an experiment preset (curated list)\n"
             "- Adjust key parameters (model/env/seed)\n"
             "- Run and persist dataset outputs\n"
@@ -244,20 +274,20 @@ ITEMS: dict[str, LandingItem] = {
         status="planned",
         lane="data",
         level="core",
-        title="Open Dataset",
+        title="Import Experimental Datasets",
         subtitle=(
             "Browse available datasets in your workspace.\n"
             "Select one dataset as the active context.\n"
             "Reuse it across viewers and analysis."
         ),
-        cta="Open",
+        cta="Import",
         prereq_hint="Dataset selection is currently handled inside each app.",
         learn_more=LearnMore(
             issue_url=GITHUB_ISSUES,
             docs_url=DOCS_REFERENCE_DATASETS,
         ),
         preview_md=(
-            "### Open Dataset (Planned)\n"
+            "### Import Experimental Datasets (Planned)\n"
             "- Browse datasets under the configured data directory\n"
             "- Preview metadata (duration, N, timestamps)\n"
             "- Set active dataset for downstream tools\n"
@@ -267,7 +297,7 @@ ITEMS: dict[str, LandingItem] = {
         id="wf.model_evaluation",
         kind="placeholder",
         status="planned",
-        lane="eval",
+        lane="simulate",
         level="core",
         title="Model Evaluation",
         subtitle=(
@@ -281,6 +311,7 @@ ITEMS: dict[str, LandingItem] = {
             issue_url=GITHUB_ISSUES,
             docs_url=DOCS_MODEL_EVALUATION,
         ),
+        badges=["Developer"],
         preview_md=(
             "### Model Evaluation (Planned)\n"
             "- Select simulation output + reference dataset\n"
@@ -291,7 +322,7 @@ ITEMS: dict[str, LandingItem] = {
     "wf.experiment_catalog": LandingItem(
         id="wf.experiment_catalog",
         kind="placeholder",
-        status="planned",
+        status="hidden",
         lane="simulate",
         level="core",
         title="Experiment Catalog",
@@ -318,7 +349,7 @@ ITEMS: dict[str, LandingItem] = {
         kind="placeholder",
         status="planned",
         lane="simulate",
-        level="advanced",
+        level="core",
         title="Batch Runs",
         subtitle=(
             "Launch many configurations in parallel.\n"
@@ -331,6 +362,7 @@ ITEMS: dict[str, LandingItem] = {
             issue_url=GITHUB_ISSUES,
             docs_url=DOCS_BATCH_RUNS,
         ),
+        badges=["Developer"],
         preview_md=(
             "### Batch Runs (Planned)\n"
             "- Define a parameter sweep\n"
@@ -346,8 +378,8 @@ ITEMS: dict[str, LandingItem] = {
         level="core",
         title="Dataset Manager",
         subtitle=(
-            "Organize datasets and attach metadata.\n"
-            "Tag runs for easier filtering and reuse.\n"
+            "Browse dataset folders in read-only mode.\n"
+            "Preview table structure and key columns.\n"
             "Inspect summary info before analysis."
         ),
         cta="Manage",
@@ -368,23 +400,23 @@ ITEMS: dict[str, LandingItem] = {
         kind="placeholder",
         status="planned",
         lane="data",
-        level="advanced",
-        title="Export Center",
+        level="core",
+        title="Analysis",
         subtitle=(
-            "Export plots, tables, and media outputs.\n"
-            "Package selected results for sharing.\n"
-            "Create reproducible report artifacts."
+            "Inspect selected datasets through analysis views.\n"
+            "Build plots and summary comparisons interactively.\n"
+            "Prepare deeper post-processing workflows."
         ),
-        cta="Export",
+        cta="Analyze",
         prereq_hint="Not available yet in the web UI.",
         learn_more=LearnMore(
             issue_url=GITHUB_ISSUES,
             docs_url=DOCS_PLOTTING_API,
         ),
         preview_md=(
-            "### Export Center (Planned)\n"
-            "- Export plots/tables/videos\n"
-            "- Bundle configs and results for sharing\n"
+            "### Analysis (Planned)\n"
+            "- Open dataset-centric analysis tools\n"
+            "- Build comparison plots and summaries\n"
         ),
     ),
     "wf.environment_builder": LandingItem(
@@ -405,6 +437,7 @@ ITEMS: dict[str, LandingItem] = {
             issue_url=GITHUB_ISSUES,
             docs_url=DOCS_ARENAS_SUBSTRATES,
         ),
+        badges=["Developer"],
         preview_md=(
             "### Environment Builder (Planned)\n"
             "- Configure arena geometry and obstacles\n"
@@ -417,21 +450,22 @@ ITEMS: dict[str, LandingItem] = {
         kind="placeholder",
         status="planned",
         lane="models",
-        level="advanced",
-        title="DEB Explorer",
+        level="core",
+        title="DEB Simulator",
         subtitle=(
             "Inspect DEB energetics assumptions.\n"
             "Explore metabolic parameter effects.\n"
             "Relate energy state to behavior."
         ),
-        cta="Explore",
+        cta="Open",
         prereq_hint="Not available yet in the web UI.",
         learn_more=LearnMore(
             issue_url=GITHUB_ISSUES,
             docs_url=f"{DOCS_AGENT_ARCHITECTURE}#4-energy-system",
         ),
+        badges=["Developer"],
         preview_md=(
-            "### DEB Explorer (Planned)\n"
+            "### DEB Simulator (Planned)\n"
             "- Inspect energetics assumptions and constraints\n"
             "- Explore DEB parameter presets\n"
         ),
@@ -440,7 +474,7 @@ ITEMS: dict[str, LandingItem] = {
         id="wf.ga_optimization",
         kind="placeholder",
         status="planned",
-        lane="eval",
+        lane="simulate",
         level="advanced",
         title="GA Optimization",
         subtitle=(
@@ -454,6 +488,7 @@ ITEMS: dict[str, LandingItem] = {
             issue_url=GITHUB_ISSUES,
             docs_url=DOCS_GA_OPTIMIZATION,
         ),
+        badges=["Developer"],
         preview_md=(
             "### GA Optimization (Planned)\n"
             "- Define a scoring objective\n"
@@ -464,8 +499,8 @@ ITEMS: dict[str, LandingItem] = {
     "wf.compare_datasets": LandingItem(
         id="wf.compare_datasets",
         kind="placeholder",
-        status="planned",
-        lane="eval",
+        status="hidden",
+        lane="simulate",
         level="advanced",
         title="Compare Datasets",
         subtitle=(
@@ -483,6 +518,28 @@ ITEMS: dict[str, LandingItem] = {
             "### Compare Datasets (Planned)\n"
             "- Select multiple runs or conditions\n"
             "- Compare metrics and summary plots\n"
+        ),
+    ),
+    "wf.essay": LandingItem(
+        id="wf.essay",
+        kind="placeholder",
+        status="planned",
+        lane="simulate",
+        level="core",
+        title="Essay",
+        subtitle=(
+            "Compose experiment essay workflows interactively.\n"
+            "Combine narratives, configs, and generated outputs.\n"
+            "Prototype structured reporting from one place."
+        ),
+        cta="Open",
+        prereq_hint="Not available yet in the web UI.",
+        learn_more=LearnMore(issue_url=GITHUB_ISSUES),
+        badges=["Beta"],
+        preview_md=(
+            "### Essay (Planned)\n"
+            "- Compose narrative-driven experiment workflows\n"
+            "- Attach runs, plots, and summary outputs\n"
         ),
     ),
 }

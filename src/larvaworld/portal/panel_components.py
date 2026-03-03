@@ -290,15 +290,199 @@ PORTAL_RAW_CSS = """
 }
 
 .lw-portal-quick-start {
-  margin: 8px 0 18px 0;
+  margin: 30px 0 18px 0;
   padding: 8px 12px 14px 10px;
   border-radius: 14px;
   background: rgba(0,0,0,0.08);
   border-left: 4px solid #f5a142;
+  overflow: visible;
 }
+
+.lw-portal-quick-start--user { border-left-color: #f5a142; }
+.lw-portal-quick-start--modeler { border-left-color: #f5a142; }
+.lw-portal-quick-start--experimentalist { border-left-color: #f5a142; }
 
 .lw-portal-root.lw-portal-dark .lw-portal-quick-start {
   background: rgba(2, 6, 23, 0.5);
+}
+
+.lw-portal-quick-start-shell {
+  display: block;
+  position: relative;
+  overflow: visible;
+}
+
+.lw-portal-quick-start-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.lw-portal-quick-start-tabs {
+  position: absolute;
+  top: -31px;
+  right: 8px;
+  z-index: 7;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: 0 !important;
+}
+
+.lw-portal-qs-top-tab,
+.lw-portal-qs-top-tab.bk-btn,
+button.lw-portal-qs-top-tab,
+.lw-portal-qs-top-tab button,
+.lw-portal-qs-top-tab .bk-btn {
+  width: 124px !important;
+  min-width: 124px !important;
+  max-width: 124px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  border-radius: 10px 10px 0 0;
+  border: 1px solid rgba(148, 163, 184, 0.75) !important;
+  border-bottom: 0 !important;
+  color: #1f2937 !important;
+  font-weight: 600;
+  text-align: center;
+  font-size: 11px;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  padding: 0 8px !important;
+  white-space: nowrap !important;
+  letter-spacing: 0.1px !important;
+  background: #d7d9dd !important;
+  background-color: #d7d9dd !important;
+  background-image: none !important;
+  box-shadow: inset 0 0 0 999px #d7d9dd !important, 0 2px 6px rgba(0,0,0,0.14);
+  transition: transform 0.14s ease, filter 0.14s ease, box-shadow 0.14s ease;
+  margin-bottom: -3px !important;
+}
+
+/* Force the real clickable element (Bokeh/Material internals) to use lane gray. */
+.lw-portal-qs-top-tab .bk-btn,
+.lw-portal-qs-top-tab button,
+.lw-portal-qs-top-tab .mdc-button,
+.lw-portal-qs-top-tab [class*="mdc-button"] {
+  background: #d7d9dd !important;
+  background-color: #d7d9dd !important;
+  background-image: none !important;
+  color: #1f2937 !important;
+}
+
+.lw-portal-qs-top-tab > span,
+.lw-portal-qs-top-tab.bk-btn > span,
+button.lw-portal-qs-top-tab > span,
+.lw-portal-qs-top-tab button > span,
+.lw-portal-qs-top-tab .bk-btn > span {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  color: inherit !important;
+  transform: none !important;
+}
+
+/* Remove white inner capsule from Material/Bokeh button internals. */
+.lw-portal-qs-top-tab .bk-btn *,
+.lw-portal-qs-top-tab.bk-btn *,
+button.lw-portal-qs-top-tab * {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  color: inherit !important;
+}
+
+.lw-portal-qs-top-tab .mdc-button__label,
+.lw-portal-qs-top-tab .mdc-button__ripple,
+.lw-portal-qs-top-tab .mdc-button__touch {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+.lw-portal-qs-top-tab .bk-btn::before,
+.lw-portal-qs-top-tab .bk-btn::after,
+.lw-portal-qs-top-tab.bk-btn::before,
+.lw-portal-qs-top-tab.bk-btn::after,
+button.lw-portal-qs-top-tab::before,
+button.lw-portal-qs-top-tab::after {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.lw-portal-qs-top-tab--user,
+.lw-portal-qs-top-tab--user.bk-btn,
+button.lw-portal-qs-top-tab--user,
+.lw-portal-qs-top-tab--user button,
+.lw-portal-qs-top-tab--user .bk-btn {
+  background: #d7d9dd !important;
+  background-color: #d7d9dd !important;
+  background-image: none !important;
+  box-shadow: inset 0 0 0 999px #d7d9dd !important;
+  color: #1f2937 !important;
+  border-color: rgba(148, 163, 184, 0.75) !important;
+}
+.lw-portal-qs-top-tab--modeler,
+.lw-portal-qs-top-tab--modeler.bk-btn,
+button.lw-portal-qs-top-tab--modeler,
+.lw-portal-qs-top-tab--modeler button,
+.lw-portal-qs-top-tab--modeler .bk-btn {
+  background: #d7d9dd !important;
+  background-color: #d7d9dd !important;
+  background-image: none !important;
+  box-shadow: inset 0 0 0 999px #d7d9dd !important;
+  color: #1f2937 !important;
+  border-color: rgba(148, 163, 184, 0.75) !important;
+}
+.lw-portal-qs-top-tab--experimentalist,
+.lw-portal-qs-top-tab--experimentalist.bk-btn,
+button.lw-portal-qs-top-tab--experimentalist,
+.lw-portal-qs-top-tab--experimentalist button,
+.lw-portal-qs-top-tab--experimentalist .bk-btn {
+  background: #d7d9dd !important;
+  background-color: #d7d9dd !important;
+  background-image: none !important;
+  box-shadow: inset 0 0 0 999px #d7d9dd !important;
+  color: #1f2937 !important;
+  border-color: rgba(148, 163, 184, 0.75) !important;
+}
+
+.lw-portal-qs-top-tab:hover,
+.lw-portal-qs-top-tab.bk-btn:hover,
+button.lw-portal-qs-top-tab:hover,
+.lw-portal-qs-top-tab button:hover,
+.lw-portal-qs-top-tab .bk-btn:hover {
+  filter: brightness(1.03);
+}
+
+.lw-portal-qs-top-tab--active,
+.lw-portal-qs-top-tab--active.bk-btn,
+button.lw-portal-qs-top-tab--active,
+.lw-portal-qs-top-tab--active button,
+.lw-portal-qs-top-tab--active .bk-btn {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 14px rgba(0,0,0,0.2);
+  filter: brightness(1.02);
+}
+
+.lw-portal-quick-start-cards {
+  flex: 1 1 auto;
+}
+
+.lw-portal-quick-start-cards.lw-portal-qs-flip .lw-portal-card {
+  animation: lwPortalFlipRotate 420ms ease;
+  transform-origin: center center;
+}
+
+@keyframes lwPortalFlipRotate {
+  0% { transform: rotateY(0deg) scale(1.0); opacity: 1; }
+  50% { transform: rotateY(90deg) scale(0.98); opacity: 0.55; }
+  100% { transform: rotateY(0deg) scale(1.0); opacity: 1; }
 }
 
 .lw-portal-grid {
@@ -388,7 +572,7 @@ PORTAL_RAW_CSS = """
   background: rgba(0,0,0,0.04);
 }
 
-.lw-portal-badge--planned {
+.lw-portal-badge--under-construction {
   border-color: rgba(239,108,0,0.55);
   background: rgba(239,108,0,0.10);
 }
@@ -599,8 +783,8 @@ def _header_links_html() -> str:
 def _badge_html(badge: str) -> str:
     # English comments inside code.
     cls = "lw-portal-badge"
-    if badge.lower() == "planned":
-        cls += " lw-portal-badge--planned"
+    if badge.strip().lower() in {"under construction", "planned"}:
+        cls += " lw-portal-badge--under-construction"
     return f'<span class="{cls}">{escape(badge)}</span>'
 
 
@@ -610,6 +794,7 @@ def _button_html(
     href: str | None,
     enabled: bool,
     extra_classes: tuple[str, ...] = (),
+    tooltip: str | None = None,
 ) -> str:
     # English comments inside code.
     normalized_label = label.strip().lower()
@@ -630,7 +815,8 @@ def _button_html(
     elif href.startswith("http://") or href.startswith("https://"):
         attrs = ' target="_blank" rel="noopener noreferrer"'
 
-    return f'<a class="{class_attr}" href="{escape(href)}"{attrs}>{escape(label)}</a>'
+    title_attr = f' title="{escape(tooltip)}"' if tooltip else ""
+    return f'<a class="{class_attr}" href="{escape(href)}"{attrs}{title_attr}>{escape(label)}</a>'
 
 
 def _subtitle_html(text: str) -> str:
@@ -750,6 +936,7 @@ def render_card(
     *,
     show_lane_accent: bool = True,
     notebook_urls: dict[str, str] | None = None,
+    notebook_names: dict[str, str] | None = None,
 ) -> pn.viewable.Viewable:
     # English comments inside code.
     action = compute_primary_action(item)
@@ -794,6 +981,11 @@ def render_card(
             href=notebook_href,
             enabled=True,
             extra_classes=extra_classes,
+            tooltip=(
+                f"Open notebook: {notebook_names[item.id]}"
+                if notebook_names and item.id in notebook_names
+                else "Open notebook"
+            ),
         )
 
     actions_html = (
@@ -857,12 +1049,16 @@ def render_lane(
     *,
     items: list[LandingItem],
     notebook_urls: dict[str, str] | None = None,
+    notebook_names: dict[str, str] | None = None,
 ) -> pn.viewable.Viewable:
     # English comments inside code.
     title = pn.pane.HTML(
         f'<div class="lw-portal-section-title">{escape(lane.title)}</div>', margin=0
     )
-    cards = [render_card(item, notebook_urls=notebook_urls) for item in items]
+    cards = [
+        render_card(item, notebook_urls=notebook_urls, notebook_names=notebook_names)
+        for item in items
+    ]
     grid = pn.pane.HTML("", visible=False)  # placeholder to keep types simple
     if cards:
         grid = pn.GridBox(*cards, ncols=4, css_classes=["lw-portal-grid"], sizing_mode="stretch_width")
