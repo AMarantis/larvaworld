@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import os
 import sys
 import threading
@@ -7,6 +8,7 @@ import time
 import traceback
 from functools import lru_cache
 from importlib import import_module
+from pathlib import Path
 from typing import Any, Callable
 
 
@@ -94,6 +96,24 @@ _BOOTSTRAP_STATE = _BootstrapState()
 _BOOTSTRAP_THREAD: threading.Thread | None = None
 
 
+def _loading_gif_data_uris() -> list[str]:
+    # English comments inside code.
+    gifs_dir = Path(__file__).with_name("icons") / "gifs"
+    if not gifs_dir.exists():
+        return []
+    uris: list[str] = []
+    for gif_path in sorted(gifs_dir.glob("*.gif")):
+        try:
+            encoded = base64.b64encode(gif_path.read_bytes()).decode("ascii")
+        except OSError:
+            continue
+        uris.append(f"data:image/gif;base64,{encoded}")
+    return uris
+
+
+_LOADING_GIF_URIS = _loading_gif_data_uris()
+
+
 def _import_attr(path: str) -> object:
     # English comments inside code.
     module_name, attr_name = path.split(":", 1)
@@ -125,6 +145,11 @@ def _warmup_steps() -> list[tuple[str, str]]:
     steps: list[tuple[str, str]] = []
     for app_id, path in APP_ID_TO_FACTORY_PATH.items():
         if app_id in skipped or path in seen_paths:
+            continue
+        # Legacy dashboard modules can execute `servable()` at import time.
+        # Warming them up in a background thread can mutate Bokeh documents
+        # outside the request/session lifecycle and crash initialization.
+        if path.startswith("larvaworld.dashboards."):
             continue
         seen_paths.add(path)
         steps.append((app_id, path))
@@ -191,6 +216,7 @@ def loading_app() -> Any:
     error = pn.pane.HTML("", visible=False, margin=(8, 0, 0, 0))
     redirect = pn.pane.HTML("", margin=0)
     progress = pn.indicators.Progress(value=0, max=100, sizing_mode="stretch_width", bar_color="success")
+    background_state = {"index": -1}
 
     def _update() -> None:
         state = _BOOTSTRAP_STATE.snapshot()
@@ -215,8 +241,20 @@ def loading_app() -> Any:
                 '<div style="font-size:12px;color:#86efac;">Ready. Redirecting to landing...</div>'
             )
 
-    _update()
-    pn.state.add_periodic_callback(_update, period=150)
+        if not _LOADING_GIF_URIS:
+            return
+        index = int(state["elapsed"] // 4) % len(_LOADING_GIF_URIS)
+        if index == background_state["index"]:
+            return
+        background_state["index"] = index
+        root.styles = {
+            "background": (
+                "linear-gradient(rgba(0,0,0,0.68), rgba(0,0,0,0.78)), "
+                f"url('{_LOADING_GIF_URIS[index]}') center / cover no-repeat"
+            ),
+            "min-height": "100vh",
+            "padding": "0",
+        }
 
     card = pn.Column(
         title,
@@ -235,12 +273,15 @@ def loading_app() -> Any:
             "box-shadow": "0 10px 30px rgba(0,0,0,0.45)",
         },
     )
-    return pn.Column(
+    root = pn.Column(
         pn.Spacer(sizing_mode="stretch_width", height=160),
         pn.Row(pn.Spacer(sizing_mode="stretch_width"), card, pn.Spacer(sizing_mode="stretch_width")),
         sizing_mode="stretch_both",
         styles={"background": "#000000", "min-height": "100vh", "padding": "0"},
     )
+    _update()
+    pn.state.add_periodic_callback(_update, period=150)
+    return root
 
 
 def _env_flag(name: str, default: bool) -> bool:

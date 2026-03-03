@@ -2,7 +2,13 @@ from __future__ import annotations
 
 import warnings
 
-from larvaworld.portal.landing_registry import ITEMS, LANES, PINNED_QUICK_START
+from larvaworld.portal.landing_registry import (
+    ITEMS,
+    LANES,
+    PINNED_QUICK_START,
+    QUICK_START_DEFAULT_MODE,
+    QUICK_START_MODES,
+)
 from larvaworld.portal.registry_types import LandingItem, PrimaryAction
 
 
@@ -13,6 +19,8 @@ def validate_registry(*, strict: bool = True) -> None:
 
     referenced: list[str] = []
     referenced.extend(PINNED_QUICK_START)
+    for mode in QUICK_START_MODES:
+        referenced.extend(mode.item_ids)
     for lane in LANES:
         referenced.extend(lane.item_ids)
 
@@ -22,6 +30,18 @@ def validate_registry(*, strict: bool = True) -> None:
 
     if len(PINNED_QUICK_START) != len(set(PINNED_QUICK_START)):
         _err("Duplicate IDs in PINNED_QUICK_START")
+
+    mode_ids = [mode.mode_id for mode in QUICK_START_MODES]
+    if len(mode_ids) != len(set(mode_ids)):
+        _err("Duplicate quick-start mode ids")
+    if QUICK_START_DEFAULT_MODE not in set(mode_ids):
+        _err(f"Unknown QUICK_START_DEFAULT_MODE='{QUICK_START_DEFAULT_MODE}'")
+
+    for mode in QUICK_START_MODES:
+        if len(mode.item_ids) != len(set(mode.item_ids)):
+            _err(f"Duplicate IDs in quick-start mode '{mode.mode_id}'")
+        if strict and len(mode.item_ids) != 3:
+            _err(f"Quick-start mode '{mode.mode_id}' must include exactly 3 items")
 
     hidden_in_refs = [item_id for item_id in referenced if ITEMS[item_id].status == "hidden"]
     if hidden_in_refs:
@@ -100,7 +120,7 @@ def compute_badges(item: LandingItem) -> list[str]:
         badges.append("Demo")
 
     if item.status == "planned":
-        badges.append("Planned")
+        badges.append("Under construction")
 
     for extra in item.badges:
         if extra not in badges:
@@ -128,4 +148,4 @@ def compute_primary_action(item: LandingItem) -> PrimaryAction:
         href = item.learn_more.issue_url or item.learn_more.docs_url
         return PrimaryAction(label="Learn more", href=href, enabled=True)
 
-    return PrimaryAction(label="Planned", href=None, enabled=False)
+    return PrimaryAction(label="Under construction", href=None, enabled=False)

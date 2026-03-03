@@ -7,6 +7,7 @@ Kind = Literal["panel_app", "external_link", "placeholder"]
 Status = Literal["ready", "planned", "hidden"]
 Level = Literal["core", "advanced", "demo"]
 Lane = Literal["simulate", "data", "models", "eval", "demos"]
+QuickStartModeId = Literal["user", "modeler", "experimentalist"]
 
 
 @dataclass(frozen=True)
@@ -50,8 +51,15 @@ class LaneSpec:
 
 
 @dataclass(frozen=True)
+class QuickStartModeSpec:
+    mode_id: QuickStartModeId
+    title: str
+    color: str
+    item_ids: list[str]
+
+
+@dataclass(frozen=True)
 class PrimaryAction:
     label: str
     href: str | None
     enabled: bool
-
