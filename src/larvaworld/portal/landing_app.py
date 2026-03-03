@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import panel as pn
+from bokeh.models import InlineStyleSheet
 
 from larvaworld.portal.landing_registry import (
     ITEMS,
@@ -46,6 +47,32 @@ def landing_app() -> pn.viewable.Viewable:
 
     mode_by_id = {mode.mode_id: mode for mode in QUICK_START_MODES}
     active_mode_id = QUICK_START_DEFAULT_MODE if QUICK_START_DEFAULT_MODE in mode_by_id else QUICK_START_MODES[0].mode_id
+    quick_start_tab_sheet = InlineStyleSheet(
+        css="""
+        .bk-btn,
+        .bk-btn:hover,
+        .bk-btn:focus,
+        .bk-btn:active {
+          background: transparent !important;
+          background-color: transparent !important;
+          background-image: none !important;
+          color: #1f2937 !important;
+          box-shadow: none !important;
+        }
+
+        .bk-btn *,
+        .bk-btn::before,
+        .bk-btn::after,
+        .bk-btn *::before,
+        .bk-btn *::after {
+          background: transparent !important;
+          background-color: transparent !important;
+          box-shadow: none !important;
+          border: 0 !important;
+          color: inherit !important;
+        }
+        """
+    )
 
     def _quick_start_grid(mode_id: str) -> pn.viewable.Viewable:
         mode = mode_by_id[mode_id]
@@ -141,6 +168,7 @@ def landing_app() -> pn.viewable.Viewable:
             sizing_mode="fixed",
             width=124,
             height=28,
+            stylesheets=[quick_start_tab_sheet],
         )
         mode_buttons[mode.mode_id] = button
         mode_tabs.append(button)

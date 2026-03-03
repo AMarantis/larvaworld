@@ -293,6 +293,8 @@ PORTAL_RAW_CSS = """
   margin: 30px 0 18px 0;
   padding: 8px 12px 14px 10px;
   border-radius: 14px;
+  /* Source-of-truth color for the Quick Start lane. */
+  --lw-quick-start-bg: rgba(0,0,0,0.08);
   background: rgba(0,0,0,0.08);
   border-left: 4px solid #f5a142;
   overflow: visible;
@@ -319,7 +321,7 @@ PORTAL_RAW_CSS = """
 
 .lw-portal-quick-start-tabs {
   position: absolute;
-  top: -31px;
+  top: -35px;
   right: 8px;
   z-index: 7;
   display: flex;
@@ -355,12 +357,12 @@ button.lw-portal-qs-top-tab,
   padding: 0 8px !important;
   white-space: nowrap !important;
   letter-spacing: 0.1px !important;
-  background: #d7d9dd !important;
-  background-color: #d7d9dd !important;
+  background: var(--lw-quick-start-bg, rgba(0,0,0,0.08)) !important;
+  background-color: var(--lw-quick-start-bg, rgba(0,0,0,0.08)) !important;
   background-image: none !important;
-  box-shadow: inset 0 0 0 999px #d7d9dd !important, 0 2px 6px rgba(0,0,0,0.14);
+  box-shadow: none !important;
   transition: transform 0.14s ease, filter 0.14s ease, box-shadow 0.14s ease;
-  margin-bottom: -3px !important;
+  margin-bottom: 0 !important;
 }
 
 /* Force the real clickable element (Bokeh/Material internals) to use lane gray. */
@@ -368,8 +370,8 @@ button.lw-portal-qs-top-tab,
 .lw-portal-qs-top-tab button,
 .lw-portal-qs-top-tab .mdc-button,
 .lw-portal-qs-top-tab [class*="mdc-button"] {
-  background: #d7d9dd !important;
-  background-color: #d7d9dd !important;
+  background: transparent !important;
+  background-color: transparent !important;
   background-image: none !important;
   color: #1f2937 !important;
 }
@@ -420,10 +422,6 @@ button.lw-portal-qs-top-tab::after {
 button.lw-portal-qs-top-tab--user,
 .lw-portal-qs-top-tab--user button,
 .lw-portal-qs-top-tab--user .bk-btn {
-  background: #d7d9dd !important;
-  background-color: #d7d9dd !important;
-  background-image: none !important;
-  box-shadow: inset 0 0 0 999px #d7d9dd !important;
   color: #1f2937 !important;
   border-color: rgba(148, 163, 184, 0.75) !important;
 }
@@ -432,10 +430,6 @@ button.lw-portal-qs-top-tab--user,
 button.lw-portal-qs-top-tab--modeler,
 .lw-portal-qs-top-tab--modeler button,
 .lw-portal-qs-top-tab--modeler .bk-btn {
-  background: #d7d9dd !important;
-  background-color: #d7d9dd !important;
-  background-image: none !important;
-  box-shadow: inset 0 0 0 999px #d7d9dd !important;
   color: #1f2937 !important;
   border-color: rgba(148, 163, 184, 0.75) !important;
 }
@@ -444,10 +438,6 @@ button.lw-portal-qs-top-tab--modeler,
 button.lw-portal-qs-top-tab--experimentalist,
 .lw-portal-qs-top-tab--experimentalist button,
 .lw-portal-qs-top-tab--experimentalist .bk-btn {
-  background: #d7d9dd !important;
-  background-color: #d7d9dd !important;
-  background-image: none !important;
-  box-shadow: inset 0 0 0 999px #d7d9dd !important;
   color: #1f2937 !important;
   border-color: rgba(148, 163, 184, 0.75) !important;
 }
@@ -465,9 +455,10 @@ button.lw-portal-qs-top-tab:hover,
 button.lw-portal-qs-top-tab--active,
 .lw-portal-qs-top-tab--active button,
 .lw-portal-qs-top-tab--active .bk-btn {
-  transform: translateY(-2px);
-  box-shadow: 0 7px 14px rgba(0,0,0,0.2);
-  filter: brightness(1.02);
+  transform: none !important;
+  box-shadow: 0 -4px 8px -5px rgba(15, 23, 42, 0.75) !important;
+  filter: brightness(1.04);
+  border-color: #f5a142 !important;
 }
 
 .lw-portal-quick-start-cards {
