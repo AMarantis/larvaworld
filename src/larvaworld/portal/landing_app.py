@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import base64
+from html import escape
+from pathlib import Path
+
 import panel as pn
 from bokeh.models import InlineStyleSheet
 
@@ -18,6 +22,104 @@ from larvaworld.portal.panel_components import (
 )
 from larvaworld.portal.notebook_workspace import notebook_names_by_item, notebook_urls_by_item
 from larvaworld.portal.registry_logic import validate_registry
+
+
+def _load_banner_gif_data_uri(filename: str) -> str:
+    # English comments inside code.
+    gif_path = Path(__file__).with_name("icons") / "gifs" / filename
+    try:
+        encoded = base64.b64encode(gif_path.read_bytes()).decode("ascii")
+    except OSError:
+        return ""
+    return f"data:image/gif;base64,{encoded}"
+
+
+def _banner_slides() -> list[dict[str, str]]:
+    # English comments inside code.
+    slide_configs = [
+        {
+            "filename": "Bisegmental_simplification_of_the_larva_body.gif",
+            "title": "Bisegmental simplification of the larva body",
+            "description": (
+                "This simulation illustrates how a reduced body representation preserves key "
+                "locomotion dynamics. It is useful for fast model experiments and sensitivity checks."
+            ),
+            "url": "https://computational-systems-neuroscience.de/wp-content/uploads/2024/10/1.mp4",
+        },
+        {
+            "filename": "Locomotory_model_for_Drosophila_larva.gif",
+            "title": "Locomotory model for Drosophila larva",
+            "description": (
+                "The locomotory model combines crawling rhythms and directional control in a "
+                "single pipeline. Use it to inspect how motor components shape trajectory behavior."
+            ),
+            "url": "https://computational-systems-neuroscience.de/wp-content/uploads/2024/10/2.mp4",
+        },
+        {
+            "filename": "Linear_Angular_speed_during_a_larva_trajectory.gif",
+            "title": "Linear & angular speed during a larva trajectory",
+            "description": (
+                "Speed traces expose coupling between forward motion and turning phases. "
+                "This view helps compare temporal kinematic signatures across conditions."
+            ),
+            "url": "https://computational-systems-neuroscience.de/wp-content/uploads/2024/10/3.mp4",
+        },
+        {
+            "filename": "Dispersion_for_real_VS_simulated_larvae.gif",
+            "title": "Dispersion for real VS simulated larvae",
+            "description": (
+                "Dispersion summaries benchmark simulated groups against observed cohort spread. "
+                "Use this comparison to validate spatial exploration realism."
+            ),
+            "url": "https://computational-systems-neuroscience.de/wp-content/uploads/2024/10/5.mp4",
+        },
+        {
+            "filename": "Growth_over_7_hours.gif",
+            "title": "Growth over 7 hours",
+            "description": (
+                "Long-horizon growth dynamics reveal substrate-dependent developmental trends. "
+                "This scenario links foraging context with life-history model outputs."
+            ),
+            "url": "https://computational-systems-neuroscience.de/wp-content/uploads/2025/07/growth_7hours.mp4",
+        },
+    ]
+
+    slides: list[dict[str, str]] = []
+    for config in slide_configs:
+        data_uri = _load_banner_gif_data_uri(config["filename"])
+        if not data_uri:
+            continue
+        slides.append(
+            {
+                "title": config["title"],
+                "description": config["description"],
+                "url": config["url"],
+                "data_uri": data_uri,
+            }
+        )
+    return slides
+
+
+def _banner_media_html(slide: dict[str, str], *, play_token: int) -> str:
+    # English comments inside code.
+    return (
+        '<img class="lw-portal-banner-gif" '
+        f'src="{slide["data_uri"]}#play-{play_token}" alt="{escape(slide["title"])}" />'
+    )
+
+
+def _banner_text_html(slide: dict[str, str]) -> str:
+    # English comments inside code.
+    return (
+        '<div class="lw-portal-banner-title">'
+        f'{escape(slide["title"])}'
+        "</div>"
+        '<div class="lw-portal-banner-description">'
+        f'{escape(slide["description"])}'
+        "</div>"
+        f'<a class="lw-portal-banner-link" href="{escape(slide["url"])}" '
+        'target="_blank" rel="noopener noreferrer">Learn more</a>'
+    )
 
 
 def landing_app() -> pn.viewable.Viewable:
@@ -42,6 +144,82 @@ def landing_app() -> pn.viewable.Viewable:
         on_dark_mode_change=_set_dark_mode,
     )
     template.header.append(topbar)
+    slides = _banner_slides()
+    if slides:
+        active_slide = {"index": 0, "play_token": 0}
+        media_pane = pn.pane.HTML(
+            _banner_media_html(slides[0], play_token=0),
+            margin=0,
+            css_classes=["lw-portal-banner-media"],
+            sizing_mode="stretch_width",
+        )
+        text_pane = pn.pane.HTML(
+            _banner_text_html(slides[0]),
+            margin=0,
+            css_classes=["lw-portal-banner-copy"],
+            sizing_mode="stretch_width",
+        )
+        banner_main = pn.Row(
+            media_pane,
+            text_pane,
+            css_classes=["lw-portal-banner-main"],
+            sizing_mode="stretch_width",
+            margin=0,
+        )
+        prev_button = pn.widgets.Button(
+            name="‹",
+            button_type="default",
+            width=30,
+            height=30,
+            margin=0,
+            css_classes=["lw-portal-banner-nav-btn", "lw-portal-banner-nav-btn--left"],
+        )
+        next_button = pn.widgets.Button(
+            name="›",
+            button_type="default",
+            width=30,
+            height=30,
+            margin=0,
+            css_classes=["lw-portal-banner-nav-btn", "lw-portal-banner-nav-btn--next"],
+        )
+
+        def _set_slide(index: int) -> None:
+            active_slide["index"] = index % len(slides)
+            active_slide["play_token"] += 1
+            current = slides[active_slide["index"]]
+            media_pane.object = _banner_media_html(current, play_token=active_slide["play_token"])
+            text_pane.object = _banner_text_html(current)
+            if active_slide["index"] % 2 == 0:
+                banner_main.css_classes = ["lw-portal-banner-main"]
+            else:
+                banner_main.css_classes = ["lw-portal-banner-main", "lw-portal-banner-main--reverse"]
+
+        prev_button.on_click(lambda _event: _set_slide(active_slide["index"] - 1))
+        next_button.on_click(lambda _event: _set_slide(active_slide["index"] + 1))
+
+        banner_nav = pn.Row(
+            prev_button,
+            next_button,
+            css_classes=["lw-portal-banner-nav-right"],
+            margin=0,
+        )
+        banner = pn.Column(
+            banner_main,
+            banner_nav,
+            css_classes=["lw-portal-banner"],
+            sizing_mode="stretch_width",
+            margin=(4, 0, 10, 0),
+        )
+        root.append(banner)
+        _set_slide(0)
+
+        doc = pn.state.curdoc
+        if doc is not None and len(slides) > 1:
+            def _advance_slide() -> None:
+                _set_slide(active_slide["index"] + 1)
+
+            doc.add_periodic_callback(_advance_slide, 5000)
+
     notebook_urls = notebook_urls_by_item()
     notebook_names = notebook_names_by_item()
 
