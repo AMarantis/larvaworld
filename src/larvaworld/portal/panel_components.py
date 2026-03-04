@@ -289,6 +289,136 @@ PORTAL_RAW_CSS = """
   font-weight: 650;
 }
 
+.lw-portal-banner {
+  position: relative;
+  height: 300px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 14px;
+  background: rgba(17, 24, 39, 0.96);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+  overflow: hidden;
+}
+
+.lw-portal-banner-main {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  height: 300px;
+}
+
+.lw-portal-banner-main--reverse {
+  flex-direction: row-reverse;
+}
+
+.lw-portal-banner-media {
+  flex: 0 0 74%;
+  min-width: 0;
+  min-height: 300px;
+}
+
+.lw-portal-banner-gif {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  min-height: 300px;
+}
+
+.lw-portal-banner-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 58px 16px 16px;
+  height: 300px;
+  flex: 1 1 26%;
+  overflow: hidden;
+}
+
+.lw-portal-banner-title {
+  font-size: 18px;
+  font-weight: 650;
+  color: rgba(241, 245, 249, 0.98);
+}
+
+.lw-portal-banner-description {
+  font-size: 14px;
+  line-height: 1.45;
+  color: rgba(203, 213, 225, 0.92);
+  max-width: 72ch;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.lw-portal-banner-link {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 11px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid rgba(245, 161, 66, 0.72);
+  background: rgba(245, 161, 66, 0.18);
+  color: rgba(255, 237, 213, 0.98);
+}
+
+.lw-portal-banner-link:hover {
+  background: rgba(245, 161, 66, 0.28);
+}
+
+.lw-portal-banner-nav-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  gap: 8px;
+  z-index: 3;
+  margin: 0 !important;
+}
+
+.lw-portal-banner-nav-btn .bk-btn {
+  width: 30px !important;
+  min-width: 30px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.62);
+  background: rgba(15, 23, 42, 0.86);
+  color: rgba(241, 245, 249, 0.96);
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 !important;
+}
+
+.lw-portal-banner-nav-btn .bk-btn:hover {
+  background: rgba(30, 41, 59, 0.94);
+}
+
+.lw-portal-banner-nav-btn--left {
+  position: static;
+}
+
+.lw-portal-banner-nav-btn--next {
+  position: static;
+}
+
+.lw-portal-root.lw-portal-dark .lw-portal-banner-nav-btn .bk-btn {
+  border-color: rgba(148, 163, 184, 0.62);
+  background: rgba(15, 23, 42, 0.86);
+  color: rgba(241, 245, 249, 0.96);
+}
+
+.lw-portal-root.lw-portal-dark .lw-portal-banner-nav-btn .bk-btn:hover {
+  background: rgba(30, 41, 59, 0.92);
+}
+
 .lw-portal-quick-start {
   margin: 30px 0 18px 0;
   padding: 8px 12px 14px 10px;
@@ -549,16 +679,17 @@ button.lw-portal-qs-top-tab--active,
 .lw-portal-card-badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 10px;
+  gap: 5px;
+  margin-bottom: 8px;
 }
 
 .lw-portal-badge {
   display: inline-flex;
   align-items: center;
-  padding: 2px 8px;
+  padding: 1px 7px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 11px;
+  line-height: 1.2;
   border: 1px solid rgba(0,0,0,0.18);
   background: rgba(0,0,0,0.04);
 }
