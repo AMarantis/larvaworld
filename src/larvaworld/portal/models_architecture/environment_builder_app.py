@@ -11,6 +11,7 @@ from bokeh.models import ColumnDataSource
 from bokeh.plotting import figure
 
 from larvaworld.portal.landing_registry import DOCS_ARENAS_SUBSTRATES
+from larvaworld.portal.panel_components import PORTAL_RAW_CSS, build_app_header
 
 
 LANE_MODELS_COLOR = "#c1b0c2"
@@ -19,6 +20,38 @@ LANE_MODELS_COLOR_DARK = "#5a4760"
 ENV_BUILDER_RAW_CSS = """
 .lw-env-builder-root {
   padding: 14px 12px 20px 12px;
+}
+
+.lw-env-builder-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(17, 17, 17, 0.38);
+  margin: 6px 0 8px 0;
+}
+
+.lw-env-builder-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.lw-env-builder-actions-primary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.lw-env-builder-actions-download {
+  display: flex;
+  width: 100%;
+}
+
+.lw-env-builder-actions-download .bk-btn {
+  width: 100% !important;
+  min-width: 0 !important;
 }
 
 .lw-env-builder-intro {
@@ -32,6 +65,7 @@ ENV_BUILDER_RAW_CSS = """
 .lw-env-builder-intro a {
   color: #4f2f5f;
 }
+
 """.strip()
 
 
@@ -81,33 +115,41 @@ class _EnvironmentBuilderController:
             options=["Food patch", "Obstacle", "Border segment"],
         )
         self.object_radius = pn.widgets.FloatSlider(
-            name="Object radius (m)",
-            start=0.001,
-            end=0.03,
-            step=0.001,
-            value=0.008,
+            name="Object radius (mm)",
+            start=1.0,
+            end=30.0,
+            step=1.0,
+            value=8.0,
+            format="0.0",
         )
         self.border_width = pn.widgets.FloatSlider(
-            name="Border width (m)",
-            start=0.0005,
-            end=0.01,
-            step=0.0005,
-            value=0.001,
+            name="Border width (mm)",
+            start=0.5,
+            end=10.0,
+            step=0.5,
+            value=1.0,
+            format="0.0",
         )
         self.object_color = pn.widgets.ColorPicker(name="Object color", value="#4caf50")
         self.clear_last_btn = pn.widgets.Button(name="Undo last", button_type="default")
         self.clear_all_btn = pn.widgets.Button(name="Clear all", button_type="warning")
         self.export_btn = pn.widgets.FileDownload(
-            name="Download JSON",
+            name="",
+            label="Download JSON",
             button_type="primary",
             callback=self._export_json,
             filename="environment_builder_config.json",
         )
+        self.clear_last_btn.width = 100
+        self.clear_all_btn.width = 90
+        self.export_btn.width = 220
         self.status = pn.pane.Markdown("Click on the canvas to place an object.")
         self.table = pn.pane.DataFrame(
-            pd.DataFrame(columns=["id", "type", "x", "y", "x2", "y2", "radius", "width", "color"]),
+            pd.DataFrame(
+                columns=["id", "type", "x", "y", "x2", "y2", "radius", "width", "color"]
+            ),
             index=False,
-            height=220,
+            height=620,
             sizing_mode="stretch_width",
         )
 
@@ -120,8 +162,14 @@ class _EnvironmentBuilderController:
         self.border_source = ColumnDataSource(
             {"x0": [], "y0": [], "x1": [], "y1": [], "w": [], "color": [], "id": []}
         )
+        self.border_preview_source = ColumnDataSource({"x": [], "y": [], "color": []})
         self._arena_source = ColumnDataSource(
-            {"x": [0.0], "y": [0.0], "w": [self.arena_width.value], "h": [self.arena_height.value]}
+            {
+                "x": [0.0],
+                "y": [0.0],
+                "w": [self.arena_width.value],
+                "h": [self.arena_height.value],
+            }
         )
 
         self.fig = figure(
@@ -193,6 +241,15 @@ class _EnvironmentBuilderController:
             line_width="w",
             legend_label="Borders",
         )
+        self.fig.scatter(
+            x="x",
+            y="y",
+            source=self.border_preview_source,
+            marker="cross",
+            size=16,
+            line_width=3,
+            line_color="color",
+        )
         self.fig.legend.location = "top_left"
         self.fig.legend.background_fill_alpha = 0.85
 
@@ -217,17 +274,38 @@ class _EnvironmentBuilderController:
             css_classes=["lw-env-builder-intro"],
             margin=0,
         )
+        divider = pn.pane.HTML('<div class="lw-env-builder-divider"></div>', margin=0)
+        primary_actions = pn.Row(
+            self.clear_last_btn,
+            self.clear_all_btn,
+            css_classes=["lw-env-builder-actions-primary"],
+            sizing_mode="stretch_width",
+            margin=0,
+        )
+        download_action = pn.Row(
+            self.export_btn,
+            css_classes=["lw-env-builder-actions-download"],
+            sizing_mode="stretch_width",
+            margin=0,
+        )
+        actions = pn.Column(
+            primary_actions,
+            download_action,
+            css_classes=["lw-env-builder-actions"],
+            sizing_mode="stretch_width",
+            margin=0,
+        )
 
         controls = pn.Card(
             self.arena_shape,
             self.arena_width,
             self.arena_height,
-            pn.layout.Divider(),
+            divider,
             self.object_type,
             self.object_radius,
             self.border_width,
             self.object_color,
-            pn.Row(self.clear_last_btn, self.clear_all_btn, self.export_btn, sizing_mode="stretch_width"),
+            actions,
             self.status,
             title="Controls",
             collapsed=False,
@@ -239,15 +317,25 @@ class _EnvironmentBuilderController:
             collapsed=False,
             sizing_mode="stretch_width",
         )
-        side = pn.Column(controls, table_card, width=420, sizing_mode="fixed")
+        side = pn.Column(controls, width=360, sizing_mode="fixed")
 
         canvas = pn.pane.Bokeh(self.fig, sizing_mode="stretch_both")
-        main = pn.Row(side, canvas, sizing_mode="stretch_width")
+        right = pn.Column(table_card, width=360, sizing_mode="fixed")
+        main = pn.Row(side, canvas, right, sizing_mode="stretch_width")
 
-        return pn.Column(intro, main, css_classes=["lw-env-builder-root"], sizing_mode="stretch_both")
+        return pn.Column(
+            intro, main, css_classes=["lw-env-builder-root"], sizing_mode="stretch_both"
+        )
 
     def _update_insert_hint(self, *_: object) -> None:
         # English comments inside code.
+        is_border_segment = self.object_type.value == "Border segment"
+        self.border_width.visible = is_border_segment
+        self.object_radius.visible = not is_border_segment
+        if self.object_type.value == "Obstacle":
+            self.object_radius.name = "Obstacle radius (mm)"
+        else:
+            self.object_radius.name = "Food patch radius (mm)"
         if self.object_type.value == "Border segment":
             if self._border_start is None:
                 self.status.object = "Click first point for border segment."
@@ -258,6 +346,7 @@ class _EnvironmentBuilderController:
                 )
             return
         self._border_start = None
+        self._clear_border_preview()
         self.status.object = f"Click canvas to add a {self.object_type.value.lower()}."
 
     def _update_arena(self, *_: object) -> None:
@@ -297,7 +386,7 @@ class _EnvironmentBuilderController:
             object_type=object_type,
             x=x,
             y=y,
-            radius=round(float(self.object_radius.value), 4),
+            radius=round(float(self.object_radius.value) / 1000.0, 4),
             color=self.object_color.value,
         )
 
@@ -305,16 +394,18 @@ class _EnvironmentBuilderController:
         # English comments inside code.
         if self._border_start is None:
             self._border_start = (x, y)
+            self._show_border_preview(x=x, y=y, color=self.object_color.value)
             self._update_insert_hint()
             return
         x0, y0 = self._border_start
         self._border_start = None
+        self._clear_border_preview()
         self._add_border_object(
             x0=x0,
             y0=y0,
             x1=x,
             y1=y,
-            width=round(float(self.border_width.value), 4),
+            width=round(float(self.border_width.value) / 1000.0, 4),
             color=self.object_color.value,
         )
         self._update_insert_hint()
@@ -325,7 +416,9 @@ class _EnvironmentBuilderController:
         self._counter += 1
         return object_id
 
-    def _add_point_object(self, *, object_type: str, x: float, y: float, radius: float, color: str) -> None:
+    def _add_point_object(
+        self, *, object_type: str, x: float, y: float, radius: float, color: str
+    ) -> None:
         # English comments inside code.
         if object_type == "Food patch":
             object_id = self._next_id("food")
@@ -353,12 +446,22 @@ class _EnvironmentBuilderController:
         self.status.object = f"Added {object_type.lower()} at ({x:.3f}, {y:.3f})."
         self._refresh_table()
 
-    def _add_border_object(self, *, x0: float, y0: float, x1: float, y1: float, width: float, color: str) -> None:
+    def _add_border_object(
+        self, *, x0: float, y0: float, x1: float, y1: float, width: float, color: str
+    ) -> None:
         # English comments inside code.
         object_id = self._next_id("border")
         self._append_source_row(
             self.border_source,
-            {"x0": x0, "y0": y0, "x1": x1, "y1": y1, "w": max(1, int(width * 1500)), "color": color, "id": object_id},
+            {
+                "x0": x0,
+                "y0": y0,
+                "x1": x1,
+                "y1": y1,
+                "w": max(1, int(width * 1500)),
+                "color": color,
+                "id": object_id,
+            },
         )
         self._objects.append(
             _ObjectRow(
@@ -372,10 +475,22 @@ class _EnvironmentBuilderController:
                 color=color,
             )
         )
-        self.status.object = f"Added border segment from ({x0:.3f}, {y0:.3f}) to ({x1:.3f}, {y1:.3f})."
+        self.status.object = (
+            f"Added border segment from ({x0:.3f}, {y0:.3f}) to ({x1:.3f}, {y1:.3f})."
+        )
         self._refresh_table()
 
-    def _append_source_row(self, source: ColumnDataSource, row: dict[str, object]) -> None:
+    def _show_border_preview(self, *, x: float, y: float, color: str) -> None:
+        # English comments inside code.
+        self.border_preview_source.data = {"x": [x], "y": [y], "color": [color]}
+
+    def _clear_border_preview(self) -> None:
+        # English comments inside code.
+        self.border_preview_source.data = {"x": [], "y": [], "color": []}
+
+    def _append_source_row(
+        self, source: ColumnDataSource, row: dict[str, object]
+    ) -> None:
         # English comments inside code.
         data = {key: list(value) for key, value in source.data.items()}
         for key, value in row.items():
@@ -384,6 +499,12 @@ class _EnvironmentBuilderController:
 
     def _on_clear_last(self, _: object) -> None:
         # English comments inside code.
+        if self._border_start is not None:
+            self._border_start = None
+            self._clear_border_preview()
+            self._update_insert_hint()
+            self.status.object = "Cancelled pending border segment."
+            return
         if not self._objects:
             self.status.object = "Nothing to undo."
             return
@@ -397,18 +518,36 @@ class _EnvironmentBuilderController:
         self._objects.clear()
         self._border_start = None
         self._counter = 1
+        self._clear_border_preview()
         self.food_source.data = {"x": [], "y": [], "r": [], "color": [], "id": []}
         self.obstacle_source.data = {"x": [], "y": [], "r": [], "color": [], "id": []}
-        self.border_source.data = {"x0": [], "y0": [], "x1": [], "y1": [], "w": [], "color": [], "id": []}
+        self.border_source.data = {
+            "x0": [],
+            "y0": [],
+            "x1": [],
+            "y1": [],
+            "w": [],
+            "color": [],
+            "id": [],
+        }
         self._refresh_table()
         self._update_insert_hint()
         self.status.object = "Cleared all placed objects."
 
     def _rebuild_sources(self) -> None:
         # English comments inside code.
+        self._clear_border_preview()
         self.food_source.data = {"x": [], "y": [], "r": [], "color": [], "id": []}
         self.obstacle_source.data = {"x": [], "y": [], "r": [], "color": [], "id": []}
-        self.border_source.data = {"x0": [], "y0": [], "x1": [], "y1": [], "w": [], "color": [], "id": []}
+        self.border_source.data = {
+            "x0": [],
+            "y0": [],
+            "x1": [],
+            "y1": [],
+            "w": [],
+            "color": [],
+            "id": [],
+        }
         for obj in self._objects:
             if obj.object_type == "Food patch":
                 self._append_source_row(
@@ -476,7 +615,11 @@ class _EnvironmentBuilderController:
                     "pos": [obj.x, obj.y],
                     "radius": obj.radius,
                     "amount": 3.0,
-                    "odor": {"id": f"{obj.object_id}_odor", "intensity": 1.0, "spread": 0.02},
+                    "odor": {
+                        "id": f"{obj.object_id}_odor",
+                        "intensity": 1.0,
+                        "spread": 0.02,
+                    },
                     "substrate": {"type": "standard", "quality": 1.0},
                     "color": obj.color,
                 }
@@ -515,13 +658,14 @@ class _EnvironmentBuilderController:
 
 def environment_builder_app() -> pn.viewable.Viewable:
     # English comments inside code.
-    pn.extension(raw_css=[ENV_BUILDER_RAW_CSS])
+    pn.extension(raw_css=[PORTAL_RAW_CSS, ENV_BUILDER_RAW_CSS])
     controller = _EnvironmentBuilderController()
 
     template = pn.template.MaterialTemplate(
-        title="Environment Builder",
+        title="",
         header_background=LANE_MODELS_COLOR,
         header_color="#1f1f1f",
     )
+    template.header.append(build_app_header(title="Environment Builder"))
     template.main.append(controller.view())
     return template

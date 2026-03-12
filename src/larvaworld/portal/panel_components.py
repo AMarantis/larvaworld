@@ -9,7 +9,11 @@ from typing import Callable
 import panel as pn
 
 from larvaworld.portal.landing_registry import DOCS_ROOT, GITHUB_ISSUES, GITHUB_ROOT
-from larvaworld.portal.registry_logic import compute_badges, compute_primary_action, resolve_target
+from larvaworld.portal.registry_logic import (
+    compute_badges,
+    compute_primary_action,
+    resolve_target,
+)
 from larvaworld.portal.registry_types import LandingItem, LaneSpec
 
 
@@ -47,6 +51,62 @@ PORTAL_RAW_CSS = """
 
 .lw-portal-topbar > * {
   align-self: center !important;
+}
+
+.lw-portal-app-topbar {
+  display: flex;
+  align-items: center !important;
+  gap: 16px;
+  width: 100%;
+  min-height: 60px;
+}
+
+.lw-portal-app-topbar > * {
+  align-self: center !important;
+}
+
+.lw-portal-app-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 2px solid rgba(17,17,17,0.78);
+  background: rgba(255,255,255,0.98);
+  color: #111111;
+  text-decoration: none;
+  font-weight: 700;
+  line-height: 1;
+  flex: 0 0 auto;
+  box-shadow: none;
+  box-sizing: border-box;
+}
+
+.lw-portal-app-back-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  line-height: 1;
+  transform: translateX(-1px);
+}
+
+.lw-portal-app-back:hover {
+  background: #f3f4f6;
+  color: #111111;
+  text-decoration: none;
+}
+
+.lw-portal-app-title {
+  display: flex;
+  align-items: center;
+  font-size: 26px;
+  font-weight: 650;
+  color: rgba(17, 17, 17, 0.96);
+  line-height: 1;
+  min-height: 42px;
+  margin: 0;
 }
 
 .lw-portal-header-left {
@@ -855,9 +915,7 @@ def _portal_logo_html(*, version: str) -> str:
     # English comments inside code.
     logo_img = ""
     if _LOGO_DATA_URI:
-        logo_img = (
-            f'<img class="lw-portal-logo-img" src="{_LOGO_DATA_URI}" alt="Larvaworld logo"/>'
-        )
+        logo_img = f'<img class="lw-portal-logo-img" src="{_LOGO_DATA_URI}" alt="Larvaworld logo"/>'
 
     return (
         '<a class="lw-portal-logo" href="/landing" '
@@ -929,7 +987,9 @@ def _button_html(
     class_attr = " ".join(button_classes)
 
     if not enabled or not href:
-        return f'<span class="{class_attr} lw-portal-btn--disabled">{escape(label)}</span>'
+        return (
+            f'<span class="{class_attr} lw-portal-btn--disabled">{escape(label)}</span>'
+        )
 
     attrs = ""
     if normalized_label == "notebook":
@@ -953,9 +1013,9 @@ def build_footer() -> pn.viewable.Viewable:
     # English comments inside code.
     html = (
         '<div class="lw-portal-footer-shell"><div class="lw-portal-footer-bar">'
-        '<span>&copy; Larvaworld</span>'
-        f'<span>v{escape(_PORTAL_VERSION)}</span>'
-        '<span>University of Cologne</span>'
+        "<span>&copy; Larvaworld</span>"
+        f"<span>v{escape(_PORTAL_VERSION)}</span>"
+        "<span>University of Cologne</span>"
         f'<a class="lw-portal-footer-link" href="{escape(DOCS_ROOT)}" '
         'target="_blank" rel="noopener noreferrer">Docs</a>'
         f'<a class="lw-portal-footer-link" href="{escape(GITHUB_ROOT)}" '
@@ -963,7 +1023,7 @@ def build_footer() -> pn.viewable.Viewable:
         f'<a class="lw-portal-footer-link" href="{escape(GITHUB_ISSUES)}" '
         'target="_blank" rel="noopener noreferrer">Issues</a>'
         '<a class="lw-portal-footer-link" href="mailto:p.sakagiannis@uni-koeln.de">'
-        'Contact</a>'
+        "Contact</a>"
         "</div></div>"
     )
     return pn.pane.HTML(html, margin=0, sizing_mode="stretch_width")
@@ -1018,6 +1078,7 @@ def build_template_header(
         settings_panel.visible = not settings_panel.visible
 
     if on_dark_mode_change is not None:
+
         def _toggle_dark_mode(event: object) -> None:
             value = bool(getattr(event, "new", False))
             on_dark_mode_change(value)
@@ -1051,6 +1112,32 @@ def build_template_header(
         margin=0,
     )
     return header_row
+
+
+def build_app_header(
+    *, title: str, back_href: str = "/landing"
+) -> pn.viewable.Viewable:
+    # English comments inside code.
+    back_button = pn.pane.HTML(
+        (
+            f'<a class="lw-portal-app-back" href="{escape(back_href)}" '
+            'title="Back to landing" aria-label="Back to landing">'
+            '<span class="lw-portal-app-back-icon">&#8249;</span></a>'
+        ),
+        margin=0,
+    )
+    title_pane = pn.pane.HTML(
+        f'<div class="lw-portal-app-title">{escape(title)}</div>',
+        margin=0,
+    )
+    return pn.Row(
+        back_button,
+        title_pane,
+        pn.Spacer(sizing_mode="stretch_width"),
+        css_classes=["lw-portal-app-topbar"],
+        sizing_mode="stretch_width",
+        margin=0,
+    )
 
 
 def render_card(
@@ -1151,10 +1238,15 @@ def render_card(
     )
 
     body = pn.Column(
-        pn.pane.HTML(f'<div class="lw-portal-card-badges">{badges_html}</div>', margin=0),
-        pn.pane.HTML(f'<div class="lw-portal-card-title">{escape(item.title)}</div>', margin=0),
         pn.pane.HTML(
-            f'<div class="lw-portal-card-subtitle">{_subtitle_html(item.subtitle)}</div>', margin=0
+            f'<div class="lw-portal-card-badges">{badges_html}</div>', margin=0
+        ),
+        pn.pane.HTML(
+            f'<div class="lw-portal-card-title">{escape(item.title)}</div>', margin=0
+        ),
+        pn.pane.HTML(
+            f'<div class="lw-portal-card-subtitle">{_subtitle_html(item.subtitle)}</div>',
+            margin=0,
         ),
         actions_pane,
         overlay_pane,
@@ -1183,7 +1275,9 @@ def render_lane(
     ]
     grid = pn.pane.HTML("", visible=False)  # placeholder to keep types simple
     if cards:
-        grid = pn.GridBox(*cards, ncols=4, css_classes=["lw-portal-grid"], sizing_mode="stretch_width")
+        grid = pn.GridBox(
+            *cards, ncols=4, css_classes=["lw-portal-grid"], sizing_mode="stretch_width"
+        )
 
     content = pn.Column(title, grid, sizing_mode="stretch_width", margin=0)
     if not lane.collapsed_by_default:
