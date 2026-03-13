@@ -30,6 +30,7 @@ packages = [
 larvaworld = "larvaworld.cli.main:main"
 # Currently GUI is not functional
 # larvaworld-gui = "larvaworld.gui.main:main"
+larvaworld-gui-v2 = "larvaworld.gui_v2.main:main"
 larvaworld-app = "larvaworld.dashboards.main:main"
 larvaworld-portal = "larvaworld.portal.serve:main"
 
@@ -61,6 +62,7 @@ pint_pandas = ">=0.3,<1.0"
 powerlaw = "1.5"
 progressbar = "2.5"
 pygame = ">=2.6,<3.0"
+PySide6 = ">=6.8,<7.0"
 pypdf = ">=5.0,<6.0"
 # PySimpleGUI is now located on a private PyPI server.  Please add to your pip command: -i https://PySimpleGUI.net/install
 #PySimpleGUI = "*"
