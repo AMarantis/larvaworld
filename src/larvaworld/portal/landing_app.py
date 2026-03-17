@@ -20,7 +20,10 @@ from larvaworld.portal.panel_components import (
     render_card,
     render_lane,
 )
-from larvaworld.portal.notebook_workspace import notebook_names_by_item, notebook_urls_by_item
+from larvaworld.portal.notebook_workspace import (
+    notebook_names_by_item,
+    notebook_urls_by_item,
+)
 from larvaworld.portal.registry_logic import validate_registry
 
 
@@ -134,15 +137,7 @@ def landing_app() -> pn.viewable.Viewable:
     )
     root = pn.Column(css_classes=["lw-portal-root"], sizing_mode="stretch_width")
 
-    def _set_dark_mode(enabled: bool) -> None:
-        classes = [cls for cls in root.css_classes if cls != "lw-portal-dark"]
-        if enabled:
-            classes.append("lw-portal-dark")
-        root.css_classes = classes
-
-    topbar = build_template_header(
-        on_dark_mode_change=_set_dark_mode,
-    )
+    topbar = build_template_header()
     template.header.append(topbar)
     slides = _banner_slides()
     if slides:
@@ -187,12 +182,17 @@ def landing_app() -> pn.viewable.Viewable:
             active_slide["index"] = index % len(slides)
             active_slide["play_token"] += 1
             current = slides[active_slide["index"]]
-            media_pane.object = _banner_media_html(current, play_token=active_slide["play_token"])
+            media_pane.object = _banner_media_html(
+                current, play_token=active_slide["play_token"]
+            )
             text_pane.object = _banner_text_html(current)
             if active_slide["index"] % 2 == 0:
                 banner_main.css_classes = ["lw-portal-banner-main"]
             else:
-                banner_main.css_classes = ["lw-portal-banner-main", "lw-portal-banner-main--reverse"]
+                banner_main.css_classes = [
+                    "lw-portal-banner-main",
+                    "lw-portal-banner-main--reverse",
+                ]
 
         prev_button.on_click(lambda _event: _set_slide(active_slide["index"] - 1))
         next_button.on_click(lambda _event: _set_slide(active_slide["index"] + 1))
@@ -215,6 +215,7 @@ def landing_app() -> pn.viewable.Viewable:
 
         doc = pn.state.curdoc
         if doc is not None and len(slides) > 1:
+
             def _advance_slide() -> None:
                 _set_slide(active_slide["index"] + 1)
 
@@ -224,7 +225,11 @@ def landing_app() -> pn.viewable.Viewable:
     notebook_names = notebook_names_by_item()
 
     mode_by_id = {mode.mode_id: mode for mode in QUICK_START_MODES}
-    active_mode_id = QUICK_START_DEFAULT_MODE if QUICK_START_DEFAULT_MODE in mode_by_id else QUICK_START_MODES[0].mode_id
+    active_mode_id = (
+        QUICK_START_DEFAULT_MODE
+        if QUICK_START_DEFAULT_MODE in mode_by_id
+        else QUICK_START_MODES[0].mode_id
+    )
     quick_start_tab_sheet = InlineStyleSheet(
         css="""
         .bk-btn,
@@ -279,18 +284,24 @@ def landing_app() -> pn.viewable.Viewable:
     )
 
     def _apply_mode_animation() -> None:
-        classes = [cls for cls in quick_start_cards.css_classes if cls != "lw-portal-qs-flip"]
+        classes = [
+            cls for cls in quick_start_cards.css_classes if cls != "lw-portal-qs-flip"
+        ]
         classes.append("lw-portal-qs-flip")
         quick_start_cards.css_classes = classes
 
         document = pn.state.curdoc
         if document is None:
-            quick_start_cards.css_classes = [cls for cls in classes if cls != "lw-portal-qs-flip"]
+            quick_start_cards.css_classes = [
+                cls for cls in classes if cls != "lw-portal-qs-flip"
+            ]
             return
 
         def _clear_animation() -> None:
             quick_start_cards.css_classes = [
-                cls for cls in quick_start_cards.css_classes if cls != "lw-portal-qs-flip"
+                cls
+                for cls in quick_start_cards.css_classes
+                if cls != "lw-portal-qs-flip"
             ]
 
         document.add_timeout_callback(_clear_animation, 430)
@@ -307,7 +318,11 @@ def landing_app() -> pn.viewable.Viewable:
         if mode_id == active_mode_id:
             return
         active_mode_id = mode_id
-        classes = [cls for cls in quick_start.css_classes if not cls.startswith("lw-portal-quick-start--")]
+        classes = [
+            cls
+            for cls in quick_start.css_classes
+            if not cls.startswith("lw-portal-quick-start--")
+        ]
         mode_cls = quick_start_mode_classes.get(mode_id)
         if mode_cls:
             classes.append(mode_cls)
@@ -315,7 +330,11 @@ def landing_app() -> pn.viewable.Viewable:
         quick_start_cards[:] = [_quick_start_grid(mode_id)]
         _apply_mode_animation()
         for key, button in mode_buttons.items():
-            classes = [cls for cls in button.css_classes if cls != "lw-portal-qs-top-tab--active"]
+            classes = [
+                cls
+                for cls in button.css_classes
+                if cls != "lw-portal-qs-top-tab--active"
+            ]
             if key == mode_id:
                 classes.append("lw-portal-qs-top-tab--active")
             button.css_classes = classes
@@ -359,7 +378,9 @@ def landing_app() -> pn.viewable.Viewable:
     )
 
     quick_start_main = pn.Column(
-        pn.pane.HTML('<div class="lw-portal-section-title">Quick Start</div>', margin=0),
+        pn.pane.HTML(
+            '<div class="lw-portal-section-title">Quick Start</div>', margin=0
+        ),
         quick_start_cards,
         css_classes=["lw-portal-quick-start-main"],
         margin=0,
@@ -385,7 +406,11 @@ def landing_app() -> pn.viewable.Viewable:
 
     # Lanes
     for lane in LANES:
-        lane_items = [ITEMS[item_id] for item_id in lane.item_ids if ITEMS[item_id].status != "hidden"]
+        lane_items = [
+            ITEMS[item_id]
+            for item_id in lane.item_ids
+            if ITEMS[item_id].status != "hidden"
+        ]
         root.append(
             render_lane(
                 lane,
