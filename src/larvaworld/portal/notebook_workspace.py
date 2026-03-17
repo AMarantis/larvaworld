@@ -18,6 +18,7 @@ from urllib.parse import quote, urlparse
 from urllib.request import Request, urlopen
 
 from larvaworld.portal.landing_registry import NOTEBOOK_TUTORIAL_BY_ITEM_ID
+from larvaworld.portal.workspace import WorkspaceError, get_notebook_workspace_dir
 
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -36,6 +37,10 @@ def _workspace_dir() -> Path:
     raw = os.getenv("LARVAWORLD_PORTAL_NOTEBOOK_WORKSPACE")
     if raw:
         return Path(raw).expanduser().resolve()
+    try:
+        return get_notebook_workspace_dir()
+    except WorkspaceError:
+        pass
     return (_REPO_ROOT / "portal_notebooks").resolve()
 
 
@@ -284,8 +289,12 @@ def _start_jupyter_process() -> bool:
         _JUPYTER_PROCESS = subprocess.Popen(
             cmd,
             env=env,
-            stdout=_JUPYTER_LOG_HANDLE if _JUPYTER_LOG_HANDLE is not None else subprocess.DEVNULL,
-            stderr=subprocess.STDOUT if _JUPYTER_LOG_HANDLE is not None else subprocess.DEVNULL,
+            stdout=_JUPYTER_LOG_HANDLE
+            if _JUPYTER_LOG_HANDLE is not None
+            else subprocess.DEVNULL,
+            stderr=subprocess.STDOUT
+            if _JUPYTER_LOG_HANDLE is not None
+            else subprocess.DEVNULL,
         )
     except OSError:
         _JUPYTER_PROCESS = None

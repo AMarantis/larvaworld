@@ -4,7 +4,6 @@ import base64
 import importlib.metadata as im
 from html import escape
 from pathlib import Path
-from typing import Callable
 
 import panel as pn
 
@@ -15,6 +14,7 @@ from larvaworld.portal.registry_logic import (
     resolve_target,
 )
 from larvaworld.portal.registry_types import LandingItem, LaneSpec
+from larvaworld.portal.workspace_ui import WorkspaceUiController
 
 
 PORTAL_RAW_CSS = """
@@ -179,30 +179,127 @@ PORTAL_RAW_CSS = """
   display: flex;
   align-items: center;
   gap: 12px;
+  flex: 0 0 auto;
 }
 
-.lw-portal-icon-link,
-.lw-portal-topbar .lw-portal-settings-btn .bk-btn {
+.lw-portal-workspace-chip {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  height: 34px;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 10px;
   border-radius: 10px;
   border: 1px solid rgba(0,0,0,0.18);
   background: #ffffff;
   color: #111111;
-  text-decoration: none;
+  white-space: nowrap;
+}
+
+.lw-portal-workspace-chip--missing {
+  background: rgba(255,255,255,0.88);
+}
+
+.lw-portal-workspace-chip-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(0,0,0,0.56);
+}
+
+.lw-portal-workspace-chip-value {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.lw-portal-workspace-chip-path {
+  font-size: 11px;
+  color: rgba(0,0,0,0.56);
+}
+
+.lw-portal-topbar .lw-portal-workspace-chip {
+  border-color: rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.16);
+  color: rgba(255,255,255,0.96);
+}
+
+.lw-portal-topbar .lw-portal-workspace-chip-label,
+.lw-portal-topbar .lw-portal-workspace-chip-path {
+  color: rgba(255,255,255,0.78);
 }
 
 .lw-portal-icon-link {
   width: 38px;
+  min-width: 38px;
+  height: 38px;
   padding: 0;
+  flex: 0 0 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(17,17,17,0.14);
+  background: #ffffff;
+  color: #111111;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.lw-portal-workspace-trigger-shell {
+  position: relative;
+  width: 22px;
+  min-width: 22px;
+  max-width: 22px;
+  height: 22px;
+  min-height: 22px;
+  max-height: 22px;
+  flex: 0 0 22px;
+  margin: 0 !important;
+}
+
+.lw-portal-workspace-led {
+  position: absolute;
+  inset: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 2px solid rgba(255,255,255,0.92);
+  box-shadow: 0 0 0 1px rgba(17,17,17,0.12), 0 1px 2px rgba(15, 23, 42, 0.12);
+  box-sizing: border-box;
+}
+
+.lw-portal-workspace-led--active {
+  background: #2f8f4e;
+  box-shadow: 0 0 0 1px rgba(17,17,17,0.12), 0 0 8px rgba(47, 143, 78, 0.28);
+}
+
+.lw-portal-workspace-led--inactive {
+  background: #d94841;
+}
+
+.lw-portal-workspace-trigger-button,
+.lw-portal-workspace-trigger-button .bk-btn,
+.lw-portal-workspace-trigger-button button,
+.lw-portal-workspace-trigger-button .mdc-button,
+.lw-portal-workspace-trigger-button [class*="mdc-button"] {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 22px !important;
+  min-width: 22px !important;
+  max-width: 22px !important;
+  height: 22px !important;
+  min-height: 22px !important;
+  max-height: 22px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  opacity: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
 }
 
 .lw-portal-icon-link:hover,
 .lw-portal-topbar .lw-portal-settings-btn .bk-btn:hover {
-  background: #f3f4f6;
-  color: #111111;
   text-decoration: none;
 }
 
@@ -228,16 +325,22 @@ PORTAL_RAW_CSS = """
   display: flex;
   display: inline-flex;
   align-items: center;
-  width: auto !important;
-  flex: 0 0 auto;
+  width: 22px !important;
+  min-width: 22px !important;
+  max-width: 22px !important;
+  flex: 0 0 22px;
   align-self: center !important;
+  margin-right: 0 !important;
+  overflow: visible;
 }
 
 .lw-portal-settings-panel {
   position: absolute;
   top: 40px;
   right: 0;
-  min-width: 260px;
+  width: 360px;
+  max-width: min(360px, calc(100vw - 24px));
+  min-width: 360px;
   padding: 0;
   border: 0;
   background: #ffffff;
@@ -256,7 +359,9 @@ PORTAL_RAW_CSS = """
 }
 
 .lw-portal-settings-body {
-  min-width: 260px;
+  width: 360px;
+  max-width: min(360px, calc(100vw - 24px));
+  min-width: 360px;
   border: 1px solid rgba(0,0,0,0.22);
   border-radius: 12px;
   padding: 10px 12px;
@@ -309,6 +414,81 @@ PORTAL_RAW_CSS = """
 
 .lw-portal-settings-body * {
   color: #111111 !important;
+}
+
+.lw-portal-workspace-status {
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.35;
+  border: 1px solid rgba(0,0,0,0.10);
+  background: rgba(0,0,0,0.03);
+  color: rgba(17,17,17,0.84);
+}
+
+.lw-portal-workspace-status--success {
+  border-color: rgba(62,124,67,0.24);
+  background: rgba(62,124,67,0.10);
+}
+
+.lw-portal-workspace-status--warning {
+  border-color: rgba(176,112,33,0.28);
+  background: rgba(245,161,66,0.12);
+}
+
+.lw-portal-workspace-status--danger {
+  border-color: rgba(160,40,40,0.24);
+  background: rgba(160,40,40,0.10);
+}
+
+.lw-portal-workspace-status-detail {
+  margin-top: 4px;
+  font-size: 11px;
+  opacity: 0.84;
+  word-break: break-word;
+}
+
+.lw-portal-workspace-controls {
+  width: 100%;
+}
+
+.lw-portal-workspace-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lw-portal-workspace-path-row {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+}
+
+.lw-portal-workspace-path-row > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.lw-portal-workspace-path-row > :last-child {
+  flex: 0 0 auto;
+}
+
+.lw-portal-workspace-actions > * {
+  flex: 0 0 auto;
+}
+
+.lw-portal-workspace-input {
+  width: 100%;
+}
+
+.lw-portal-settings-panel .lw-portal-workspace-input .bk-input-group input {
+  width: 100% !important;
+  min-height: 36px;
+  padding: 7px 10px !important;
+  border: 1px solid rgba(0,0,0,0.18) !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
 }
 
 .lw-portal-settings-panel .bk-input-group,
@@ -1029,11 +1209,9 @@ def build_footer() -> pn.viewable.Viewable:
     return pn.pane.HTML(html, margin=0, sizing_mode="stretch_width")
 
 
-def build_template_header(
-    *,
-    on_dark_mode_change: Callable[[bool], None] | None = None,
-) -> pn.viewable.Viewable:
+def build_template_header() -> pn.viewable.Viewable:
     # English comments inside code.
+    workspace_ui = WorkspaceUiController()
     left = pn.pane.HTML(
         _portal_logo_html(version=_PORTAL_VERSION),
         margin=0,
@@ -1043,26 +1221,9 @@ def build_template_header(
         _header_links_html(),
         margin=0,
     )
-    settings_button = pn.widgets.Button(
-        name="Settings",
-        button_type="default",
-        width=88,
-        margin=0,
-        css_classes=["lw-portal-settings-btn"],
-    )
-    advanced_toggle = pn.pane.HTML(
-        (
-            '<div class="lw-portal-settings-row lw-portal-settings-advanced">'
-            '<span class="lw-portal-settings-check">☑</span>'
-            "<span>Show Advanced items</span>"
-            "</div>"
-        ),
-        margin=0,
-    )
-    dark_mode_toggle = pn.widgets.Switch(name="Dark mode", value=False, margin=0)
+    workspace_controls = workspace_ui.build_controls()
     settings_body = pn.Column(
-        advanced_toggle,
-        dark_mode_toggle,
+        workspace_controls,
         css_classes=["lw-portal-settings-body"],
         sizing_mode="stretch_width",
         margin=0,
@@ -1077,17 +1238,10 @@ def build_template_header(
     def _toggle_settings(_: object) -> None:
         settings_panel.visible = not settings_panel.visible
 
-    if on_dark_mode_change is not None:
-
-        def _toggle_dark_mode(event: object) -> None:
-            value = bool(getattr(event, "new", False))
-            on_dark_mode_change(value)
-
-        dark_mode_toggle.param.watch(_toggle_dark_mode, "value")
-    settings_button.on_click(_toggle_settings)
+    workspace_ui.trigger_button.on_click(_toggle_settings)
 
     settings_dropdown = pn.Column(
-        settings_button,
+        workspace_ui.trigger_view,
         settings_panel,
         css_classes=["lw-portal-settings-dropdown-wrap"],
         margin=0,
@@ -1118,6 +1272,7 @@ def build_app_header(
     *, title: str, back_href: str = "/landing"
 ) -> pn.viewable.Viewable:
     # English comments inside code.
+    workspace_ui = WorkspaceUiController()
     back_button = pn.pane.HTML(
         (
             f'<a class="lw-portal-app-back" href="{escape(back_href)}" '
@@ -1134,6 +1289,7 @@ def build_app_header(
         back_button,
         title_pane,
         pn.Spacer(sizing_mode="stretch_width"),
+        workspace_ui.chip_pane,
         css_classes=["lw-portal-app-topbar"],
         sizing_mode="stretch_width",
         margin=0,
