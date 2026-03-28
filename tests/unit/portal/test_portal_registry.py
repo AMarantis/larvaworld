@@ -17,4 +17,3 @@ def test_ready_panel_apps_are_served() -> None:
     }
     assert None not in ready_panel_app_ids
     assert {x for x in ready_panel_app_ids if x is not None} <= SERVED_APP_IDS
-

@@ -46,7 +46,11 @@ class _BootstrapState:
     def snapshot(self) -> dict[str, Any]:
         with self.lock:
             elapsed = max(time.monotonic() - self.started_at, 0.0)
-            percent = 100 if self.ready else int((self.completed_steps / max(self.total_steps, 1)) * 100)
+            percent = (
+                100
+                if self.ready
+                else int((self.completed_steps / max(self.total_steps, 1)) * 100)
+            )
             remaining = 0.0
             if self.completed_steps > 0 and self.completed_steps < self.total_steps:
                 avg = elapsed / self.completed_steps
@@ -189,7 +193,9 @@ def _start_bootstrap_once() -> None:
         return
     if _BOOTSTRAP_STATE.started and _BOOTSTRAP_STATE.ready:
         return
-    _BOOTSTRAP_THREAD = threading.Thread(target=_run_bootstrap, name="portal-bootstrap", daemon=True)
+    _BOOTSTRAP_THREAD = threading.Thread(
+        target=_run_bootstrap, name="portal-bootstrap", daemon=True
+    )
     _BOOTSTRAP_THREAD.start()
 
 
@@ -215,13 +221,17 @@ def loading_app() -> Any:
     )
     error = pn.pane.HTML("", visible=False, margin=(8, 0, 0, 0))
     redirect = pn.pane.HTML("", margin=0)
-    progress = pn.indicators.Progress(value=0, max=100, sizing_mode="stretch_width", bar_color="success")
+    progress = pn.indicators.Progress(
+        value=0, max=100, sizing_mode="stretch_width", bar_color="success"
+    )
     background_state = {"index": -1}
 
     def _update() -> None:
         state = _BOOTSTRAP_STATE.snapshot()
         progress.value = state["percent"]
-        step.object = f'<div style="font-size:14px;color:#cbd5e1;">{state["step"]}</div>'
+        step.object = (
+            f'<div style="font-size:14px;color:#cbd5e1;">{state["step"]}</div>'
+        )
         details.object = (
             '<div style="font-size:12px;color:#94a3b8;">'
             f'{state["completed_steps"]}/{state["total_steps"]} steps • '
@@ -275,7 +285,11 @@ def loading_app() -> Any:
     )
     root = pn.Column(
         pn.Spacer(sizing_mode="stretch_width", height=160),
-        pn.Row(pn.Spacer(sizing_mode="stretch_width"), card, pn.Spacer(sizing_mode="stretch_width")),
+        pn.Row(
+            pn.Spacer(sizing_mode="stretch_width"),
+            card,
+            pn.Spacer(sizing_mode="stretch_width"),
+        ),
         sizing_mode="stretch_both",
         styles={"background": "#000000", "min-height": "100vh", "padding": "0"},
     )

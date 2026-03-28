@@ -453,32 +453,52 @@ PORTAL_RAW_CSS = """
 }
 
 .lw-portal-workspace-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 0.85fr);
+  column-gap: 10px;
+  row-gap: 10px;
+  align-items: stretch;
 }
 
 .lw-portal-workspace-path-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
-  gap: 8px;
+  column-gap: 10px;
 }
 
 .lw-portal-workspace-path-row > :first-child {
-  flex: 1 1 auto;
   min-width: 0;
 }
 
 .lw-portal-workspace-path-row > :last-child {
-  flex: 0 0 auto;
+  width: auto;
 }
 
 .lw-portal-workspace-actions > * {
-  flex: 0 0 auto;
+  min-width: 0;
 }
 
 .lw-portal-workspace-input {
   width: 100%;
+}
+
+.lw-portal-workspace-actions .bk-btn,
+.lw-portal-workspace-actions button,
+.lw-portal-workspace-browse-btn .bk-btn,
+.lw-portal-workspace-browse-btn button {
+  margin: 0 !important;
+}
+
+.lw-portal-workspace-actions .bk-btn,
+.lw-portal-workspace-actions button {
+  width: 100% !important;
+}
+
+.lw-portal-workspace-browse-btn .bk-btn,
+.lw-portal-workspace-browse-btn button {
+  min-height: 36px !important;
+  margin-top: 22px !important;
 }
 
 .lw-portal-settings-panel .lw-portal-workspace-input .bk-input-group input {

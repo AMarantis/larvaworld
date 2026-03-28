@@ -27,10 +27,14 @@ DOCS_DATA_PROCESSING = f"{DOCS_ROOT}data_pipeline/data_processing.html"
 DOCS_PLOTTING_API = f"{DOCS_ROOT}visualization/plotting_api.html"
 
 DOCS_ARENAS_SUBSTRATES = f"{DOCS_ROOT}agents_environments/arenas_and_substrates.html"
-DOCS_AGENT_ARCHITECTURE = f"{DOCS_ROOT}agents_environments/larva_agent_architecture.html"
+DOCS_AGENT_ARCHITECTURE = (
+    f"{DOCS_ROOT}agents_environments/larva_agent_architecture.html"
+)
 
 DOCS_MODEL_EVALUATION = f"{DOCS_ROOT}working_with_larvaworld/model_evaluation.html"
-DOCS_GA_OPTIMIZATION = f"{DOCS_ROOT}working_with_larvaworld/ga_optimization_advanced.html"
+DOCS_GA_OPTIMIZATION = (
+    f"{DOCS_ROOT}working_with_larvaworld/ga_optimization_advanced.html"
+)
 DOCS_COMPARE_DATASETS = f"{DOCS_MODEL_EVALUATION}#statistical-comparison-plots"
 
 NOTEBOOK_TUTORIAL_BY_ITEM_ID: dict[str, str] = {

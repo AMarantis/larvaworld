@@ -23,7 +23,7 @@ def _error_view(message: str) -> pn.viewable.Viewable:
     # English comments inside code.
     html = (
         '<div style="max-width:720px;margin:36px auto;padding:16px 18px;'
-        'border:1px solid rgba(0,0,0,0.15);border-radius:12px;'
+        "border:1px solid rgba(0,0,0,0.15);border-radius:12px;"
         'font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;">'
         '<h3 style="margin:0 0 10px 0;">Notebook launch unavailable</h3>'
         f'<p style="margin:0 0 10px 0;">{escape(message)}</p>'

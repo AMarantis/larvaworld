@@ -87,12 +87,16 @@ def test_clear_active_workspace_resets_config() -> None:
         require_active_workspace()
 
 
-def test_get_workspace_dir_and_notebook_dir_use_active_workspace(tmp_path: Path) -> None:
+def test_get_workspace_dir_and_notebook_dir_use_active_workspace(
+    tmp_path: Path,
+) -> None:
     workspace_root = tmp_path / "workspace"
     initialize_workspace(workspace_root)
     set_active_workspace_path(workspace_root)
 
-    assert get_workspace_dir("environments") == workspace_root.resolve() / "environments"
+    assert (
+        get_workspace_dir("environments") == workspace_root.resolve() / "environments"
+    )
     notebook_dir = get_notebook_workspace_dir()
     assert notebook_dir == workspace_root.resolve() / "metadata" / "notebooks"
     assert notebook_dir.is_dir()

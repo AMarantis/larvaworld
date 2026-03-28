@@ -152,14 +152,18 @@ def _pick_directory_via_tk(initial_dir: Path | None = None) -> Path | None:
     try:
         selected = filedialog.askdirectory(
             title="Select Larvaworld workspace folder",
-            initialdir=str((initial_dir or _default_workspace_candidate()).expanduser()),
+            initialdir=str(
+                (initial_dir or _default_workspace_candidate()).expanduser()
+            ),
         )
     finally:
         root.destroy()
     return Path(selected).expanduser() if selected else None
 
 
-def _pick_workspace_directory(initial_dir: Path | None = None) -> tuple[Path | None, str | None]:
+def _pick_workspace_directory(
+    initial_dir: Path | None = None,
+) -> tuple[Path | None, str | None]:
     if os.getenv("WSL_DISTRO_NAME") and shutil.which("powershell.exe") is not None:
         try:
             return _pick_directory_via_windows_dialog(initial_dir), None
@@ -193,7 +197,9 @@ class WorkspaceUiController:
         current = get_active_workspace_path()
         self.path_input = pn.widgets.TextInput(
             name="Workspace folder",
-            value=str(current) if current is not None else str(_default_workspace_candidate()),
+            value=str(current)
+            if current is not None
+            else str(_default_workspace_candidate()),
             placeholder="/path/to/larvaworld-workspace",
             sizing_mode="stretch_width",
             css_classes=["lw-portal-workspace-input"],
@@ -209,6 +215,7 @@ class WorkspaceUiController:
             button_type="default",
             width=80,
             margin=0,
+            css_classes=["lw-portal-workspace-browse-btn"],
         )
         self.init_button = pn.widgets.Button(
             name="Initialize",
@@ -262,7 +269,11 @@ class WorkspaceUiController:
         if workspace is None:
             self.trigger_button.css_classes = ["lw-portal-workspace-trigger-button"]
             current = get_active_workspace_path()
-            if not preserve_input and current is not None and not self.path_input.value.strip():
+            if (
+                not preserve_input
+                and current is not None
+                and not self.path_input.value.strip()
+            ):
                 self.path_input.value = str(current)
             self.current_pane.object = _status_html(
                 text="No active workspace is configured.",
@@ -329,7 +340,9 @@ class WorkspaceUiController:
 
     def _on_browse(self, _: object) -> None:
         current = self.path_input.value.strip()
-        initial_dir = Path(current).expanduser() if current else _default_workspace_candidate()
+        initial_dir = (
+            Path(current).expanduser() if current else _default_workspace_candidate()
+        )
         selected, error = _pick_workspace_directory(initial_dir)
         if selected is not None:
             self.path_input.value = str(selected)
