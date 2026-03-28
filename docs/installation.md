@@ -75,7 +75,7 @@ Web dashboards (`larvaworld-app`) are included in the default install. The optio
 
 ### Installing optional features (PyPI / `pip`)
 
-If you installed Larvaworld from PyPI using `pip install larvaworld`, install optional features by installing the relevant *third-party packages* into the same environment (Larvaworld does not currently expose `pip` “extras” like `larvaworld[nengo]`).
+If you installed Larvaworld from PyPI using `pip install larvaworld`, install optional features by installing the relevant _third-party packages_ into the same environment (Larvaworld does not currently expose `pip` “extras” like `larvaworld[nengo]`).
 
 ```bash
 # Neural simulators
@@ -87,6 +87,7 @@ pip install box2d-py
 ```
 
 **Use cases**:
+
 - Neural simulators: required for experiments using `NengoBrain` or `Brian2Brain` controllers.
 - Box2D: required for experiments with `physics_model=True` (multisegment larvae with Box2D).
 

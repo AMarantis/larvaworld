@@ -8,7 +8,9 @@ from pathlib import Path
 from typing import Literal
 
 
-WorkspaceKind = Literal["environments", "experiments", "datasets", "analysis", "metadata"]
+WorkspaceKind = Literal[
+    "environments", "experiments", "datasets", "analysis", "metadata"
+]
 
 WORKSPACE_DIR_NAMES: dict[WorkspaceKind, str] = {
     "environments": "environments",
@@ -200,7 +202,9 @@ def _default_workspace_name(root: Path) -> str:
     return root.name or "Larvaworld Workspace"
 
 
-def initialize_workspace(path: str | Path, *, name: str | None = None) -> WorkspaceState:
+def initialize_workspace(
+    path: str | Path, *, name: str | None = None
+) -> WorkspaceState:
     resolved = _resolve_path(path)
     validation = validate_workspace(resolved)
     if validation.errors:
@@ -296,4 +300,3 @@ def get_notebook_workspace_dir(*, workspace: WorkspaceState | None = None) -> Pa
     path = state.metadata_dir / "notebooks"
     path.mkdir(parents=True, exist_ok=True)
     return path
-
