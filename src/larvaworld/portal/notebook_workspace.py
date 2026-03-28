@@ -18,7 +18,7 @@ from urllib.parse import quote, urlparse
 from urllib.request import Request, urlopen
 
 from larvaworld.portal.landing_registry import NOTEBOOK_TUTORIAL_BY_ITEM_ID
-from larvaworld.portal.workspace import WorkspaceError, get_notebook_workspace_dir
+from larvaworld.portal.workspace import WorkspaceError, get_active_workspace, get_notebook_workspace_dir
 
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -37,11 +37,7 @@ def _workspace_dir() -> Path:
     raw = os.getenv("LARVAWORLD_PORTAL_NOTEBOOK_WORKSPACE")
     if raw:
         return Path(raw).expanduser().resolve()
-    try:
-        return get_notebook_workspace_dir()
-    except WorkspaceError:
-        pass
-    return (_REPO_ROOT / "portal_notebooks").resolve()
+    return get_notebook_workspace_dir()
 
 
 def _kernel_name() -> str:
@@ -88,6 +84,12 @@ def _jupyter_root_dir() -> Path:
     raw = os.getenv("LARVAWORLD_JUPYTER_ROOT_DIR")
     if raw:
         return Path(raw).expanduser().resolve()
+    raw_notebook_workspace = os.getenv("LARVAWORLD_PORTAL_NOTEBOOK_WORKSPACE")
+    if raw_notebook_workspace:
+        return Path(raw_notebook_workspace).expanduser().resolve()
+    active_workspace = get_active_workspace()
+    if active_workspace is not None:
+        return active_workspace.root
     return _REPO_ROOT
 
 
@@ -432,6 +434,11 @@ def launch_notebook_for_item(item_id: str) -> tuple[str | None, str | None]:
         return None, f'Unknown notebook id "{item_id}".'
     if not (_TUTORIALS_DIR / notebook_name).exists():
         return None, f'Notebook source "{notebook_name}" was not found.'
+    if get_active_workspace() is None:
+        return (
+            None,
+            "Configure an active workspace before opening notebooks.",
+        )
     if not ensure_notebook_runtime():
         return None, _LAST_RUNTIME_ERROR or "Notebook runtime is unavailable."
 

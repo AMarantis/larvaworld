@@ -11,6 +11,8 @@ from importlib import import_module
 from pathlib import Path
 from typing import Any, Callable
 
+from larvaworld.portal.workspace import clear_active_workspace_path
+
 
 # String-only mapping to keep unit tests free of heavy imports.
 APP_ID_TO_FACTORY_PATH: dict[str, str] = {
@@ -202,10 +204,59 @@ def _start_bootstrap_once() -> None:
 def loading_app() -> Any:
     # English comments inside code.
     import panel as pn
+    from larvaworld.portal.panel_components import PORTAL_RAW_CSS
+    from larvaworld.portal.workspace_ui import WorkspaceUiController
 
     _start_bootstrap_once()
+    clear_active_workspace_path()
 
-    pn.extension()
+    pn.extension(raw_css=[PORTAL_RAW_CSS])
+
+    redirect = pn.pane.HTML("", margin=0)
+    workspace_state = {"confirmed": False}
+    workspace_ui = WorkspaceUiController(
+        theme="dark",
+        on_workspace_change=lambda workspace: (
+            workspace_state.__setitem__("confirmed", workspace is not None),
+            redirect.__setattr__(
+                "object",
+                (
+                    '<script>window.location.replace("/landing");</script>'
+                    '<div style="font-size:12px;color:#86efac;">Workspace configured. Redirecting to landing...</div>'
+                )
+                if workspace is not None
+                else "",
+            ),
+        )[-1]
+    )
+    workspace_card = pn.Column(
+        pn.pane.HTML(
+            '<div style="font-size:24px;font-weight:700;color:#f8fafc;">Choose Workspace</div>',
+            margin=(0, 0, 8, 0),
+        ),
+        pn.pane.HTML(
+            (
+                '<div style="font-size:13px;line-height:1.5;color:#cbd5e1;">'
+                "Select or initialize a Larvaworld workspace before entering the portal. "
+                "Notebooks and other persistent workflows are disabled until a workspace is configured."
+                "</div>"
+            ),
+            margin=(0, 0, 14, 0),
+        ),
+        workspace_ui.build_controls(),
+        redirect,
+        visible=False,
+        width=640,
+        margin=0,
+        css_classes=["lw-portal-loading-workspace-card"],
+        styles={
+            "padding": "24px",
+            "border": "1px solid rgba(255,255,255,0.14)",
+            "border-radius": "12px",
+            "background": "rgba(15,23,42,0.90)",
+            "box-shadow": "0 10px 30px rgba(0,0,0,0.45)",
+        },
+    )
 
     title = pn.pane.HTML(
         '<div style="font-size:24px;font-weight:700;color:#f8fafc;">Loading Larvaworld Portal</div>',
@@ -220,7 +271,6 @@ def loading_app() -> Any:
         margin=(0, 0, 6, 0),
     )
     error = pn.pane.HTML("", visible=False, margin=(8, 0, 0, 0))
-    redirect = pn.pane.HTML("", margin=0)
     progress = pn.indicators.Progress(
         value=0, max=100, sizing_mode="stretch_width", bar_color="success"
     )
@@ -240,16 +290,26 @@ def loading_app() -> Any:
         )
         if state["error"]:
             error.visible = True
+            card.visible = True
+            workspace_card.visible = False
             error.object = (
                 '<div style="font-size:12px;color:#fecaca;">'
                 f"Initialization failed: {state['error']}</div>"
             )
             return
         if state["ready"]:
-            redirect.object = (
-                '<script>window.location.replace("/landing");</script>'
-                '<div style="font-size:12px;color:#86efac;">Ready. Redirecting to landing...</div>'
-            )
+            if workspace_state["confirmed"]:
+                card.visible = True
+                workspace_card.visible = False
+            else:
+                card.visible = False
+                redirect.object = ""
+                workspace_card.visible = True
+                details.object = (
+                    '<div style="font-size:12px;color:#94a3b8;">'
+                    "Initialization is complete. Workspace setup is required to continue."
+                    "</div>"
+                )
 
         if not _LOADING_GIF_URIS:
             return
@@ -275,6 +335,7 @@ def loading_app() -> Any:
         redirect,
         width=640,
         margin=0,
+        visible=True,
         styles={
             "padding": "24px",
             "border": "1px solid rgba(255,255,255,0.14)",
@@ -288,6 +349,7 @@ def loading_app() -> Any:
         pn.Row(
             pn.Spacer(sizing_mode="stretch_width"),
             card,
+            workspace_card,
             pn.Spacer(sizing_mode="stretch_width"),
         ),
         sizing_mode="stretch_both",

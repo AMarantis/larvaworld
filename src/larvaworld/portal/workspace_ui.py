@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from html import escape
-from pathlib import Path
 import os
+from pathlib import Path
+import platform
 import shutil
 import subprocess
 from typing import Callable
+from typing import Literal
 
 import panel as pn
 
@@ -58,14 +60,79 @@ def _workspace_led_html(workspace: WorkspaceState | None) -> str:
     return f'<div class="{cls}" title="{escape(title)}" aria-label="{escape(title)}"></div>'
 
 
-def _status_html(*, text: str, tone: str = "neutral", detail: str | None = None) -> str:
+def _status_html(
+    *,
+    text: str,
+    tone: str = "neutral",
+    detail: str | None = None,
+    theme: Literal["light", "dark"] = "light",
+) -> str:
+    style_map = {
+        "light": {
+            "neutral": (
+                "border:1px solid rgba(0,0,0,0.10);"
+                "background:rgba(0,0,0,0.03);"
+                "color:rgba(17,17,17,0.84);"
+            ),
+            "success": (
+                "border:1px solid rgba(62,124,67,0.24);"
+                "background:rgba(62,124,67,0.10);"
+                "color:rgba(17,17,17,0.84);"
+            ),
+            "warning": (
+                "border:1px solid rgba(176,112,33,0.28);"
+                "background:rgba(245,161,66,0.12);"
+                "color:rgba(17,17,17,0.84);"
+            ),
+            "danger": (
+                "border:1px solid rgba(160,40,40,0.24);"
+                "background:rgba(160,40,40,0.10);"
+                "color:rgba(17,17,17,0.84);"
+            ),
+        },
+        "dark": {
+            "neutral": (
+                "border:1px solid rgba(148,163,184,0.28);"
+                "background:rgba(255,255,255,0.08);"
+                "color:rgba(241,245,249,0.94);"
+            ),
+            "success": (
+                "border:1px solid rgba(134,239,172,0.32);"
+                "background:rgba(22,101,52,0.28);"
+                "color:rgba(241,245,249,0.94);"
+            ),
+            "warning": (
+                "border:1px solid rgba(245,161,66,0.34);"
+                "background:rgba(245,161,66,0.16);"
+                "color:rgba(241,245,249,0.94);"
+            ),
+            "danger": (
+                "border:1px solid rgba(248,113,113,0.34);"
+                "background:rgba(127,29,29,0.24);"
+                "color:rgba(241,245,249,0.94);"
+            ),
+        },
+    }
+    theme_styles = style_map.get(theme, style_map["light"])
+    tone_style = theme_styles.get(tone, theme_styles["neutral"])
+    detail_color = (
+        "rgba(241,245,249,0.84)" if theme == "dark" else "rgba(17,17,17,0.72)"
+    )
     detail_html = ""
     if detail:
         detail_html = (
-            f'<div class="lw-portal-workspace-status-detail">{escape(detail)}</div>'
+            '<div class="lw-portal-workspace-status-detail" '
+            f'style="margin-top:4px;font-size:11px;word-break:break-word;color:{detail_color};">'
+            f"{escape(detail)}"
+            "</div>"
         )
+    theme_class = ""
+    if theme == "dark":
+        theme_class = " lw-portal-workspace-status--theme-dark"
     return (
-        f'<div class="lw-portal-workspace-status lw-portal-workspace-status--{escape(tone)}">'
+        '<div '
+        f'class="lw-portal-workspace-status lw-portal-workspace-status--{escape(tone)}{theme_class}" '
+        f'style="padding:8px 10px;border-radius:10px;font-size:12px;line-height:1.35;{tone_style}">'
         f"{escape(text)}"
         f"{detail_html}"
         "</div>"
@@ -79,11 +146,23 @@ def _default_workspace_candidate() -> Path:
     return Path.home() / "Documents" / "Larvaworld" / "workspace"
 
 
+def _picker_initial_directory(initial_dir: Path | None = None) -> Path:
+    candidate = (initial_dir or _default_workspace_candidate()).expanduser()
+    if candidate.is_dir():
+        return candidate
+
+    fallbacks = [candidate.parent, Path.home() / "Documents", Path.home()]
+    for fallback in fallbacks:
+        if fallback.is_dir():
+            return fallback
+    return Path.home()
+
+
 def _pick_directory_via_windows_dialog(initial_dir: Path | None = None) -> Path | None:
     if not os.getenv("WSL_DISTRO_NAME") or shutil.which("powershell.exe") is None:
         return None
 
-    initial_linux = str((initial_dir or _default_workspace_candidate()).expanduser())
+    initial_linux = str(_picker_initial_directory(initial_dir))
     initial_windows = ""
     converted = subprocess.run(
         ["wslpath", "-w", initial_linux],
@@ -139,6 +218,42 @@ if ($dialog.ShowDialog() -eq $true) {{
     return Path(linux_path) if linux_path else None
 
 
+def _pick_directory_via_osascript(initial_dir: Path | None = None) -> Path | None:
+    if shutil.which("osascript") is None:
+        return None
+
+    default_dir = str(_picker_initial_directory(initial_dir)).replace("\\", "\\\\")
+    default_dir = default_dir.replace('"', '\\"')
+    script_lines = [
+        f'set defaultLocation to POSIX file "{default_dir}"',
+        'try',
+        (
+            'set chosenFolder to choose folder with prompt '
+            '"Select Larvaworld workspace folder" default location defaultLocation'
+        ),
+        'on error number -128',
+        'return ""',
+        'end try',
+        'POSIX path of chosenFolder',
+    ]
+    args: list[str] = ["osascript"]
+    for line in script_lines:
+        args.extend(["-e", line])
+
+    result = subprocess.run(
+        args,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        message = result.stderr.strip() or result.stdout.strip() or "osascript failed"
+        raise RuntimeError(message)
+
+    selected = result.stdout.strip()
+    return Path(selected).expanduser() if selected else None
+
+
 def _pick_directory_via_tk(initial_dir: Path | None = None) -> Path | None:
     try:
         import tkinter as tk
@@ -152,9 +267,7 @@ def _pick_directory_via_tk(initial_dir: Path | None = None) -> Path | None:
     try:
         selected = filedialog.askdirectory(
             title="Select Larvaworld workspace folder",
-            initialdir=str(
-                (initial_dir or _default_workspace_candidate()).expanduser()
-            ),
+            initialdir=str(_picker_initial_directory(initial_dir)),
         )
     finally:
         root.destroy()
@@ -170,6 +283,12 @@ def _pick_workspace_directory(
         except Exception as exc:
             return None, f"Windows folder picker failed: {exc}"
 
+    if platform.system() == "Darwin" and shutil.which("osascript") is not None:
+        try:
+            return _pick_directory_via_osascript(initial_dir), None
+        except Exception as exc:
+            return None, f"macOS folder picker failed: {exc}"
+
     try:
         selected = _pick_directory_via_tk(initial_dir)
         if selected is not None:
@@ -182,6 +301,7 @@ def _pick_workspace_directory(
 
 @dataclass
 class WorkspaceUiController:
+    theme: Literal["light", "dark"] = "light"
     on_workspace_change: Callable[[WorkspaceState | None], None] | None = None
 
     def __post_init__(self) -> None:
@@ -196,38 +316,33 @@ class WorkspaceUiController:
         self.trigger_led = pn.pane.HTML(margin=0, width=22, height=22)
         current = get_active_workspace_path()
         self.path_input = pn.widgets.TextInput(
-            name="Workspace folder",
+            name="",
             value=str(current)
             if current is not None
             else str(_default_workspace_candidate()),
             placeholder="/path/to/larvaworld-workspace",
+            margin=0,
             sizing_mode="stretch_width",
             css_classes=["lw-portal-workspace-input"],
         )
-        self.set_button = pn.widgets.Button(
-            name="Use Existing",
-            button_type="primary",
-            width=110,
-            margin=0,
-        )
         self.browse_button = pn.widgets.Button(
             name="Browse",
-            button_type="default",
-            width=80,
+            button_type="primary",
             margin=0,
+            sizing_mode="stretch_width",
             css_classes=["lw-portal-workspace-browse-btn"],
         )
         self.init_button = pn.widgets.Button(
             name="Initialize",
             button_type="default",
-            width=96,
             margin=0,
+            sizing_mode="stretch_width",
         )
         self.clear_button = pn.widgets.Button(
             name="Clear",
             button_type="default",
-            width=72,
             margin=0,
+            sizing_mode="stretch_width",
         )
         self.current_pane = pn.pane.HTML(margin=0, sizing_mode="stretch_width")
         self.status_pane = pn.pane.HTML(
@@ -244,7 +359,6 @@ class WorkspaceUiController:
             css_classes=["lw-portal-workspace-trigger-shell"],
         )
 
-        self.set_button.on_click(self._on_use_existing)
         self.browse_button.on_click(self._on_browse)
         self.init_button.on_click(self._on_initialize)
         self.clear_button.on_click(self._on_clear)
@@ -279,6 +393,7 @@ class WorkspaceUiController:
                 text="No active workspace is configured.",
                 tone="warning",
                 detail="Select an initialized workspace or initialize a new one.",
+                theme=self.theme,
             )
         else:
             self.trigger_button.css_classes = ["lw-portal-workspace-trigger-button"]
@@ -288,11 +403,16 @@ class WorkspaceUiController:
                 text=f'Active workspace: "{workspace.name}"',
                 tone="success",
                 detail=str(workspace.root),
+                theme=self.theme,
             )
 
         self.status_pane.object = ""
         if message is not None:
-            self.status_pane.object = _status_html(text=message, tone=tone)
+            self.status_pane.object = _status_html(
+                text=message,
+                tone=tone,
+                theme=self.theme,
+            )
 
     def _candidate_path(self) -> Path | None:
         raw = self.path_input.value.strip()
@@ -300,28 +420,6 @@ class WorkspaceUiController:
             self._refresh("Enter a workspace folder path first.", tone="warning")
             return None
         return Path(raw).expanduser()
-
-    def _on_use_existing(self, _: object) -> None:
-        candidate = self._candidate_path()
-        if candidate is None:
-            return
-
-        validation = validate_workspace(candidate)
-        if validation.errors:
-            self._refresh("; ".join(validation.errors), tone="danger")
-            return
-        if not validation.initialized:
-            self.status_pane.object = _status_html(
-                text="Workspace exists but is not initialized.",
-                tone="warning",
-                detail="Missing folders: " + ", ".join(validation.missing_dirs),
-            )
-            return
-
-        set_active_workspace_path(validation.path)
-        workspace = get_active_workspace()
-        self._refresh("Active workspace updated.", tone="success")
-        self._emit(workspace)
 
     def _on_initialize(self, _: object) -> None:
         candidate = self._candidate_path()
@@ -346,10 +444,29 @@ class WorkspaceUiController:
         selected, error = _pick_workspace_directory(initial_dir)
         if selected is not None:
             self.path_input.value = str(selected)
-            self._refresh(
-                "Selected workspace folder.",
-                tone="neutral",
-                preserve_input=True,
+            validation = validate_workspace(selected)
+            if validation.errors:
+                self._refresh(
+                    "; ".join(validation.errors),
+                    tone="danger",
+                    preserve_input=True,
+                )
+                return
+            if validation.initialized:
+                set_active_workspace_path(validation.path)
+                workspace = get_active_workspace()
+                self._refresh(
+                    "Active workspace updated.",
+                    tone="success",
+                    preserve_input=True,
+                )
+                self._emit(workspace)
+                return
+            self.status_pane.object = _status_html(
+                text="Selected workspace folder.",
+                tone="warning",
+                detail="Folder is not initialized yet. Use Initialize to create the workspace layout.",
+                theme=self.theme,
             )
             return
         if error is not None:
@@ -362,21 +479,42 @@ class WorkspaceUiController:
         self._emit(None)
 
     def build_controls(self) -> pn.viewable.Viewable:
+        classes = ["lw-portal-workspace-controls"]
+        if self.theme == "dark":
+            classes.append("lw-portal-workspace-controls--dark")
+        title_classes = ["lw-portal-settings-title"]
+        field_label_classes = ["lw-portal-field-label"]
+        title_style = ""
+        field_label_style = ""
+        if self.theme == "dark":
+            title_classes.append("lw-portal-settings-title--dark")
+            field_label_classes.append("lw-portal-field-label--dark")
+            title_style = ' style="font-size:13px;font-weight:650;margin:0 0 6px 0;color:rgba(241,245,249,0.96);"'
+            field_label_style = ' style="font-size:12px;font-weight:600;color:rgba(241,245,249,0.92);"'
+        title_class_attr = " ".join(title_classes)
+        field_label_class_attr = " ".join(field_label_classes)
         return pn.Column(
             pn.pane.HTML(
-                '<div class="lw-portal-settings-title">Workspace</div>',
+                f'<div class="{title_class_attr}"{title_style}>Workspace</div>',
                 margin=0,
             ),
             self.current_pane,
+            pn.pane.HTML(
+                (
+                    f'<div class="{field_label_class_attr}"{field_label_style}>'
+                    "Workspace folder"
+                    "</div>"
+                ),
+                margin=(8, 0, 4, 0),
+            ),
             pn.Row(
                 self.path_input,
-                self.browse_button,
                 sizing_mode="stretch_width",
-                margin=(8, 0, 0, 0),
+                margin=0,
                 css_classes=["lw-portal-workspace-path-row"],
             ),
             pn.Row(
-                self.set_button,
+                self.browse_button,
                 self.init_button,
                 self.clear_button,
                 sizing_mode="stretch_width",
@@ -386,5 +524,5 @@ class WorkspaceUiController:
             self.status_pane,
             sizing_mode="stretch_width",
             margin=0,
-            css_classes=["lw-portal-workspace-controls"],
+            css_classes=classes,
         )

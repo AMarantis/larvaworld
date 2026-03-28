@@ -8,6 +8,20 @@ import panel as pn
 from larvaworld.portal.notebook_workspace import launch_notebook_for_item
 
 
+def _card_html(*, title: str, body: str, footer: str = "") -> str:
+    # English comments inside code.
+    footer_html = f'<p style="margin:12px 0 0 0;">{footer}</p>' if footer else ""
+    return (
+        '<div style="max-width:720px;margin:36px auto;padding:16px 18px;'
+        "border:1px solid rgba(0,0,0,0.15);border-radius:12px;"
+        'font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;">'
+        f'<h3 style="margin:0 0 10px 0;">{escape(title)}</h3>'
+        f'<div style="margin:0;font-size:14px;line-height:1.5;">{body}</div>'
+        f"{footer_html}"
+        "</div>"
+    )
+
+
 def _query_param(name: str) -> str | None:
     # English comments inside code.
     values = pn.state.session_args.get(name, [])
@@ -21,16 +35,46 @@ def _query_param(name: str) -> str | None:
 
 def _error_view(message: str) -> pn.viewable.Viewable:
     # English comments inside code.
-    html = (
-        '<div style="max-width:720px;margin:36px auto;padding:16px 18px;'
-        "border:1px solid rgba(0,0,0,0.15);border-radius:12px;"
-        'font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;">'
-        '<h3 style="margin:0 0 10px 0;">Notebook launch unavailable</h3>'
-        f'<p style="margin:0 0 10px 0;">{escape(message)}</p>'
-        '<p style="margin:0;"><a href="/landing">Back to landing</a></p>'
-        "</div>"
-    )
+    html = _error_html(message)
     return pn.Column(pn.pane.HTML(html, margin=0), sizing_mode="stretch_width")
+
+
+def _error_html(message: str) -> str:
+    # English comments inside code.
+    return _card_html(
+        title="Notebook launch unavailable",
+        body=f"<p style=\"margin:0;\">{escape(message)}</p>",
+        footer='<a href="/landing">Back to landing</a>',
+    )
+
+
+def _initializing_html() -> str:
+    # English comments inside code.
+    return _card_html(
+        title="Initializing notebooks",
+        body=(
+            "<p style=\"margin:0 0 10px 0;\">"
+            "Preparing notebook files in the active workspace and checking the notebook runtime."
+            "</p>"
+            "<p style=\"margin:0;color:rgba(15,23,42,0.72);\">"
+            "The first notebook launch can take a little longer. Please wait."
+            "</p>"
+        ),
+        footer='<a href="/landing">Back to landing</a>',
+    )
+
+
+def _redirect_html(notebook_url: str) -> str:
+    # English comments inside code.
+    js_url = json.dumps(notebook_url)
+    return _card_html(
+        title="Opening notebook",
+        body=(
+            f"<script>window.location.replace({js_url});</script>"
+            "<p style=\"margin:0 0 10px 0;\">Opening notebook...</p>"
+            f'<p style="margin:0;">If you are not redirected, <a href="{escape(notebook_url)}">open it here</a>.</p>'
+        ),
+    )
 
 
 def notebook_launch_app() -> pn.viewable.Viewable:
@@ -41,17 +85,14 @@ def notebook_launch_app() -> pn.viewable.Viewable:
     if not item_id:
         return _error_view("Missing notebook id.")
 
-    notebook_url, error = launch_notebook_for_item(item_id)
-    if not notebook_url:
-        return _error_view(error or "Notebook runtime is unavailable.")
+    status_pane = pn.pane.HTML(_initializing_html(), margin=30)
 
-    js_url = json.dumps(notebook_url)
-    redirect = (
-        f"<script>window.location.replace({js_url});</script>"
-        "<p>Opening notebook...</p>"
-        f'<p>If you are not redirected, <a href="{escape(notebook_url)}">open it here</a>.</p>'
-    )
-    return pn.Column(
-        pn.pane.HTML(redirect, margin=30),
-        sizing_mode="stretch_width",
-    )
+    def _launch_after_render() -> None:
+        notebook_url, error = launch_notebook_for_item(item_id)
+        if not notebook_url:
+            status_pane.object = _error_html(error or "Notebook runtime is unavailable.")
+            return
+        status_pane.object = _redirect_html(notebook_url)
+
+    pn.state.onload(_launch_after_render)
+    return pn.Column(status_pane, sizing_mode="stretch_width")

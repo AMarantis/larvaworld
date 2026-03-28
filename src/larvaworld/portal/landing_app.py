@@ -25,6 +25,7 @@ from larvaworld.portal.notebook_workspace import (
     notebook_urls_by_item,
 )
 from larvaworld.portal.registry_logic import validate_registry
+from larvaworld.portal.workspace import get_active_workspace
 
 
 def _load_banner_gif_data_uri(filename: str) -> str:
@@ -128,6 +129,22 @@ def _banner_text_html(slide: dict[str, str]) -> str:
 def landing_app() -> pn.viewable.Viewable:
     # English comments inside code.
     pn.extension(raw_css=[PORTAL_RAW_CSS])
+    if get_active_workspace() is None:
+        return pn.Column(
+            pn.pane.HTML(
+                (
+                    '<script>window.location.replace("/");</script>'
+                    '<div style="max-width:720px;margin:36px auto;padding:16px 18px;'
+                    "border:1px solid rgba(0,0,0,0.15);border-radius:12px;"
+                    'font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;">'
+                    "<h3 style=\"margin:0 0 10px 0;\">Workspace setup required</h3>"
+                    "<p style=\"margin:0;\">Redirecting to workspace setup...</p>"
+                    "</div>"
+                ),
+                margin=0,
+            ),
+            sizing_mode="stretch_width",
+        )
     validate_registry(strict=True)
 
     template = pn.template.MaterialTemplate(
@@ -223,6 +240,13 @@ def landing_app() -> pn.viewable.Viewable:
 
     notebook_urls = notebook_urls_by_item()
     notebook_names = notebook_names_by_item()
+    workspace = get_active_workspace()
+    notebook_enabled = workspace is not None
+    notebook_disabled_reason = (
+        "Configure an active workspace first."
+        if not notebook_enabled
+        else None
+    )
 
     mode_by_id = {mode.mode_id: mode for mode in QUICK_START_MODES}
     active_mode_id = (
@@ -265,6 +289,8 @@ def landing_app() -> pn.viewable.Viewable:
                 show_lane_accent=False,
                 notebook_urls=notebook_urls,
                 notebook_names=notebook_names,
+                notebook_enabled=notebook_enabled,
+                notebook_disabled_reason=notebook_disabled_reason,
             )
             for item_id in mode.item_ids
             if item_id in ITEMS and ITEMS[item_id].status != "hidden"
@@ -402,6 +428,25 @@ def landing_app() -> pn.viewable.Viewable:
         *quick_start.css_classes,
         quick_start_mode_classes.get(active_mode_id, "lw-portal-quick-start--modeler"),
     ]
+
+    if workspace is None:
+        root.append(
+            pn.pane.HTML(
+                (
+                    '<div class="lw-portal-workspace-callout">'
+                    '<div>'
+                    '<div class="lw-portal-workspace-callout-title">Workspace setup required</div>'
+                    '<div class="lw-portal-workspace-callout-copy">'
+                    "Select or initialize a Larvaworld workspace before using notebook-based workflows "
+                    "and other persistent portal features. Use the workspace control in the header to continue."
+                    "</div>"
+                    "</div>"
+                    "</div>"
+                ),
+                margin=(0, 0, 14, 0),
+                sizing_mode="stretch_width",
+            )
+        )
     root.append(quick_start)
 
     # Lanes
@@ -417,6 +462,8 @@ def landing_app() -> pn.viewable.Viewable:
                 items=lane_items,
                 notebook_urls=notebook_urls,
                 notebook_names=notebook_names,
+                notebook_enabled=notebook_enabled,
+                notebook_disabled_reason=notebook_disabled_reason,
             )
         )
 
