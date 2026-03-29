@@ -247,29 +247,29 @@ ITEMS: dict[str, LandingItem] = {
     # ---- Planned workflows / placeholders ----
     "wf.run_experiment": LandingItem(
         id="wf.run_experiment",
-        kind="placeholder",
-        status="planned",
+        kind="panel_app",
+        status="ready",
         lane="simulate",
         level="core",
         title="Single Experiment",
         subtitle=(
-            "Select a preset and configure key options.\n"
-            "Run one simulation from the web workflow.\n"
-            "Store outputs for immediate follow-up."
+            "Select an experiment template and key run settings.\n"
+            "Optionally apply a workspace environment preset.\n"
+            "Prepare one simulation in the browser workflow."
         ),
         cta="Run",
-        prereq_hint="Not available yet in the web UI.",
+        panel_app_id="wf.run_experiment",
         learn_more=LearnMore(
             issue_url=GITHUB_ISSUES,
             docs_url=DOCS_SINGLE_EXPERIMENTS,
         ),
         badges=["Developer"],
         preview_md=(
-            "### Single Experiment (Planned)\n"
-            "- Pick an experiment preset (curated list)\n"
-            "- Adjust key parameters (model/env/seed)\n"
-            "- Run and persist dataset outputs\n"
-            "- One-click open in Track Viewer / Evaluation\n"
+            "### Single Experiment\n"
+            "- Pick an experiment template from the Larvaworld registry\n"
+            "- Apply a workspace environment preset or keep the template default\n"
+            "- Adjust run duration and larvae-per-group override\n"
+            "- Prepare an interactive arena preview for one single-run experiment\n"
         ),
     ),
     "wf.open_dataset": LandingItem(
