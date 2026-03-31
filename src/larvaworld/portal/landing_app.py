@@ -137,8 +137,8 @@ def landing_app() -> pn.viewable.Viewable:
                     '<div style="max-width:720px;margin:36px auto;padding:16px 18px;'
                     "border:1px solid rgba(0,0,0,0.15);border-radius:12px;"
                     'font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;">'
-                    "<h3 style=\"margin:0 0 10px 0;\">Workspace setup required</h3>"
-                    "<p style=\"margin:0;\">Redirecting to workspace setup...</p>"
+                    '<h3 style="margin:0 0 10px 0;">Workspace setup required</h3>'
+                    '<p style="margin:0;">Redirecting to workspace setup...</p>'
                     "</div>"
                 ),
                 margin=0,
@@ -243,9 +243,7 @@ def landing_app() -> pn.viewable.Viewable:
     workspace = get_active_workspace()
     notebook_enabled = workspace is not None
     notebook_disabled_reason = (
-        "Configure an active workspace first."
-        if not notebook_enabled
-        else None
+        "Configure an active workspace first." if not notebook_enabled else None
     )
 
     mode_by_id = {mode.mode_id: mode for mode in QUICK_START_MODES}
@@ -434,7 +432,7 @@ def landing_app() -> pn.viewable.Viewable:
             pn.pane.HTML(
                 (
                     '<div class="lw-portal-workspace-callout">'
-                    '<div>'
+                    "<div>"
                     '<div class="lw-portal-workspace-callout-title">Workspace setup required</div>'
                     '<div class="lw-portal-workspace-callout-copy">'
                     "Select or initialize a Larvaworld workspace before using notebook-based workflows "

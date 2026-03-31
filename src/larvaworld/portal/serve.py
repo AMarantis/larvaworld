@@ -228,7 +228,7 @@ def loading_app() -> Any:
                 if workspace is not None
                 else "",
             ),
-        )[-1]
+        )[-1],
     )
     workspace_card = pn.Column(
         pn.pane.HTML(

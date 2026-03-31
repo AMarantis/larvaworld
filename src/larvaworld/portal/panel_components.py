@@ -1304,9 +1304,7 @@ def _button_html(
     title_attr = f' title="{escape(tooltip)}"' if tooltip else ""
 
     if not enabled or not href:
-        return (
-            f'<span class="{class_attr} lw-portal-btn--disabled"{title_attr}>{escape(label)}</span>'
-        )
+        return f'<span class="{class_attr} lw-portal-btn--disabled"{title_attr}>{escape(label)}</span>'
 
     attrs = ""
     if normalized_label == "notebook":
@@ -1491,9 +1489,9 @@ def render_card(
                 notebook_disabled_reason
                 if not notebook_enabled and notebook_disabled_reason
                 else (
-                f"Open notebook: {notebook_names[item.id]}"
-                if notebook_names and item.id in notebook_names
-                else "Open notebook"
+                    f"Open notebook: {notebook_names[item.id]}"
+                    if notebook_names and item.id in notebook_names
+                    else "Open notebook"
                 )
             ),
         )

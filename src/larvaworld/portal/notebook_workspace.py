@@ -18,7 +18,11 @@ from urllib.parse import quote, urlparse
 from urllib.request import Request, urlopen
 
 from larvaworld.portal.landing_registry import NOTEBOOK_TUTORIAL_BY_ITEM_ID
-from larvaworld.portal.workspace import WorkspaceError, get_active_workspace, get_notebook_workspace_dir
+from larvaworld.portal.workspace import (
+    WorkspaceError,
+    get_active_workspace,
+    get_notebook_workspace_dir,
+)
 
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]

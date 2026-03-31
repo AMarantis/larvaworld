@@ -9,7 +9,9 @@ from larvaworld.portal import notebook_launch_app
 @pytest.fixture
 def onload_callbacks(monkeypatch: pytest.MonkeyPatch) -> list:
     callbacks: list = []
-    monkeypatch.setattr(notebook_launch_app.pn, "extension", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        notebook_launch_app.pn, "extension", lambda *args, **kwargs: None
+    )
     monkeypatch.setattr(notebook_launch_app.pn.state, "onload", callbacks.append)
     return callbacks
 
@@ -20,11 +22,15 @@ def test_notebook_launch_app_shows_initializing_message_before_launch(
 ) -> None:
     calls: list[str] = []
 
-    monkeypatch.setattr(notebook_launch_app, "_query_param", lambda _name: "wf.dataset_manager")
+    monkeypatch.setattr(
+        notebook_launch_app, "_query_param", lambda _name: "wf.dataset_manager"
+    )
     monkeypatch.setattr(
         notebook_launch_app,
         "launch_notebook_for_item",
-        lambda item_id: (calls.append(item_id) or ("http://127.0.0.1:8888/lab/tree/demo.ipynb", None)),
+        lambda item_id: (
+            calls.append(item_id) or ("http://127.0.0.1:8888/lab/tree/demo.ipynb", None)
+        ),
     )
 
     app = notebook_launch_app.notebook_launch_app()
@@ -40,7 +46,9 @@ def test_notebook_launch_app_redirects_after_onload_launch(
     monkeypatch: pytest.MonkeyPatch,
     onload_callbacks: list,
 ) -> None:
-    monkeypatch.setattr(notebook_launch_app, "_query_param", lambda _name: "wf.dataset_manager")
+    monkeypatch.setattr(
+        notebook_launch_app, "_query_param", lambda _name: "wf.dataset_manager"
+    )
     monkeypatch.setattr(
         notebook_launch_app,
         "launch_notebook_for_item",
@@ -58,11 +66,16 @@ def test_notebook_launch_app_shows_error_after_onload_failure(
     monkeypatch: pytest.MonkeyPatch,
     onload_callbacks: list,
 ) -> None:
-    monkeypatch.setattr(notebook_launch_app, "_query_param", lambda _name: "wf.dataset_manager")
+    monkeypatch.setattr(
+        notebook_launch_app, "_query_param", lambda _name: "wf.dataset_manager"
+    )
     monkeypatch.setattr(
         notebook_launch_app,
         "launch_notebook_for_item",
-        lambda _item_id: (None, "Configure an active workspace before opening notebooks."),
+        lambda _item_id: (
+            None,
+            "Configure an active workspace before opening notebooks.",
+        ),
     )
 
     app = notebook_launch_app.notebook_launch_app()

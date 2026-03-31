@@ -43,7 +43,7 @@ def _error_html(message: str) -> str:
     # English comments inside code.
     return _card_html(
         title="Notebook launch unavailable",
-        body=f"<p style=\"margin:0;\">{escape(message)}</p>",
+        body=f'<p style="margin:0;">{escape(message)}</p>',
         footer='<a href="/landing">Back to landing</a>',
     )
 
@@ -53,10 +53,10 @@ def _initializing_html() -> str:
     return _card_html(
         title="Initializing notebooks",
         body=(
-            "<p style=\"margin:0 0 10px 0;\">"
+            '<p style="margin:0 0 10px 0;">'
             "Preparing notebook files in the active workspace and checking the notebook runtime."
             "</p>"
-            "<p style=\"margin:0;color:rgba(15,23,42,0.72);\">"
+            '<p style="margin:0;color:rgba(15,23,42,0.72);">'
             "The first notebook launch can take a little longer. Please wait."
             "</p>"
         ),
@@ -71,7 +71,7 @@ def _redirect_html(notebook_url: str) -> str:
         title="Opening notebook",
         body=(
             f"<script>window.location.replace({js_url});</script>"
-            "<p style=\"margin:0 0 10px 0;\">Opening notebook...</p>"
+            '<p style="margin:0 0 10px 0;">Opening notebook...</p>'
             f'<p style="margin:0;">If you are not redirected, <a href="{escape(notebook_url)}">open it here</a>.</p>'
         ),
     )
@@ -90,7 +90,9 @@ def notebook_launch_app() -> pn.viewable.Viewable:
     def _launch_after_render() -> None:
         notebook_url, error = launch_notebook_for_item(item_id)
         if not notebook_url:
-            status_pane.object = _error_html(error or "Notebook runtime is unavailable.")
+            status_pane.object = _error_html(
+                error or "Notebook runtime is unavailable."
+            )
             return
         status_pane.object = _redirect_html(notebook_url)
 
