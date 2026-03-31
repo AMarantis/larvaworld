@@ -122,7 +122,11 @@ class Arena(ViewableBoundedArea, agentpy.Space):
             }
         else:
             dic = {
-                a: dic["sources"][0] if dic["dsts"][0] <= a.radius else None
+                a: (
+                    dic["sources"][0]
+                    if len(dic["dsts"]) > 0 and dic["dsts"][0] <= a.radius
+                    else None
+                )
                 for a, dic in self.accessible_sources_sorted.items()
             }
         self.accessible_sources = dic

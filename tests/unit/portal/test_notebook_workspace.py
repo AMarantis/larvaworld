@@ -53,7 +53,9 @@ def test_jupyter_root_dir_uses_explicit_notebook_workspace_override(
 
 
 def test_workspace_dir_requires_configured_workspace() -> None:
-    with pytest.raises(WorkspaceError, match="No valid active workspace is configured."):
+    with pytest.raises(
+        WorkspaceError, match="No valid active workspace is configured."
+    ):
         notebook_workspace._workspace_dir()
 
 

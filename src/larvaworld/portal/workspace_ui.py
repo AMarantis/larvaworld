@@ -130,7 +130,7 @@ def _status_html(
     if theme == "dark":
         theme_class = " lw-portal-workspace-status--theme-dark"
     return (
-        '<div '
+        "<div "
         f'class="lw-portal-workspace-status lw-portal-workspace-status--{escape(tone)}{theme_class}" '
         f'style="padding:8px 10px;border-radius:10px;font-size:12px;line-height:1.35;{tone_style}">'
         f"{escape(text)}"
@@ -226,15 +226,15 @@ def _pick_directory_via_osascript(initial_dir: Path | None = None) -> Path | Non
     default_dir = default_dir.replace('"', '\\"')
     script_lines = [
         f'set defaultLocation to POSIX file "{default_dir}"',
-        'try',
+        "try",
         (
-            'set chosenFolder to choose folder with prompt '
+            "set chosenFolder to choose folder with prompt "
             '"Select Larvaworld workspace folder" default location defaultLocation'
         ),
-        'on error number -128',
+        "on error number -128",
         'return ""',
-        'end try',
-        'POSIX path of chosenFolder',
+        "end try",
+        "POSIX path of chosenFolder",
     ]
     args: list[str] = ["osascript"]
     for line in script_lines:
@@ -490,7 +490,9 @@ class WorkspaceUiController:
             title_classes.append("lw-portal-settings-title--dark")
             field_label_classes.append("lw-portal-field-label--dark")
             title_style = ' style="font-size:13px;font-weight:650;margin:0 0 6px 0;color:rgba(241,245,249,0.96);"'
-            field_label_style = ' style="font-size:12px;font-weight:600;color:rgba(241,245,249,0.92);"'
+            field_label_style = (
+                ' style="font-size:12px;font-weight:600;color:rgba(241,245,249,0.92);"'
+            )
         title_class_attr = " ".join(title_classes)
         field_label_class_attr = " ".join(field_label_classes)
         return pn.Column(
