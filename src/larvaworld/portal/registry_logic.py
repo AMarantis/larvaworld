@@ -13,7 +13,6 @@ from larvaworld.portal.registry_types import LandingItem, PrimaryAction
 
 
 def validate_registry(*, strict: bool = True) -> None:
-    # English comments inside code.
     def _err(msg: str) -> None:
         raise ValueError(f"[larvaworld.portal] {msg}")
 
@@ -102,7 +101,6 @@ def validate_registry(*, strict: bool = True) -> None:
 
 
 def resolve_target(item: LandingItem) -> str | None:
-    # English comments inside code.
     if item.kind == "panel_app":
         return f"/{item.panel_app_id}"
     if item.kind == "external_link":
@@ -111,7 +109,6 @@ def resolve_target(item: LandingItem) -> str | None:
 
 
 def compute_badges(item: LandingItem) -> list[str]:
-    # English comments inside code.
     badges: list[str] = []
 
     if item.level == "core":
@@ -132,7 +129,6 @@ def compute_badges(item: LandingItem) -> list[str]:
 
 
 def compute_primary_action(item: LandingItem) -> PrimaryAction:
-    # English comments inside code.
     if item.status == "hidden":
         return PrimaryAction(label="Hidden", href=None, enabled=False)
 

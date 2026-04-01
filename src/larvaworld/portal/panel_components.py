@@ -1204,7 +1204,6 @@ button.lw-portal-qs-top-tab--active,
 
 
 def _load_icon_data_uri(filename: str, mime_type: str) -> str:
-    # English comments inside code.
     icon_path = Path(__file__).with_name("icons") / filename
     try:
         encoded = base64.b64encode(icon_path.read_bytes()).decode("ascii")
@@ -1214,7 +1213,6 @@ def _load_icon_data_uri(filename: str, mime_type: str) -> str:
 
 
 def _resolve_portal_version() -> str:
-    # English comments inside code.
     try:
         return im.version("larvaworld")
     except Exception:
@@ -1228,7 +1226,6 @@ _PORTAL_VERSION = _resolve_portal_version()
 
 
 def _portal_logo_html(*, version: str) -> str:
-    # English comments inside code.
     logo_img = ""
     if _LOGO_DATA_URI:
         logo_img = f'<img class="lw-portal-logo-img" src="{_LOGO_DATA_URI}" alt="Larvaworld logo"/>'
@@ -1247,7 +1244,6 @@ def _portal_logo_html(*, version: str) -> str:
 
 
 def _header_links_html() -> str:
-    # English comments inside code.
     docs_icon = ""
     if _RTD_ICON_DATA_URI:
         docs_icon = (
@@ -1277,7 +1273,6 @@ def _header_links_html() -> str:
 
 
 def _badge_html(badge: str) -> str:
-    # English comments inside code.
     cls = "lw-portal-badge"
     if badge.strip().lower() in {"under construction", "planned"}:
         cls += " lw-portal-badge--under-construction"
@@ -1292,7 +1287,6 @@ def _button_html(
     extra_classes: tuple[str, ...] = (),
     tooltip: str | None = None,
 ) -> str:
-    # English comments inside code.
     normalized_label = label.strip().lower()
     button_classes = ["lw-portal-btn"]
     if normalized_label in {"learn more", "notebook"}:
@@ -1316,7 +1310,6 @@ def _button_html(
 
 
 def _subtitle_html(text: str) -> str:
-    # English comments inside code.
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     if not lines:
         lines = [""]
@@ -1324,7 +1317,6 @@ def _subtitle_html(text: str) -> str:
 
 
 def build_footer() -> pn.viewable.Viewable:
-    # English comments inside code.
     html = (
         '<div class="lw-portal-footer-shell"><div class="lw-portal-footer-bar">'
         "<span>&copy; Larvaworld</span>"
@@ -1344,7 +1336,6 @@ def build_footer() -> pn.viewable.Viewable:
 
 
 def build_template_header() -> pn.viewable.Viewable:
-    # English comments inside code.
     workspace_ui = WorkspaceUiController()
     left = pn.pane.HTML(
         _portal_logo_html(version=_PORTAL_VERSION),
@@ -1405,7 +1396,6 @@ def build_template_header() -> pn.viewable.Viewable:
 def build_app_header(
     *, title: str, back_href: str = "/landing"
 ) -> pn.viewable.Viewable:
-    # English comments inside code.
     workspace_ui = WorkspaceUiController()
     back_button = pn.pane.HTML(
         (
@@ -1439,7 +1429,6 @@ def render_card(
     notebook_enabled: bool = True,
     notebook_disabled_reason: str | None = None,
 ) -> pn.viewable.Viewable:
-    # English comments inside code.
     action = compute_primary_action(item)
     badges = compute_badges(item)
     card_href = resolve_target(item) or f"/{item.id}"
@@ -1566,7 +1555,6 @@ def render_lane(
     notebook_enabled: bool = True,
     notebook_disabled_reason: str | None = None,
 ) -> pn.viewable.Viewable:
-    # English comments inside code.
     title = pn.pane.HTML(
         f'<div class="lw-portal-section-title">{escape(lane.title)}</div>', margin=0
     )
