@@ -35,7 +35,6 @@ SERVED_APP_IDS: set[str] = set(APP_ID_TO_FACTORY_PATH.keys())
 
 
 class _BootstrapState:
-    # English comments inside code.
     def __init__(self) -> None:
         self.lock = threading.Lock()
         self.started = False
@@ -104,7 +103,6 @@ _BOOTSTRAP_THREAD: threading.Thread | None = None
 
 
 def _loading_gif_data_uris() -> list[str]:
-    # English comments inside code.
     gifs_dir = Path(__file__).with_name("icons") / "gifs"
     if not gifs_dir.exists():
         return []
@@ -122,7 +120,6 @@ _LOADING_GIF_URIS = _loading_gif_data_uris()
 
 
 def _import_attr(path: str) -> object:
-    # English comments inside code.
     module_name, attr_name = path.split(":", 1)
     module = import_module(module_name)
     return getattr(module, attr_name)
@@ -130,12 +127,10 @@ def _import_attr(path: str) -> object:
 
 @lru_cache(maxsize=None)
 def _resolve_target(path: str) -> Any:
-    # English comments inside code.
     return _import_attr(path)
 
 
 def _lazy_factory(path: str) -> Callable[..., Any]:
-    # English comments inside code.
     def _factory(*args: Any, **kwargs: Any) -> Any:
         target = _resolve_target(path)
         if callable(target):
@@ -146,7 +141,6 @@ def _lazy_factory(path: str) -> Callable[..., Any]:
 
 
 def _warmup_steps() -> list[tuple[str, str]]:
-    # English comments inside code.
     skipped = {"/", "loading"}
     seen_paths: set[str] = set()
     steps: list[tuple[str, str]] = []
@@ -164,7 +158,6 @@ def _warmup_steps() -> list[tuple[str, str]]:
 
 
 def _run_bootstrap() -> None:
-    # English comments inside code.
     steps = _warmup_steps()
     _BOOTSTRAP_STATE.begin(total_steps=2 + len(steps))
     try:
@@ -190,7 +183,6 @@ def _run_bootstrap() -> None:
 
 
 def _start_bootstrap_once() -> None:
-    # English comments inside code.
     global _BOOTSTRAP_THREAD
     if _BOOTSTRAP_THREAD is not None and _BOOTSTRAP_THREAD.is_alive():
         return
@@ -203,7 +195,6 @@ def _start_bootstrap_once() -> None:
 
 
 def loading_app() -> Any:
-    # English comments inside code.
     import panel as pn
     from larvaworld.portal.panel_components import PORTAL_RAW_CSS
     from larvaworld.portal.workspace_ui import WorkspaceUiController
@@ -362,7 +353,6 @@ def loading_app() -> Any:
 
 
 def _env_flag(name: str, default: bool) -> bool:
-    # English comments inside code.
     raw = os.getenv(name)
     if raw is None:
         return default
@@ -370,14 +360,12 @@ def _env_flag(name: str, default: bool) -> bool:
 
 
 def _default_open_browser() -> bool:
-    # English comments inside code.
     if sys.platform.startswith("win") or sys.platform == "darwin":
         return True
     return bool(os.getenv("DISPLAY") or os.getenv("WAYLAND_DISPLAY"))
 
 
 def main() -> None:
-    # English comments inside code.
     import panel as pn
 
     port = int(os.getenv("LARVAWORLD_PORTAL_PORT", "5006"))

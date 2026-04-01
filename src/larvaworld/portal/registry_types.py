@@ -12,7 +12,6 @@ QuickStartModeId = Literal["user", "modeler", "experimentalist"]
 
 @dataclass(frozen=True)
 class LearnMore:
-    # English comments inside code.
     issue_url: str | None = None
     docs_url: str | None = None
 

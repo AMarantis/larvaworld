@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 from typing import Any
 
+import numpy as np
 import pandas as pd
 import panel as pn
 import param
@@ -33,6 +34,12 @@ LANE_MODELS_COLOR_DARK = "#5a4760"
 SUBSTRATE_TYPE_OPTIONS = ["standard"] + [
     key for key in substrate_dict.keys() if key != "standard"
 ]
+ENV_CANVAS_WIDTH = 760
+ENV_CANVAS_HEIGHT = 620
+ENV_CANVAS_Y_HALF_RANGE = 0.30
+ENV_CANVAS_X_HALF_RANGE = ENV_CANVAS_Y_HALF_RANGE * (
+    ENV_CANVAS_WIDTH / ENV_CANVAS_HEIGHT
+)
 
 ENV_BUILDER_RAW_CSS = """
 .lw-env-builder-root {
@@ -215,7 +222,6 @@ def _title_with_help_html(
 def _editor_family_box(
     title: str, *children: object, help_text: str | None = None
 ) -> pn.Column:
-    # English comments inside code.
     return pn.Column(
         pn.pane.Markdown(
             f"**{title}**",
@@ -231,7 +237,6 @@ def _editor_family_box(
 
 @dataclass(frozen=True)
 class _ObjectRow:
-    # English comments inside code.
     object_id: str
     object_type: str
     x: float | None
@@ -308,7 +313,6 @@ def _translate_builder_environment_payload(
 
 
 def _normalize_group_shape(shape: str | None) -> str:
-    # English comments inside code.
     normalized = str(shape or "circle").strip().lower()
     if normalized in {"circle", "circular"}:
         return "circle"
@@ -356,6 +360,15 @@ def _mix_hex_colors(color_a: str, color_b: str, ratio: float) -> str:
         for component_a, component_b in zip(rgb_a, rgb_b)
     )
     return "#{:02x}{:02x}{:02x}".format(*mixed)
+
+
+def _stable_preview_seed(*parts: object) -> int:
+    seed = 2166136261
+    for part in parts:
+        for char in str(part):
+            seed ^= ord(char)
+            seed = (seed * 16777619) & 0xFFFFFFFF
+    return seed
 
 
 def _build_odor_layers(
@@ -432,7 +445,6 @@ def _build_odor_peak(
 
 
 def _table_dataframe(rows: list[dict[str, Any]], columns: list[str]) -> pd.DataFrame:
-    # English comments inside code.
     if not rows:
         return pd.DataFrame(columns=columns)
     frame = pd.DataFrame(rows)
@@ -443,24 +455,20 @@ def _table_dataframe(rows: list[dict[str, Any]], columns: list[str]) -> pd.DataF
 
 
 def _rotate_point(x: float, y: float, angle: float) -> tuple[float, float]:
-    # English comments inside code.
     cos_a = math.cos(angle)
     sin_a = math.sin(angle)
     return (x * cos_a - y * sin_a, x * sin_a + y * cos_a)
 
 
 def _rad_to_deg(angle: float) -> float:
-    # English comments inside code.
     return round(math.degrees(float(angle)), 4)
 
 
 def _deg_to_rad(angle: float) -> float:
-    # English comments inside code.
     return float(math.radians(float(angle)))
 
 
 class _EnvironmentBuilderController:
-    # English comments inside code.
     @staticmethod
     def _resolve_doc_from_class(cls: type[Any], parts: list[str]) -> str | None:
         if not hasattr(cls, "param") or not parts:
@@ -682,8 +690,8 @@ class _EnvironmentBuilderController:
             "object_type": "Choose which canonical EnvConf object family to place on the canvas: source unit, source group, or border segment.",
             "arena_width": "Builder note: in circular arenas this field edits the arena radius. The exported config still stores full arena dimensions in meters.",
             "arena_height": "Builder note: used only when the arena shape is rectangular.",
-            "object_radius": "Builder note: this controls the core source radius, not the overall footprint of a source group distribution.",
-            "selected_radius": "Builder note: this controls the core source radius, not the overall footprint of a source group distribution.",
+            "object_radius": "Builder note: this controls the source unit radius, not the overall footprint of a source group distribution.",
+            "selected_radius": "Builder note: this controls the source unit radius, not the overall footprint of a source group distribution.",
             "object_color": "Preview color used for the object and exported as the object's color.",
             "selected_color": "Preview color used for the object and exported as the object's color.",
             "group_spread_x": "Builder note: for circles this becomes the group radius. For oval and rect groups it represents the horizontal size of the group footprint.",
@@ -784,7 +792,7 @@ class _EnvironmentBuilderController:
             options=["Source unit", "Source group", "Border segment"],
         )
         self.object_radius = pn.widgets.FloatSlider(
-            name="Core source radius (mm)",
+            name="Source unit radius (mm)",
             start=1.0,
             end=30.0,
             step=1.0,
@@ -849,7 +857,7 @@ class _EnvironmentBuilderController:
         self.selected_x2 = pn.widgets.FloatInput(name="X2 (m)", value=0.0, step=0.001)
         self.selected_y2 = pn.widgets.FloatInput(name="Y2 (m)", value=0.0, step=0.001)
         self.selected_radius = pn.widgets.FloatSlider(
-            name="Core source radius (mm)",
+            name="Source unit radius (mm)",
             start=1.0,
             end=30.0,
             step=0.5,
@@ -905,11 +913,21 @@ class _EnvironmentBuilderController:
             value="uniform",
             options=["uniform", "normal", "periphery", "grid"],
         )
-        self.selected_distribution_scale_x = pn.widgets.FloatInput(
-            name="Group spread X (mm)", value=12.0, step=0.5
+        self.selected_distribution_scale_x = pn.widgets.FloatSlider(
+            name="Group spread X (mm)",
+            start=0.0,
+            end=100.0,
+            step=1.0,
+            value=12.0,
+            format="0.0",
         )
-        self.selected_distribution_scale_y = pn.widgets.FloatInput(
-            name="Group spread Y (mm)", value=12.0, step=0.5
+        self.selected_distribution_scale_y = pn.widgets.FloatSlider(
+            name="Group spread Y (mm)",
+            start=0.0,
+            end=100.0,
+            step=1.0,
+            value=12.0,
+            format="0.0",
         )
         self.selected_substrate_type = pn.widgets.Select(
             name="Substrate type",
@@ -1288,6 +1306,43 @@ class _EnvironmentBuilderController:
                 "overflow-wrap": "anywhere",
             },
         )
+        self._pending_overwrite_id: str | None = None
+        self.preset_overwrite_text = pn.pane.Markdown(
+            "",
+            sizing_mode="stretch_width",
+            margin=0,
+            styles={
+                "font-size": "12px",
+                "line-height": "1.4",
+                "padding": "8px 10px",
+                "background": "rgba(255, 244, 214, 0.95)",
+                "border": "1px solid rgba(180, 120, 0, 0.22)",
+                "border-radius": "8px",
+                "color": "rgba(65, 45, 0, 0.92)",
+            },
+        )
+        self.confirm_overwrite_btn = pn.widgets.Button(
+            name="Yes, overwrite",
+            button_type="warning",
+            sizing_mode="stretch_width",
+        )
+        self.cancel_overwrite_btn = pn.widgets.Button(
+            name="No, cancel",
+            button_type="default",
+            sizing_mode="stretch_width",
+        )
+        self.preset_overwrite_confirm = pn.Column(
+            self.preset_overwrite_text,
+            pn.Row(
+                self.confirm_overwrite_btn,
+                self.cancel_overwrite_btn,
+                sizing_mode="stretch_width",
+                margin=(6, 0, 0, 0),
+            ),
+            sizing_mode="stretch_width",
+            margin=(4, 0, 0, 0),
+            visible=False,
+        )
         self.clear_last_btn.width = None
         self.clear_last_btn.sizing_mode = "stretch_width"
         self.preset_name.width = None
@@ -1458,6 +1513,9 @@ class _EnvironmentBuilderController:
         self.source_group_rect_source = ColumnDataSource(
             self._empty_source_group_xy_data()
         )
+        self.source_group_member_source = ColumnDataSource(
+            self._empty_source_group_member_data()
+        )
         self.source_group_circle_highlight_source = ColumnDataSource(
             self._empty_source_group_circle_highlight_data()
         )
@@ -1510,6 +1568,9 @@ class _EnvironmentBuilderController:
                 "fill_alpha": [0.0],
             }
         )
+        self._food_grid_cell_source = ColumnDataSource(
+            self._empty_food_grid_cell_data()
+        )
         self._arena_source = ColumnDataSource(
             {
                 "x": [0.0],
@@ -1521,11 +1582,11 @@ class _EnvironmentBuilderController:
 
         self.fig = figure(
             title="Environment canvas",
-            x_range=(-0.30, 0.30),
-            y_range=(-0.30, 0.30),
+            x_range=(-ENV_CANVAS_X_HALF_RANGE, ENV_CANVAS_X_HALF_RANGE),
+            y_range=(-ENV_CANVAS_Y_HALF_RANGE, ENV_CANVAS_Y_HALF_RANGE),
             match_aspect=True,
-            width=760,
-            height=620,
+            width=ENV_CANVAS_WIDTH,
+            height=ENV_CANVAS_HEIGHT,
             tools="pan,wheel_zoom,reset,save",
             active_scroll="wheel_zoom",
             toolbar_location="right",
@@ -1580,6 +1641,19 @@ class _EnvironmentBuilderController:
             source=self._food_grid_overlay_source,
             line_color=None,
             fill_color="color",
+            fill_alpha="fill_alpha",
+            visible=False,
+        )
+        self._food_grid_cell_renderer = self.fig.rect(
+            x="x",
+            y="y",
+            width="w",
+            height="h",
+            source=self._food_grid_cell_source,
+            line_color="line_color",
+            line_alpha="line_alpha",
+            line_width="line_width",
+            fill_color="fill_color",
             fill_alpha="fill_alpha",
             visible=False,
         )
@@ -1720,6 +1794,17 @@ class _EnvironmentBuilderController:
             x="x",
             y="y",
             radius="r",
+            source=self.source_group_member_source,
+            line_color="line_color",
+            fill_color="fill_color",
+            fill_alpha="fill_alpha",
+            line_alpha="line_alpha",
+            line_width="line_width",
+        )
+        self.fig.circle(
+            x="x",
+            y="y",
+            radius="r",
             source=self.source_group_circle_highlight_source,
             line_color="#f97316",
             fill_color=None,
@@ -1785,6 +1870,8 @@ class _EnvironmentBuilderController:
         self.group_spread_x.param.watch(self._on_group_spread_x_change, "value")
         self.food_grid_enabled.param.watch(self._sync_food_grid_overlay, "value")
         self.food_grid_color.param.watch(self._sync_food_grid_overlay, "value")
+        self.food_grid_dims_x.param.watch(self._sync_food_grid_overlay, "value")
+        self.food_grid_dims_y.param.watch(self._sync_food_grid_overlay, "value")
         self.odorscape_mode.param.watch(self._sync_odorscape_controls, "value")
         for widget in [
             self.odorscape_enabled,
@@ -1822,12 +1909,15 @@ class _EnvironmentBuilderController:
         self.save_preset_btn.on_click(self._on_save_preset)
         self.load_preset_btn.on_click(self._on_load_preset)
         self.refresh_presets_btn.on_click(self._on_refresh_presets)
+        self.confirm_overwrite_btn.on_click(self._on_confirm_overwrite_preset)
+        self.cancel_overwrite_btn.on_click(self._on_cancel_overwrite_preset)
         self.clear_last_btn.on_click(self._on_clear_last)
         self.clear_all_btn.on_click(self._on_clear_all)
         self.add_wind_puff_btn.on_click(self._on_add_wind_puff)
         self.remove_wind_puff_btn.on_click(self._on_remove_wind_puff)
         self.add_thermo_source_btn.on_click(self._on_add_thermo_source)
         self.remove_thermo_source_btn.on_click(self._on_remove_thermo_source)
+        self.preset_name.param.watch(self._on_preset_name_change, "value")
 
         self._update_insert_hint()
         self._sync_arena_controls()
@@ -1840,7 +1930,6 @@ class _EnvironmentBuilderController:
         self._refresh_object_controls()
 
     def view(self) -> pn.viewable.Viewable:
-        # English comments inside code.
         intro = pn.pane.Markdown(
             (
                 "### Environment Builder\n"
@@ -1991,7 +2080,6 @@ class _EnvironmentBuilderController:
         )
 
     def _update_insert_hint(self, *_: object) -> None:
-        # English comments inside code.
         is_border_segment = self.object_type.value == "Border segment"
         is_source_group = self.object_type.value == "Source group"
         self._set_field_visible(self.border_width, is_border_segment)
@@ -2001,7 +2089,7 @@ class _EnvironmentBuilderController:
         self._set_field_visible(self.group_mode, is_source_group)
         self._set_field_visible(self.group_spread_x, is_source_group)
         self._set_field_visible(self.group_spread_y, is_source_group)
-        self.object_radius.name = "Core source radius (mm)"
+        self.object_radius.name = "Source unit radius (mm)"
         self._sync_group_shape_controls()
         if self.object_type.value == "Border segment":
             if self._border_start is None:
@@ -2017,20 +2105,17 @@ class _EnvironmentBuilderController:
         self.status.object = f"Click canvas to add a {self.object_type.value.lower()}."
 
     def _arena_dimensions(self) -> tuple[float, float]:
-        # English comments inside code.
         if self.arena_shape.value == "circular":
             diameter = max(float(self.arena_width.value) * 2.0, 0.0)
             return diameter, diameter
         return float(self.arena_width.value), float(self.arena_height.value)
 
     def _sync_arena_controls(self) -> None:
-        # English comments inside code.
         is_circular = self.arena_shape.value == "circular"
         self.arena_width.name = "Arena radius (m)" if is_circular else "Arena width (m)"
         self._set_field_visible(self.arena_height, not is_circular)
 
     def _on_arena_shape_change(self, event: object) -> None:
-        # English comments inside code.
         old = getattr(event, "old", None)
         new = getattr(event, "new", self.arena_shape.value)
         if old == new:
@@ -2051,14 +2136,12 @@ class _EnvironmentBuilderController:
         self._update_arena()
 
     def _sync_odorscape_controls(self, *_: object) -> None:
-        # English comments inside code.
         is_diffusion = self.odorscape_mode.value == "Diffusion"
         self._set_field_visible(self.odorscape_evap_const, is_diffusion)
         self._set_field_visible(self.odorscape_sigma_x, is_diffusion)
         self._set_field_visible(self.odorscape_sigma_y, is_diffusion)
 
     def _empty_scape_preview_sources(self) -> None:
-        # English comments inside code.
         self.odorscape_contour_source.data = {
             "x": [],
             "y": [],
@@ -2101,7 +2184,6 @@ class _EnvironmentBuilderController:
         }
 
     def _iter_odor_preview_rows(self) -> list[_ObjectRow]:
-        # English comments inside code.
         return [
             obj
             for obj in self._objects
@@ -2116,7 +2198,6 @@ class _EnvironmentBuilderController:
         ]
 
     def _build_odorscape_preview(self) -> None:
-        # English comments inside code.
         if not self.odorscape_enabled.value:
             self.odorscape_contour_source.data = {
                 "x": [],
@@ -2167,7 +2248,6 @@ class _EnvironmentBuilderController:
             }
 
     def _build_windscape_preview(self) -> None:
-        # English comments inside code.
         if not self.windscape_enabled.value or float(self.windscape_speed.value) <= 0:
             self.windscape_segment_source.data = {
                 "x0": [],
@@ -2227,7 +2307,6 @@ class _EnvironmentBuilderController:
         }
 
     def _build_thermoscape_preview(self) -> None:
-        # English comments inside code.
         if not self.thermoscape_enabled.value:
             self.thermoscape_aura_source.data = {
                 "x": [],
@@ -2303,13 +2382,11 @@ class _EnvironmentBuilderController:
         }
 
     def _sync_scape_preview(self, *_: object) -> None:
-        # English comments inside code.
         self._build_odorscape_preview()
         self._build_windscape_preview()
         self._build_thermoscape_preview()
 
     def _next_wind_puff_id(self) -> str:
-        # English comments inside code.
         ids = []
         frame = self.wind_puffs_table.value
         if isinstance(frame, pd.DataFrame) and "id" in frame.columns:
@@ -2322,7 +2399,6 @@ class _EnvironmentBuilderController:
         return f"puff_{highest + 1:03d}"
 
     def _next_thermo_source_id(self) -> str:
-        # English comments inside code.
         ids = []
         frame = self.thermo_sources_table.value
         if isinstance(frame, pd.DataFrame) and "id" in frame.columns:
@@ -2335,7 +2411,6 @@ class _EnvironmentBuilderController:
         return f"thermal_{highest + 1:03d}"
 
     def _on_add_wind_puff(self, _: object) -> None:
-        # English comments inside code.
         frame = self.wind_puffs_table.value
         if not isinstance(frame, pd.DataFrame):
             frame = _table_dataframe([], _WIND_PUFF_COLUMNS)
@@ -2353,7 +2428,6 @@ class _EnvironmentBuilderController:
         )[_WIND_PUFF_COLUMNS]
 
     def _on_remove_wind_puff(self, _: object) -> None:
-        # English comments inside code.
         frame = self.wind_puffs_table.value
         selection = list(self.wind_puffs_table.selection or [])
         if not isinstance(frame, pd.DataFrame) or not selection:
@@ -2364,7 +2438,6 @@ class _EnvironmentBuilderController:
         self.wind_puffs_table.selection = []
 
     def _on_add_thermo_source(self, _: object) -> None:
-        # English comments inside code.
         frame = self.thermo_sources_table.value
         if not isinstance(frame, pd.DataFrame):
             frame = _table_dataframe([], _THERMO_SOURCE_COLUMNS)
@@ -2379,7 +2452,6 @@ class _EnvironmentBuilderController:
         )[_THERMO_SOURCE_COLUMNS]
 
     def _on_remove_thermo_source(self, _: object) -> None:
-        # English comments inside code.
         frame = self.thermo_sources_table.value
         selection = list(self.thermo_sources_table.selection or [])
         if not isinstance(frame, pd.DataFrame) or not selection:
@@ -2390,7 +2462,6 @@ class _EnvironmentBuilderController:
         self.thermo_sources_table.selection = []
 
     def _sync_group_shape_controls(self, *_: object) -> None:
-        # English comments inside code.
         is_source_group = self.object_type.value == "Source group"
         shape = _normalize_group_shape(self.group_shape.value)
         is_circle = shape == "circle"
@@ -2408,14 +2479,12 @@ class _EnvironmentBuilderController:
             self.group_spread_y.value = float(self.group_spread_x.value)
 
     def _on_group_spread_x_change(self, event: object) -> None:
-        # English comments inside code.
         if _normalize_group_shape(self.group_shape.value) == "circle":
             self.group_spread_y.value = float(
                 getattr(event, "new", self.group_spread_x.value)
             )
 
     def _sync_selected_group_shape_controls(self, *_: object) -> None:
-        # English comments inside code.
         selected = self._selected_row()
         is_source_group = (
             selected is not None and selected.object_type == "Source group"
@@ -2440,32 +2509,27 @@ class _EnvironmentBuilderController:
             )
 
     def _on_selected_distribution_scale_x_change(self, event: object) -> None:
-        # English comments inside code.
         if _normalize_group_shape(self.selected_distribution_shape.value) == "circle":
             self.selected_distribution_scale_y.value = float(
                 getattr(event, "new", self.selected_distribution_scale_x.value)
             )
 
     def _group_display_value_mm(self, shape: str, scale_m: float | None) -> float:
-        # English comments inside code.
         value_m = float(scale_m or 0.012)
         if _normalize_group_shape(shape) == "circle":
             return round(value_m * 1000.0, 4)
         return round(value_m * 2000.0, 4)
 
     def _group_scale_from_display_mm(self, shape: str, display_mm: float) -> float:
-        # English comments inside code.
         value_mm = float(display_mm)
         if _normalize_group_shape(shape) == "circle":
             return round(value_mm / 1000.0, 4)
         return round(value_mm / 2000.0, 4)
 
     def _preset_dir(self) -> Path:
-        # English comments inside code.
         return get_workspace_dir("environments")
 
     def _preset_filename(self, name: str) -> str:
-        # English comments inside code.
         cleaned = re.sub(r"[^a-zA-Z0-9._-]+", "_", name.strip()).strip("._-")
         if not cleaned:
             cleaned = "environment_builder_config"
@@ -2474,23 +2538,18 @@ class _EnvironmentBuilderController:
         return cleaned
 
     def _preset_label_from_filename(self, filename: str) -> str:
-        # English comments inside code.
         return Path(filename).stem
 
     def _registry_preset_value(self, name: str) -> str:
-        # English comments inside code.
         return f"{_REGISTRY_PRESET_PREFIX}{name}"
 
     def _is_registry_preset(self, selected: str | None) -> bool:
-        # English comments inside code.
         return bool(selected and str(selected).startswith(_REGISTRY_PRESET_PREFIX))
 
     def _registry_preset_name_from_value(self, selected: str) -> str:
-        # English comments inside code.
         return str(selected)[len(_REGISTRY_PRESET_PREFIX) :]
 
     def _next_counter_seed(self) -> int:
-        # English comments inside code.
         highest = 0
         for obj in self._objects:
             match = re.search(r"_(\d+)$", obj.object_id)
@@ -2499,7 +2558,6 @@ class _EnvironmentBuilderController:
         return highest + 1 if highest else len(self._objects) + 1
 
     def _refresh_preset_controls(self, *, selected_filename: str | None = None) -> None:
-        # English comments inside code.
         workspace_message = ""
         workspace_options: dict[str, str] = {}
         workspace_labels: set[str] = set()
@@ -2555,9 +2613,85 @@ class _EnvironmentBuilderController:
         )
         meta_lines.append("</div>")
         self.preset_meta.object = "".join(meta_lines)
+        if (
+            self._pending_overwrite_id is not None
+            and not self._preset_id_exists_in_visible_options(
+                self._pending_overwrite_id
+            )
+        ):
+            self._clear_overwrite_confirmation()
+
+    def _preset_id_exists_in_visible_options(self, preset_id: str) -> bool:
+        normalized_id = str(preset_id).strip()
+        if not normalized_id:
+            return False
+        options = self.preset_select.options
+        labels = options.keys() if isinstance(options, dict) else (options or [])
+        for label in labels:
+            label_text = str(label)
+            if " / " in label_text:
+                label_text = label_text.split(" / ", 1)[1]
+            if label_text == normalized_id:
+                return True
+        return False
+
+    def _show_overwrite_confirmation(self, preset_id: str) -> None:
+        self._pending_overwrite_id = preset_id
+        self.preset_overwrite_text.object = (
+            f'Unique ID "{preset_id}" already exists. Overwrite the existing preset?'
+        )
+        self.preset_overwrite_confirm.visible = True
+        self.status.object = (
+            f'Unique ID "{preset_id}" already exists. Confirm overwrite or cancel.'
+        )
+
+    def _clear_overwrite_confirmation(self) -> None:
+        self._pending_overwrite_id = None
+        self.preset_overwrite_text.object = ""
+        self.preset_overwrite_confirm.visible = False
+
+    def _on_preset_name_change(self, _: param.parameterized.Event) -> None:
+        self._clear_overwrite_confirmation()
+
+    def _on_confirm_overwrite_preset(self, _: object) -> None:
+        if not self._pending_overwrite_id:
+            return
+        self._perform_save_preset()
+
+    def _on_cancel_overwrite_preset(self, _: object) -> None:
+        pending_id = self._pending_overwrite_id
+        self._clear_overwrite_confirmation()
+        if pending_id:
+            self.status.object = f'Overwrite cancelled for "{pending_id}".'
+
+    def _perform_save_preset(self) -> None:
+        self._clear_overwrite_confirmation()
+        try:
+            preset_dir = self._preset_dir()
+            preset_dir.mkdir(parents=True, exist_ok=True)
+        except WorkspaceError as exc:
+            self.status.object = (
+                f"Cannot save preset without an active workspace: {exc}"
+            )
+            return
+
+        raw_name = self.preset_name.value.strip() or "environment_builder_config"
+        filename = self._preset_filename(raw_name)
+        target = preset_dir / filename
+        registry_id = self._preset_label_from_filename(filename)
+        payload = self._build_export_config()
+        target.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        env_dict = util.AttrDict(reg.conf.Env.dict).get_copy()
+        env_dict[registry_id] = self._build_registry_config()
+        reg.conf.Env.set_dict(env_dict)
+        self._refresh_preset_controls(selected_filename=filename)
+        self.preset_name.value = registry_id
+        self.status.object = (
+            f'Saved environment preset "{self.preset_name.value}" to the workspace '
+            "and registered it in Env.txt."
+        )
 
     def _selected_row(self) -> _ObjectRow | None:
-        # English comments inside code.
         selected_id = self._selected_object_id or self.selected_object.value
         if not selected_id:
             return None
@@ -2567,7 +2701,6 @@ class _EnvironmentBuilderController:
         return None
 
     def _selected_row_index(self) -> int | None:
-        # English comments inside code.
         selected = self._selected_row()
         if selected is None:
             return None
@@ -2577,14 +2710,12 @@ class _EnvironmentBuilderController:
         return None
 
     def _object_options(self) -> dict[str, str]:
-        # English comments inside code.
         return {
             f"{obj.object_id} ({obj.object_type})": obj.object_id
             for obj in self._objects
         }
 
     def _odor_id_options(self) -> list[str]:
-        # English comments inside code.
         odor_ids = {
             str(obj.odor_id).strip()
             for obj in self._objects
@@ -2593,7 +2724,6 @@ class _EnvironmentBuilderController:
         return sorted(odor_id for odor_id in odor_ids if odor_id)
 
     def _set_editor_disabled(self, disabled: bool) -> None:
-        # English comments inside code.
         widgets = [
             self.selected_object,
             self.selected_id,
@@ -2622,7 +2752,6 @@ class _EnvironmentBuilderController:
             widget.disabled = disabled
 
     def _clear_canvas_highlight(self) -> None:
-        # English comments inside code.
         self.food_highlight_source.data = {"x": [], "y": [], "r": [], "color": []}
         self.source_group_circle_highlight_source.data = (
             self._empty_source_group_circle_highlight_data()
@@ -2643,7 +2772,6 @@ class _EnvironmentBuilderController:
         }
 
     def _update_canvas_highlight(self, obj: _ObjectRow | None) -> None:
-        # English comments inside code.
         self._clear_canvas_highlight()
         if obj is None:
             return
@@ -2692,7 +2820,6 @@ class _EnvironmentBuilderController:
             }
 
     def _set_selected_object(self, object_id: str | None) -> None:
-        # English comments inside code.
         self._syncing_selection = True
         try:
             self._selected_object_id = object_id
@@ -2714,7 +2841,6 @@ class _EnvironmentBuilderController:
             self._syncing_selection = False
 
     def _sync_editor_visibility(self, obj: _ObjectRow | None) -> None:
-        # English comments inside code.
         object_type = obj.object_type if obj is not None else None
         is_border = object_type == "Border segment"
         is_source_unit = object_type == "Source unit"
@@ -2748,7 +2874,6 @@ class _EnvironmentBuilderController:
         self._sync_selected_group_shape_controls()
 
     def _set_substrate_type_options(self, substrate_type: str | None = None) -> None:
-        # English comments inside code.
         options = list(SUBSTRATE_TYPE_OPTIONS)
         if substrate_type:
             substrate_value = str(substrate_type)
@@ -2757,7 +2882,6 @@ class _EnvironmentBuilderController:
         self.selected_substrate_type.options = options
 
     def _populate_editor(self, obj: _ObjectRow | None) -> None:
-        # English comments inside code.
         self._sync_editor_visibility(obj)
         if obj is None:
             self._set_editor_disabled(True)
@@ -2807,7 +2931,6 @@ class _EnvironmentBuilderController:
     def _refresh_object_controls(
         self, *, selected_object_id: str | None = None
     ) -> None:
-        # English comments inside code.
         self.selected_odor_id.options = self._odor_id_options()
         options = self._object_options()
         self.selected_object.options = options
@@ -2826,13 +2949,11 @@ class _EnvironmentBuilderController:
         self._set_selected_object(target_id)
 
     def _on_selected_object_change(self, *_: object) -> None:
-        # English comments inside code.
         if self._syncing_selection:
             return
         self._set_selected_object(self.selected_object.value)
 
     def _on_table_selection_change(self, *_: object) -> None:
-        # English comments inside code.
         if self._syncing_selection:
             return
         selection = list(self.table.selection or [])
@@ -2846,7 +2967,6 @@ class _EnvironmentBuilderController:
         self._set_selected_object(self._objects[row_index].object_id)
 
     def _on_select_mode_change(self, *_: object) -> None:
-        # English comments inside code.
         if self.select_mode.value:
             self.select_mode.button_type = "success"
             self.status.object = (
@@ -2859,7 +2979,6 @@ class _EnvironmentBuilderController:
             )
 
     def _iter_loaded_objects(self, config: dict[str, object]) -> list[_ObjectRow]:
-        # English comments inside code.
         loaded: list[_ObjectRow] = []
         food_params = config.get("food_params")
         if isinstance(food_params, dict):
@@ -3000,7 +3119,6 @@ class _EnvironmentBuilderController:
         return loaded
 
     def _apply_config(self, config: dict[str, object]) -> None:
-        # English comments inside code.
         translated_config = _translate_builder_environment_payload(config)
         self._loaded_config = util.AttrDict(translated_config).get_copy()
         arena = translated_config.get("arena", {})
@@ -3158,34 +3276,17 @@ class _EnvironmentBuilderController:
         self._update_insert_hint()
 
     def _on_save_preset(self, _: object) -> None:
-        # English comments inside code.
-        try:
-            preset_dir = self._preset_dir()
-            preset_dir.mkdir(parents=True, exist_ok=True)
-        except WorkspaceError as exc:
-            self.status.object = (
-                f"Cannot save preset without an active workspace: {exc}"
-            )
-            return
-
         raw_name = self.preset_name.value.strip() or "environment_builder_config"
-        filename = self._preset_filename(raw_name)
-        target = preset_dir / filename
-        registry_id = self._preset_label_from_filename(filename)
-        payload = self._build_export_config()
-        target.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-        env_dict = util.AttrDict(reg.conf.Env.dict).get_copy()
-        env_dict[registry_id] = self._build_registry_config()
-        reg.conf.Env.set_dict(env_dict)
-        self._refresh_preset_controls(selected_filename=filename)
-        self.preset_name.value = registry_id
-        self.status.object = (
-            f'Saved environment preset "{self.preset_name.value}" to the workspace '
-            "and registered it in Env.txt."
-        )
+        if (
+            self._preset_id_exists_in_visible_options(raw_name)
+            and self._pending_overwrite_id != raw_name
+        ):
+            self._show_overwrite_confirmation(raw_name)
+            return
+        self._perform_save_preset()
 
     def _on_load_preset(self, _: object) -> None:
-        # English comments inside code.
+        self._clear_overwrite_confirmation()
         selected = self.preset_select.value
         if not selected:
             self.status.object = "Select a saved preset first."
@@ -3230,14 +3331,13 @@ class _EnvironmentBuilderController:
         self.status.object = f'{status_prefix} "{loaded_name}".'
 
     def _on_refresh_presets(self, _: object) -> None:
-        # English comments inside code.
+        self._clear_overwrite_confirmation()
         self._refresh_preset_controls(
             selected_filename=str(self.preset_select.value or "")
         )
         self.status.object = "Refreshed environment preset list."
 
     def _on_apply_selected_object(self, _: object) -> None:
-        # English comments inside code.
         current = self._selected_row()
         if current is None:
             self.status.object = "Select an object to edit first."
@@ -3354,7 +3454,6 @@ class _EnvironmentBuilderController:
         self.status.object = f'Updated object "{updated.object_id}".'
 
     def _on_delete_selected_object(self, _: object) -> None:
-        # English comments inside code.
         current = self._selected_row()
         if current is None:
             self.status.object = "Select an object to delete first."
@@ -3369,7 +3468,6 @@ class _EnvironmentBuilderController:
         self.status.object = f'Deleted object "{current.object_id}".'
 
     def _update_arena(self, *_: object) -> None:
-        # English comments inside code.
         self._sync_arena_controls()
         width, height = self._arena_dimensions()
         self._arena_source.data = {"x": [0.0], "y": [0.0], "w": [width], "h": [height]}
@@ -3384,12 +3482,13 @@ class _EnvironmentBuilderController:
         is_rect = self.arena_shape.value == "rectangular"
         self._arena_rect_renderer.visible = is_rect
         self._arena_circle_renderer.visible = not is_rect
-        self._food_grid_rect_renderer.visible = is_rect
-        self._food_grid_circle_renderer.visible = not is_rect
+        self._food_grid_rect_renderer.visible = False
+        self._food_grid_circle_renderer.visible = False
+        self._food_grid_cell_renderer.visible = bool(self.food_grid_enabled.value)
+        self._rebuild_food_grid_cells()
         self._sync_scape_preview()
 
     def _sync_food_grid_overlay(self, *_: object) -> None:
-        # English comments inside code.
         width, height = self._arena_dimensions()
         self._food_grid_overlay_source.data = {
             "x": [0.0],
@@ -3399,9 +3498,10 @@ class _EnvironmentBuilderController:
             "color": [self.food_grid_color.value],
             "fill_alpha": [0.08 if self.food_grid_enabled.value else 0.0],
         }
+        self._food_grid_cell_renderer.visible = bool(self.food_grid_enabled.value)
+        self._rebuild_food_grid_cells()
 
     def _inside_arena(self, x: float, y: float) -> bool:
-        # English comments inside code.
         width, height = self._arena_dimensions()
         if self.arena_shape.value == "rectangular":
             return abs(x) <= width / 2 and abs(y) <= height / 2
@@ -3412,8 +3512,27 @@ class _EnvironmentBuilderController:
         return (nx * nx + ny * ny) <= 1.0
 
     def _pick_object_at(self, x: float, y: float) -> _ObjectRow | None:
-        # English comments inside code.
         nearest: tuple[float, _ObjectRow] | None = None
+        group_lookup = {
+            obj.object_id: obj
+            for obj in self._objects
+            if obj.object_type == "Source group"
+        }
+        member_data = self.source_group_member_source.data
+        member_xs = member_data.get("x", [])
+        member_ys = member_data.get("y", [])
+        member_rs = member_data.get("r", [])
+        member_parent_ids = member_data.get("parent_id", [])
+        for member_x, member_y, member_radius, parent_id in zip(
+            member_xs, member_ys, member_rs, member_parent_ids
+        ):
+            parent = group_lookup.get(str(parent_id))
+            if parent is None:
+                continue
+            distance = math.hypot(x - float(member_x), y - float(member_y))
+            tolerance = max(float(member_radius or 0.0), 0.004)
+            if distance <= tolerance and (nearest is None or distance < nearest[0]):
+                nearest = (distance, parent)
         for obj in self._objects:
             if obj.object_type == "Border segment":
                 x0 = float(obj.x or 0.0)
@@ -3452,7 +3571,6 @@ class _EnvironmentBuilderController:
         return None if nearest is None else nearest[1]
 
     def _on_tap(self, event: Tap) -> None:
-        # English comments inside code.
         x = round(float(event.x), 4)
         y = round(float(event.y), 4)
         if self.select_mode.value:
@@ -3480,7 +3598,6 @@ class _EnvironmentBuilderController:
         )
 
     def _tap_border(self, x: float, y: float) -> None:
-        # English comments inside code.
         if self._border_start is None:
             self._border_start = (x, y)
             self._show_border_preview(x=x, y=y, color=self.object_color.value)
@@ -3500,7 +3617,6 @@ class _EnvironmentBuilderController:
         self._update_insert_hint()
 
     def _next_id(self, prefix: str) -> str:
-        # English comments inside code.
         object_id = f"{prefix}_{self._counter:03d}"
         self._counter += 1
         return object_id
@@ -3508,7 +3624,6 @@ class _EnvironmentBuilderController:
     def _add_point_object(
         self, *, object_type: str, x: float, y: float, radius: float, color: str
     ) -> None:
-        # English comments inside code.
         if object_type == "Source unit":
             object_id = self._next_id("food")
             fill_color, line_color, fill_alpha, line_alpha, line_width = (
@@ -3595,7 +3710,6 @@ class _EnvironmentBuilderController:
     def _add_border_object(
         self, *, x0: float, y0: float, x1: float, y1: float, width: float, color: str
     ) -> None:
-        # English comments inside code.
         object_id = self._next_id("border")
         self._append_source_row(
             self.border_source,
@@ -3628,17 +3742,14 @@ class _EnvironmentBuilderController:
         self._refresh_object_controls(selected_object_id=object_id)
 
     def _show_border_preview(self, *, x: float, y: float, color: str) -> None:
-        # English comments inside code.
         self.border_preview_source.data = {"x": [x], "y": [y], "color": [color]}
 
     def _clear_border_preview(self) -> None:
-        # English comments inside code.
         self.border_preview_source.data = {"x": [], "y": [], "color": []}
 
     def _append_source_row(
         self, source: ColumnDataSource, row: dict[str, object]
     ) -> None:
-        # English comments inside code.
         data = {key: list(value) for key, value in source.data.items()}
         for key, value in row.items():
             data[key].append(value)
@@ -3647,12 +3758,10 @@ class _EnvironmentBuilderController:
     def _append_rows(
         self, source: ColumnDataSource, rows: list[dict[str, object]]
     ) -> None:
-        # English comments inside code.
         for row in rows:
             self._append_source_row(source, row)
 
     def _empty_source_group_circle_data(self) -> dict[str, list[object]]:
-        # English comments inside code.
         return {
             "x": [],
             "y": [],
@@ -3664,7 +3773,6 @@ class _EnvironmentBuilderController:
         }
 
     def _empty_source_group_xy_data(self) -> dict[str, list[object]]:
-        # English comments inside code.
         return {
             "x": [],
             "y": [],
@@ -3677,15 +3785,143 @@ class _EnvironmentBuilderController:
         }
 
     def _empty_source_group_circle_highlight_data(self) -> dict[str, list[object]]:
-        # English comments inside code.
         return {"x": [], "y": [], "r": [], "color": []}
 
     def _empty_source_group_xy_highlight_data(self) -> dict[str, list[object]]:
-        # English comments inside code.
         return {"x": [], "y": [], "w": [], "h": [], "color": []}
 
+    def _empty_food_grid_cell_data(self) -> dict[str, list[object]]:
+        return {
+            "x": [],
+            "y": [],
+            "w": [],
+            "h": [],
+            "fill_color": [],
+            "line_color": [],
+            "fill_alpha": [],
+            "line_alpha": [],
+            "line_width": [],
+        }
+
+    def _rebuild_food_grid_cells(self) -> None:
+        if not bool(self.food_grid_enabled.value):
+            self._food_grid_cell_source.data = self._empty_food_grid_cell_data()
+            return
+        width, height = self._arena_dimensions()
+        nx = max(int(self.food_grid_dims_x.value), 1)
+        ny = max(int(self.food_grid_dims_y.value), 1)
+        if width <= 0 or height <= 0:
+            self._food_grid_cell_source.data = self._empty_food_grid_cell_data()
+            return
+        cell_w = width / nx
+        cell_h = height / ny
+        xs = np.linspace(-width / 2 + cell_w / 2, width / 2 - cell_w / 2, nx)
+        ys = np.linspace(-height / 2 + cell_h / 2, height / 2 - cell_h / 2, ny)
+        fill_color = _mix_hex_colors(self.food_grid_color.value, "#ffffff", 0.32)
+        line_color = _mix_hex_colors(self.food_grid_color.value, "#111111", 0.20)
+        rows: list[dict[str, object]] = []
+        for center_x in xs:
+            for center_y in ys:
+                if self.arena_shape.value != "rectangular":
+                    nx_ellipse = float(center_x) / (width / 2)
+                    ny_ellipse = float(center_y) / (height / 2)
+                    if (nx_ellipse * nx_ellipse + ny_ellipse * ny_ellipse) > 1.0:
+                        continue
+                rows.append(
+                    {
+                        "x": float(center_x),
+                        "y": float(center_y),
+                        "w": float(cell_w),
+                        "h": float(cell_h),
+                        "fill_color": fill_color,
+                        "line_color": line_color,
+                        "fill_alpha": 0.10,
+                        "line_alpha": 0.42,
+                        "line_width": 0.9,
+                    }
+                )
+        data = self._empty_food_grid_cell_data()
+        for row in rows:
+            for key, value in row.items():
+                data[key].append(value)
+        self._food_grid_cell_source.data = data
+
+    def _empty_source_group_member_data(self) -> dict[str, list[object]]:
+        return {
+            "x": [],
+            "y": [],
+            "r": [],
+            "fill_color": [],
+            "line_color": [],
+            "fill_alpha": [],
+            "line_alpha": [],
+            "line_width": [],
+            "parent_id": [],
+        }
+
+    def _group_member_positions(self, obj: _ObjectRow) -> list[tuple[float, float]]:
+        if obj.object_type != "Source group" or obj.x is None or obj.y is None:
+            return []
+        count = int(obj.distribution_n or 0)
+        if count <= 0:
+            return []
+        distribution = Spatial_Distro(
+            N=count,
+            shape=_normalize_group_shape(obj.distribution_shape),
+            mode=str(obj.distribution_mode or "uniform"),
+            loc=(float(obj.x), float(obj.y)),
+            scale=(
+                float(obj.distribution_scale_x or 0.012),
+                float(obj.distribution_scale_y or 0.012),
+            ),
+        )
+        state = np.random.get_state()
+        try:
+            np.random.seed(
+                _stable_preview_seed(
+                    obj.object_id,
+                    obj.distribution_mode,
+                    obj.distribution_shape,
+                    obj.distribution_n,
+                    obj.x,
+                    obj.y,
+                    obj.distribution_scale_x,
+                    obj.distribution_scale_y,
+                )
+            )
+            return [
+                (float(member_x), float(member_y))
+                for member_x, member_y in distribution()
+            ]
+        except Exception:
+            return []
+        finally:
+            np.random.set_state(state)
+
+    def _build_group_member_rows(self, obj: _ObjectRow) -> list[dict[str, object]]:
+        positions = self._group_member_positions(obj)
+        if not positions:
+            return []
+        base_color = str(obj.color or "#4caf50")
+        fill_color = _mix_hex_colors(base_color, "#ffffff", 0.18)
+        line_color = _mix_hex_colors(base_color, "#111111", 0.04)
+        radius = max(float(obj.radius or 0.003), 0.0015)
+        return [
+            {
+                "x": member_x,
+                "y": member_y,
+                "r": radius,
+                "fill_color": fill_color,
+                "line_color": line_color,
+                "fill_alpha": 0.78,
+                "line_alpha": 0.92,
+                "line_width": 1.4,
+                "parent_id": obj.object_id,
+            }
+            for member_x, member_y in positions
+        ]
+
     def _on_clear_last(self, _: object) -> None:
-        # English comments inside code.
         if self._border_start is not None:
             self._border_start = None
             self._clear_border_preview()
@@ -3702,7 +3938,6 @@ class _EnvironmentBuilderController:
         self.status.object = "Removed last object."
 
     def _on_clear_all(self, _: object) -> None:
-        # English comments inside code.
         self._objects.clear()
         self._border_start = None
         self._counter = 1
@@ -3737,6 +3972,7 @@ class _EnvironmentBuilderController:
         self.source_group_circle_source.data = self._empty_source_group_circle_data()
         self.source_group_ellipse_source.data = self._empty_source_group_xy_data()
         self.source_group_rect_source.data = self._empty_source_group_xy_data()
+        self.source_group_member_source.data = self._empty_source_group_member_data()
         self.border_source.data = {
             "x0": [],
             "y0": [],
@@ -3753,7 +3989,6 @@ class _EnvironmentBuilderController:
         self.status.object = "Cleared all placed objects."
 
     def _rebuild_sources(self) -> None:
-        # English comments inside code.
         self._clear_border_preview()
         self.food_source.data = {
             "x": [],
@@ -3785,6 +4020,7 @@ class _EnvironmentBuilderController:
         self.source_group_circle_source.data = self._empty_source_group_circle_data()
         self.source_group_ellipse_source.data = self._empty_source_group_xy_data()
         self.source_group_rect_source.data = self._empty_source_group_xy_data()
+        self.source_group_member_source.data = self._empty_source_group_member_data()
         self.border_source.data = {
             "x0": [],
             "y0": [],
@@ -3909,6 +4145,10 @@ class _EnvironmentBuilderController:
                             "id": obj.object_id,
                         },
                     )
+                self._append_rows(
+                    self.source_group_member_source,
+                    self._build_group_member_rows(obj),
+                )
             else:
                 self._append_source_row(
                     self.border_source,
@@ -3925,7 +4165,6 @@ class _EnvironmentBuilderController:
         self._sync_scape_preview()
 
     def _refresh_table(self) -> None:
-        # English comments inside code.
         rows = [
             {
                 "id": obj.object_id,
@@ -3948,7 +4187,6 @@ class _EnvironmentBuilderController:
         self.table.value = pd.DataFrame(rows)
 
     def _build_export_config(self) -> dict[str, object]:
-        # English comments inside code.
         base_config = util.AttrDict(self._loaded_config).get_copy()
         source_units: dict[str, dict[str, object]] = {}
         source_groups: dict[str, dict[str, object]] = {}
@@ -3981,6 +4219,7 @@ class _EnvironmentBuilderController:
                     "color": obj.color,
                 }
             elif obj.object_type == "Source group":
+                distribution_mode = obj.distribution_mode or "uniform"
                 source_groups[obj.object_id] = {
                     "radius": obj.radius,
                     "amount": obj.amount if obj.amount is not None else 0.0,
@@ -4128,17 +4367,14 @@ class _EnvironmentBuilderController:
         return dict(base_config)
 
     def _build_registry_config(self) -> util.AttrDict:
-        # English comments inside code.
         return _translate_builder_environment_payload(self._build_export_config())
 
     def _export_json(self) -> io.StringIO:
-        # English comments inside code.
         payload = self._build_export_config()
         return io.StringIO(json.dumps(payload, indent=2))
 
 
 def environment_builder_app() -> pn.viewable.Viewable:
-    # English comments inside code.
     pn.extension("tabulator", raw_css=[PORTAL_RAW_CSS, ENV_BUILDER_RAW_CSS])
     controller = _EnvironmentBuilderController()
 
@@ -4162,8 +4398,8 @@ class _InsertSection(param.Parameterized):
     radius = param.Number(
         default=3.0,
         bounds=(1.0, 30.0),
-        label="Core source radius (mm)",
-        doc="The spatial radius of the source core. Builder UI is shown in millimeters.",
+        label="Source unit radius (mm)",
+        doc="The spatial radius of the source unit core. Builder UI is shown in millimeters.",
     )
     border_width = param.Number(
         default=1.0,
@@ -4363,6 +4599,9 @@ def _sync_param_with_widget(
 class _EnvironmentBuilderV2Controller:
     def __init__(self) -> None:
         self.legacy = _EnvironmentBuilderController()
+        self._syncing_area_dims = False
+        self._syncing_group_scale = False
+        self._syncing_food_grid_dims = False
         self.legacy.clear_all_btn.name = "Reset configurations"
         self.legacy.selected_color.width = 52
         self.legacy.selected_color.sizing_mode = "fixed"
@@ -4530,9 +4769,26 @@ class _EnvironmentBuilderV2Controller:
             _sync_param_with_widget(section, parameter_name, widget)
         _sync_param_with_widget(self.arena, "geometry", self.legacy.arena_shape)
         _sync_param_with_widget(self.insert, "enabled", self.legacy.food_grid_enabled)
+        _sync_param_with_widget(self.group_distribution, "N", self.legacy.group_count)
+        _sync_param_with_widget(
+            self.group_distribution, "shape", self.legacy.group_shape
+        )
+        _sync_param_with_widget(self.group_distribution, "mode", self.legacy.group_mode)
+        _sync_param_with_widget(self.food_grid, "color", self.legacy.food_grid_color)
+        _sync_param_with_widget(
+            self.food_grid, "initial_value", self.legacy.food_grid_initial_value
+        )
         _sync_param_with_widget(self.food_grid, "fixed_max", self.food_grid_fixed_max)
         _sync_param_with_widget(
+            self.food_grid, "fixed_max", self.legacy.food_grid_fixed_max
+        )
+        _sync_param_with_widget(
             self.food_grid.substrate, "quality", self.food_grid_substrate_quality
+        )
+        _sync_param_with_widget(
+            self.food_grid.substrate,
+            "quality",
+            self.legacy.food_grid_substrate_quality,
         )
         _sync_param_with_widget(
             self.odorscape, "grid_dims_x", self.odorscape_grid_dims_x
@@ -4541,12 +4797,148 @@ class _EnvironmentBuilderV2Controller:
             self.odorscape, "grid_dims_y", self.odorscape_grid_dims_y
         )
         self.presets.param.watch(self._sync_canvas_title, "preset_name")
+        self.legacy.arena_width.param.watch(self._sync_area_dims_from_widgets, "value")
+        self.legacy.arena_height.param.watch(self._sync_area_dims_from_widgets, "value")
+        self.legacy.group_spread_x.param.watch(
+            self._sync_group_distribution_scale_from_widgets, "value"
+        )
+        self.legacy.group_spread_y.param.watch(
+            self._sync_group_distribution_scale_from_widgets, "value"
+        )
+        self.legacy.group_shape.param.watch(
+            self._sync_group_distribution_scale_from_widgets, "value"
+        )
+        self.group_distribution.param.watch(
+            self._sync_group_distribution_widgets_from_param, "scale"
+        )
+        self.food_grid_dims_x.param.watch(self._sync_food_grid_dims_from_v2, "value")
+        self.food_grid_dims_y.param.watch(self._sync_food_grid_dims_from_v2, "value")
+        self.legacy.food_grid_dims_x.param.watch(
+            self._sync_food_grid_dims_from_runtime, "value"
+        )
+        self.legacy.food_grid_dims_y.param.watch(
+            self._sync_food_grid_dims_from_runtime, "value"
+        )
+        self.food_grid.param.watch(self._sync_food_grid_dims_from_param, "grid_dims")
+        self._sync_area_dims_from_widgets()
+        self._sync_group_distribution_scale_from_widgets()
+        self._sync_food_grid_dims_from_runtime()
 
     def _sync_canvas_title(self, *_: object) -> None:
         unique_id = (
             self.presets.preset_name or ""
         ).strip() or "environment_builder_config"
         self.legacy.fig.title.text = f"Environment: {unique_id}"
+
+    def _sync_area_dims_from_widgets(self, *_: object) -> None:
+        if self._syncing_area_dims:
+            return
+        dims = (
+            float(self.legacy.arena_width.value),
+            float(self.legacy.arena_height.value),
+        )
+        if tuple(self.arena.dims) == dims:
+            return
+        self._syncing_area_dims = True
+        try:
+            self.arena.dims = dims
+        finally:
+            self._syncing_area_dims = False
+
+    def _sync_group_distribution_scale_from_widgets(self, *_: object) -> None:
+        if self._syncing_group_scale:
+            return
+        shape = _normalize_group_shape(self.legacy.group_shape.value)
+        scale_x = self.legacy._group_scale_from_display_mm(
+            shape, float(self.legacy.group_spread_x.value)
+        )
+        scale_y = (
+            scale_x
+            if shape == "circle"
+            else self.legacy._group_scale_from_display_mm(
+                shape, float(self.legacy.group_spread_y.value)
+            )
+        )
+        scale = (scale_x, scale_y)
+        if tuple(self.group_distribution.scale) == scale:
+            return
+        self._syncing_group_scale = True
+        try:
+            self.group_distribution.scale = scale
+        finally:
+            self._syncing_group_scale = False
+
+    def _sync_group_distribution_widgets_from_param(
+        self, *_: param.parameterized.Event
+    ) -> None:
+        if self._syncing_group_scale:
+            return
+        shape = _normalize_group_shape(self.legacy.group_shape.value)
+        scale_x, scale_y = tuple(self.group_distribution.scale)
+        display_x = self.legacy._group_display_value_mm(shape, float(scale_x))
+        display_y = (
+            display_x
+            if shape == "circle"
+            else self.legacy._group_display_value_mm(shape, float(scale_y))
+        )
+        self._syncing_group_scale = True
+        try:
+            if float(self.legacy.group_spread_x.value) != float(display_x):
+                self.legacy.group_spread_x.value = float(display_x)
+            if float(self.legacy.group_spread_y.value) != float(display_y):
+                self.legacy.group_spread_y.value = float(display_y)
+        finally:
+            self._syncing_group_scale = False
+
+    def _sync_food_grid_dims_from_v2(self, *_: object) -> None:
+        if self._syncing_food_grid_dims:
+            return
+        dims = (int(self.food_grid_dims_x.value), int(self.food_grid_dims_y.value))
+        self._syncing_food_grid_dims = True
+        try:
+            if tuple(self.food_grid.grid_dims) != dims:
+                self.food_grid.grid_dims = dims
+            if int(self.legacy.food_grid_dims_x.value) != dims[0]:
+                self.legacy.food_grid_dims_x.value = dims[0]
+            if int(self.legacy.food_grid_dims_y.value) != dims[1]:
+                self.legacy.food_grid_dims_y.value = dims[1]
+        finally:
+            self._syncing_food_grid_dims = False
+
+    def _sync_food_grid_dims_from_runtime(self, *_: object) -> None:
+        if self._syncing_food_grid_dims:
+            return
+        dims = (
+            int(self.legacy.food_grid_dims_x.value),
+            int(self.legacy.food_grid_dims_y.value),
+        )
+        self._syncing_food_grid_dims = True
+        try:
+            if tuple(self.food_grid.grid_dims) != dims:
+                self.food_grid.grid_dims = dims
+            if int(self.food_grid_dims_x.value) != dims[0]:
+                self.food_grid_dims_x.value = dims[0]
+            if int(self.food_grid_dims_y.value) != dims[1]:
+                self.food_grid_dims_y.value = dims[1]
+        finally:
+            self._syncing_food_grid_dims = False
+
+    def _sync_food_grid_dims_from_param(self, *_: param.parameterized.Event) -> None:
+        if self._syncing_food_grid_dims:
+            return
+        dims = tuple(int(value) for value in self.food_grid.grid_dims)
+        self._syncing_food_grid_dims = True
+        try:
+            if int(self.food_grid_dims_x.value) != dims[0]:
+                self.food_grid_dims_x.value = dims[0]
+            if int(self.food_grid_dims_y.value) != dims[1]:
+                self.food_grid_dims_y.value = dims[1]
+            if int(self.legacy.food_grid_dims_x.value) != dims[0]:
+                self.legacy.food_grid_dims_x.value = dims[0]
+            if int(self.legacy.food_grid_dims_y.value) != dims[1]:
+                self.legacy.food_grid_dims_y.value = dims[1]
+        finally:
+            self._syncing_food_grid_dims = False
 
     @staticmethod
     def _param_pane(
@@ -4709,7 +5101,13 @@ class _EnvironmentBuilderV2Controller:
                         pn.Param(
                             self.food_grid.param,
                             parameters=["color", "initial_value"],
-                            widgets={"color": {"type": pn.widgets.ColorPicker}},
+                            widgets={
+                                "color": {"type": pn.widgets.ColorPicker},
+                                "initial_value": {
+                                    "type": pn.widgets.FloatInput,
+                                    "step": 1e-6,
+                                },
+                            },
                             show_name=False,
                             sizing_mode="stretch_width",
                             margin=0,
@@ -4863,6 +5261,7 @@ class _EnvironmentBuilderV2Controller:
                     sizing_mode="stretch_width",
                     margin=0,
                 ),
+                self.legacy.preset_overwrite_confirm,
                 self.legacy.export_btn,
                 sizing_mode="stretch_width",
                 margin=0,
@@ -4929,7 +5328,7 @@ class _EnvironmentBuilderV2Controller:
             collapsed=False,
             sizing_mode="stretch_width",
         )
-        side = pn.Column(presets, controls, min_width=360, sizing_mode="stretch_width")
+        side = pn.Column(presets, controls, min_width=320, sizing_mode="stretch_width")
         center = pn.Column(
             pn.pane.Bokeh(self.legacy.fig, sizing_mode="stretch_both"),
             table_card,
