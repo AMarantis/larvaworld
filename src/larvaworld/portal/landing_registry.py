@@ -443,9 +443,9 @@ ITEMS: dict[str, LandingItem] = {
         ),
         badges=["Developer"],
         preview_md=(
-            "### Environment Builder (Planned)\n"
-            "- Configure arena geometry and obstacles\n"
-            "- Define sensory landscapes\n"
+            "### Environment Builder\n"
+            "- Configure arena geometry, borders, and obstacles\n"
+            "- Define source, grid, and scape parameters\n"
             "- Save and reuse environment presets\n"
         ),
     ),

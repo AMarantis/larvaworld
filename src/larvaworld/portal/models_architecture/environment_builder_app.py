@@ -12,13 +12,17 @@ from typing import Any
 
 import pandas as pd
 import panel as pn
+import param
 from bokeh.events import Tap
-from bokeh.models import ColumnDataSource
+from bokeh.models import ColumnDataSource, WheelZoomTool
 from bokeh.plotting import figure
 
 from larvaworld.lib import reg, util
+from larvaworld.lib.model.envs.valuegrid import FoodGrid
 from larvaworld.lib.param.custom import ClassAttr, ClassDict
-from larvaworld.lib.param.composition import substrate_dict
+from larvaworld.lib.param.composition import Substrate, substrate_dict
+from larvaworld.lib.param.spatial import Area
+from larvaworld.lib.param.xy_distro import Spatial_Distro
 from larvaworld.portal.landing_registry import DOCS_ARENAS_SUBSTRATES
 from larvaworld.portal.panel_components import PORTAL_RAW_CSS, build_app_header
 from larvaworld.portal.workspace import WorkspaceError, get_workspace_dir
@@ -73,10 +77,6 @@ ENV_BUILDER_RAW_CSS = """
   font-size: 12px;
   line-height: 1.45;
   color: rgba(17, 17, 17, 0.72);
-}
-
-.lw-env-builder-select-mode .bk-btn {
-  font-weight: 700;
 }
 
 .lw-env-builder-objects-table .tabulator {
@@ -245,6 +245,9 @@ class _ObjectRow:
     odor_id: str | None = None
     odor_intensity: float | None = None
     odor_spread: float | None = None
+    can_be_carried: bool | None = None
+    can_be_displaced: bool | None = None
+    regeneration: bool | None = None
     substrate_type: str | None = None
     substrate_quality: float | None = None
     distribution_mode: str | None = None
@@ -506,7 +509,7 @@ class _EnvironmentBuilderController:
 
     @staticmethod
     def _param_doc_for_key(key: str) -> str | None:
-        from larvaworld.lib.model.agents._source import Food
+        from larvaworld.lib.model.agents._source import Food, Source
         from larvaworld.lib.model.envs.valuegrid import (
             DiffusionValueLayer,
             FoodGrid,
@@ -562,6 +565,18 @@ class _EnvironmentBuilderController:
         if key == "selected_amount":
             return _EnvironmentBuilderController._resolve_doc_from_class(
                 Food, ["amount"]
+            )
+        if key == "selected_can_be_carried":
+            return _EnvironmentBuilderController._resolve_doc_from_class(
+                Source, ["can_be_carried"]
+            )
+        if key == "selected_can_be_displaced":
+            return _EnvironmentBuilderController._resolve_doc_from_class(
+                Source, ["can_be_displaced"]
+            )
+        if key == "selected_regeneration":
+            return _EnvironmentBuilderController._resolve_doc_from_class(
+                Source, ["regeneration"]
             )
         if key == "selected_odor_id":
             return _EnvironmentBuilderController._resolve_doc_from_class(Odor, ["id"])
@@ -652,6 +667,8 @@ class _EnvironmentBuilderController:
             return _EnvironmentBuilderController._class_doc_summary(Odor)
         if key == "family_distribution":
             return _EnvironmentBuilderController._class_doc_summary(Spatial_Distro)
+        if key == "family_source_behavior":
+            return _EnvironmentBuilderController._class_doc_summary(Source)
         if key == "family_odorscape":
             return _EnvironmentBuilderController._class_doc_summary(OdorScape)
         if key == "family_windscape":
@@ -820,7 +837,6 @@ class _EnvironmentBuilderController:
             name="Select on canvas",
             value=False,
             button_type="primary",
-            css_classes=["lw-env-builder-select-mode"],
         )
         self.selected_object = pn.widgets.Select(
             name="Inspect object",
@@ -832,8 +848,12 @@ class _EnvironmentBuilderController:
         self.selected_y = pn.widgets.FloatInput(name="Y (m)", value=0.0, step=0.001)
         self.selected_x2 = pn.widgets.FloatInput(name="X2 (m)", value=0.0, step=0.001)
         self.selected_y2 = pn.widgets.FloatInput(name="Y2 (m)", value=0.0, step=0.001)
-        self.selected_radius = pn.widgets.FloatInput(
-            name="Core source radius (mm)", value=3.0, step=0.5
+        self.selected_radius = pn.widgets.FloatSlider(
+            name="Core source radius (mm)",
+            start=1.0,
+            end=30.0,
+            step=0.5,
+            value=3.0,
         )
         self.selected_width = pn.widgets.FloatInput(
             name="Border width (mm)", value=1.0, step=0.5
@@ -841,6 +861,18 @@ class _EnvironmentBuilderController:
         self.selected_color = pn.widgets.ColorPicker(name="Color", value="#4caf50")
         self.selected_amount = pn.widgets.FloatInput(
             name="Food amount", value=0.0, step=0.5
+        )
+        self.selected_can_be_carried = pn.widgets.Checkbox(
+            name="Can be carried",
+            value=False,
+        )
+        self.selected_can_be_displaced = pn.widgets.Checkbox(
+            name="Can be displaced",
+            value=False,
+        )
+        self.selected_regeneration = pn.widgets.Checkbox(
+            name="Regeneration",
+            value=False,
         )
         self.selected_odor_id = pn.widgets.AutocompleteInput(
             name="Odor ID",
@@ -905,6 +937,10 @@ class _EnvironmentBuilderController:
             name="Grid initial value",
             value=1e-6,
             step=1e-6,
+        )
+        self.food_grid_fixed_max = pn.widgets.Checkbox(
+            name="Grid fixed max",
+            value=True,
         )
         self.food_grid_substrate_type = pn.widgets.Select(
             name="Grid substrate type",
@@ -1060,6 +1096,7 @@ class _EnvironmentBuilderController:
             ("food_grid_dims_x", self.food_grid_dims_x),
             ("food_grid_dims_y", self.food_grid_dims_y),
             ("food_grid_initial_value", self.food_grid_initial_value),
+            ("food_grid_fixed_max", self.food_grid_fixed_max),
             ("food_grid_substrate_type", self.food_grid_substrate_type),
             ("food_grid_substrate_quality", self.food_grid_substrate_quality),
             ("odorscape_enabled", self.odorscape_enabled),
@@ -1091,6 +1128,9 @@ class _EnvironmentBuilderController:
             ("selected_width", self.selected_width),
             ("selected_color", self.selected_color),
             ("selected_amount", self.selected_amount),
+            ("selected_can_be_carried", self.selected_can_be_carried),
+            ("selected_can_be_displaced", self.selected_can_be_displaced),
+            ("selected_regeneration", self.selected_regeneration),
             ("selected_odor_id", self.selected_odor_id),
             ("selected_odor_intensity", self.selected_odor_intensity),
             ("selected_odor_spread", self.selected_odor_spread),
@@ -1112,6 +1152,13 @@ class _EnvironmentBuilderController:
             "Food",
             self._field_view(self.selected_amount),
             help_text=self._help_text_for_key("family_food"),
+        )
+        self._editor_source_behavior_family = _editor_family_box(
+            "Source behavior",
+            self._field_view(self.selected_can_be_carried),
+            self._field_view(self.selected_can_be_displaced),
+            self._field_view(self.selected_regeneration),
+            help_text=self._help_text_for_key("family_source_behavior"),
         )
         self._editor_substrate_family = _editor_family_box(
             "Substrate",
@@ -1230,10 +1277,14 @@ class _EnvironmentBuilderController:
             sizing_mode="stretch_width",
             margin=(0, 0, 4, 0),
             styles={
-                "font-size": "12px",
+                "font-size": "11px",
                 "line-height": "1.45",
                 "color": "rgba(17, 17, 17, 0.72)",
-                "padding": "0 6px",
+                "padding": "8px 10px",
+                "text-align": "left",
+                "background": "rgba(252, 252, 253, 0.99)",
+                "border": "1px solid rgba(90, 71, 96, 0.10)",
+                "border-radius": "8px",
                 "overflow-wrap": "anywhere",
             },
         )
@@ -1262,6 +1313,7 @@ class _EnvironmentBuilderController:
             self.food_grid_dims_x,
             self.food_grid_dims_y,
             self.food_grid_initial_value,
+            self.food_grid_fixed_max,
             self.food_grid_substrate_type,
             self.food_grid_substrate_quality,
         ):
@@ -1286,6 +1338,9 @@ class _EnvironmentBuilderController:
             self.selected_width,
             self.selected_color,
             self.selected_amount,
+            self.selected_can_be_carried,
+            self.selected_can_be_displaced,
+            self.selected_regeneration,
             self.selected_odor_id,
             self.selected_odor_intensity,
             self.selected_odor_spread,
@@ -1475,6 +1530,10 @@ class _EnvironmentBuilderController:
             active_scroll="wheel_zoom",
             toolbar_location="right",
         )
+        wheel_zoom = self.fig.select_one(WheelZoomTool)
+        if wheel_zoom is not None:
+            wheel_zoom.dimensions = "both"
+            wheel_zoom.zoom_on_axis = False
         self.fig.background_fill_color = "#ffffff"
         self.fig.border_fill_color = "#fafafa"
         self.fig.xaxis.axis_label = "X (m)"
@@ -1829,6 +1888,7 @@ class _EnvironmentBuilderController:
                 self._field_view(self.food_grid_dims_x),
                 self._field_view(self.food_grid_dims_y),
                 self._field_view(self.food_grid_initial_value),
+                self._field_view(self.food_grid_fixed_max),
                 self._field_view(self.food_grid_substrate_type),
                 self._field_view(self.food_grid_substrate_quality),
                 self.status,
@@ -1877,6 +1937,7 @@ class _EnvironmentBuilderController:
                 self._field_view(self.selected_width),
                 self._field_view(self.selected_color),
                 self._editor_food_family,
+                self._editor_source_behavior_family,
                 self._editor_substrate_family,
                 self._editor_odor_family,
                 self._editor_distribution_family,
@@ -2441,6 +2502,7 @@ class _EnvironmentBuilderController:
         # English comments inside code.
         workspace_message = ""
         workspace_options: dict[str, str] = {}
+        workspace_labels: set[str] = set()
         workspace_available = True
         try:
             preset_dir = self._preset_dir()
@@ -2451,6 +2513,9 @@ class _EnvironmentBuilderController:
             workspace_message = f"Workspace environments directory unavailable: {exc}"
         else:
             preset_files = sorted(preset_dir.glob("*.json"))
+            workspace_labels = {
+                self._preset_label_from_filename(path.name) for path in preset_files
+            }
             workspace_options = {
                 f"Workspace / {self._preset_label_from_filename(path.name)}": path.name
                 for path in preset_files
@@ -2459,6 +2524,7 @@ class _EnvironmentBuilderController:
         registry_options = {
             f"Registry / {name}": self._registry_preset_value(name)
             for name in sorted(str(key) for key in reg.conf.Env.dict.keys())
+            if name not in workspace_labels
         }
         options = {**workspace_options, **registry_options}
         self.preset_select.options = options
@@ -2479,16 +2545,13 @@ class _EnvironmentBuilderController:
         meta_lines = ["<div>"]
         if workspace_available and preset_dir is not None:
             meta_lines.append(
-                f"Workspace preset directory: <code>{preset_dir}</code><br>"
-            )
-            meta_lines.append(
-                f"Workspace presets: <strong>{len(workspace_options)}</strong><br>"
+                f'Workspace preset directory:<br><code style="color: #4a8fd8;">{preset_dir}</code><br>'
             )
         elif workspace_message:
             meta_lines.append(f"{workspace_message}<br>")
         meta_lines.append(
-            f"Registry environments from <code>{reg.conf.Env.path_to_dict}</code>: "
-            f"<strong>{len(registry_options)}</strong>"
+            f"{len(registry_options)} Registry environments from:<br>"
+            f'<code style="color: #4a8fd8;">{reg.conf.Env.path_to_dict}</code>'
         )
         meta_lines.append("</div>")
         self.preset_meta.object = "".join(meta_lines)
@@ -2664,6 +2727,9 @@ class _EnvironmentBuilderController:
             self.selected_radius, object_type in {"Source unit", "Source group"}
         )
         self._set_field_visible(self.selected_amount, is_source)
+        self._set_field_visible(self.selected_can_be_carried, is_source)
+        self._set_field_visible(self.selected_can_be_displaced, is_source)
+        self._set_field_visible(self.selected_regeneration, is_source)
         self._set_field_visible(self.selected_odor_id, is_source)
         self._set_field_visible(self.selected_odor_intensity, is_source)
         self._set_field_visible(self.selected_odor_spread, is_source)
@@ -2675,6 +2741,7 @@ class _EnvironmentBuilderController:
         self._set_field_visible(self.selected_substrate_type, is_source)
         self._set_field_visible(self.selected_substrate_quality, is_source)
         self._editor_food_family.visible = is_source
+        self._editor_source_behavior_family.visible = is_source
         self._editor_substrate_family.visible = is_source
         self._editor_odor_family.visible = is_source
         self._editor_distribution_family.visible = is_source_group
@@ -2711,6 +2778,9 @@ class _EnvironmentBuilderController:
         self.selected_amount.value = float(
             obj.amount if obj.amount is not None else 0.0
         )
+        self.selected_can_be_carried.value = bool(obj.can_be_carried)
+        self.selected_can_be_displaced.value = bool(obj.can_be_displaced)
+        self.selected_regeneration.value = bool(obj.regeneration)
         self.selected_odor_id.value = str(obj.odor_id or "")
         self.selected_odor_intensity.value = float(
             obj.odor_intensity if obj.odor_intensity is not None else 1.0
@@ -2814,6 +2884,9 @@ class _EnvironmentBuilderController:
                                 if entry.get("amount") is not None
                                 else 0.0
                             ),
+                            can_be_carried=bool(entry.get("can_be_carried", False)),
+                            can_be_displaced=bool(entry.get("can_be_displaced", False)),
+                            regeneration=bool(entry.get("regeneration", False)),
                             odor_id=str(
                                 entry.get("odor", {}).get("id", f"{object_id}_odor")
                             )
@@ -2864,6 +2937,9 @@ class _EnvironmentBuilderController:
                                 if entry.get("amount") is not None
                                 else 0.0
                             ),
+                            can_be_carried=bool(entry.get("can_be_carried", False)),
+                            can_be_displaced=bool(entry.get("can_be_displaced", False)),
+                            regeneration=bool(entry.get("regeneration", False)),
                             odor_id=str(entry.get("odor", {}).get("id"))
                             if entry.get("odor", {}).get("id") is not None
                             else None,
@@ -2962,6 +3038,7 @@ class _EnvironmentBuilderController:
                 self.food_grid_initial_value.value = float(
                     food_grid.get("initial_value", 1e-6)
                 )
+                self.food_grid_fixed_max.value = bool(food_grid.get("fixed_max", True))
                 self.food_grid_substrate_type.value = str(
                     food_grid.get("substrate", {}).get("type", "standard")
                 )
@@ -3094,9 +3171,9 @@ class _EnvironmentBuilderController:
         raw_name = self.preset_name.value.strip() or "environment_builder_config"
         filename = self._preset_filename(raw_name)
         target = preset_dir / filename
+        registry_id = self._preset_label_from_filename(filename)
         payload = self._build_export_config()
         target.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-        registry_id = self._preset_label_from_filename(filename)
         env_dict = util.AttrDict(reg.conf.Env.dict).get_copy()
         env_dict[registry_id] = self._build_registry_config()
         reg.conf.Env.set_dict(env_dict)
@@ -3229,6 +3306,9 @@ class _EnvironmentBuilderController:
                 radius=round(float(self.selected_radius.value) / 1000.0, 4),
                 color=self.selected_color.value,
                 amount=float(self.selected_amount.value),
+                can_be_carried=bool(self.selected_can_be_carried.value),
+                can_be_displaced=bool(self.selected_can_be_displaced.value),
+                regeneration=bool(self.selected_regeneration.value),
                 odor_id=odor_id,
                 odor_intensity=(
                     float(self.selected_odor_intensity.value)
@@ -3457,6 +3537,9 @@ class _EnvironmentBuilderController:
                     radius=radius,
                     color=color,
                     amount=0.0,
+                    can_be_carried=False,
+                    can_be_displaced=False,
+                    regeneration=False,
                     odor_id=None,
                     odor_intensity=None,
                     odor_spread=None,
@@ -3489,6 +3572,9 @@ class _EnvironmentBuilderController:
                     odor_id=None,
                     odor_intensity=None,
                     odor_spread=None,
+                    can_be_carried=False,
+                    can_be_displaced=False,
+                    regeneration=False,
                     substrate_type="standard",
                     substrate_quality=1.0,
                     distribution_n=int(self.group_count.value),
@@ -3878,6 +3964,9 @@ class _EnvironmentBuilderController:
                     "pos": [obj.x, obj.y],
                     "radius": obj.radius,
                     "amount": obj.amount if obj.amount is not None else 0.0,
+                    "can_be_carried": bool(obj.can_be_carried),
+                    "can_be_displaced": bool(obj.can_be_displaced),
+                    "regeneration": bool(obj.regeneration),
                     "odor": {
                         "id": obj.odor_id,
                         "intensity": obj.odor_intensity,
@@ -3895,6 +3984,9 @@ class _EnvironmentBuilderController:
                 source_groups[obj.object_id] = {
                     "radius": obj.radius,
                     "amount": obj.amount if obj.amount is not None else 0.0,
+                    "can_be_carried": bool(obj.can_be_carried),
+                    "can_be_displaced": bool(obj.can_be_displaced),
+                    "regeneration": bool(obj.regeneration),
                     "distribution": {
                         "N": obj.distribution_n
                         if obj.distribution_n is not None
@@ -3935,7 +4027,7 @@ class _EnvironmentBuilderController:
             food_grid = {
                 "unique_id": "FoodGrid",
                 "color": self.food_grid_color.value,
-                "fixed_max": True,
+                "fixed_max": bool(self.food_grid_fixed_max.value),
                 "grid_dims": [
                     int(self.food_grid_dims_x.value),
                     int(self.food_grid_dims_y.value),
@@ -4050,6 +4142,815 @@ def environment_builder_app() -> pn.viewable.Viewable:
     pn.extension("tabulator", raw_css=[PORTAL_RAW_CSS, ENV_BUILDER_RAW_CSS])
     controller = _EnvironmentBuilderController()
 
+    template = pn.template.MaterialTemplate(
+        title="",
+        header_background=LANE_MODELS_COLOR,
+        header_color="#1f1f1f",
+    )
+    template.header.append(build_app_header(title="Environment Builder"))
+    template.main.append(controller.view())
+    return template
+
+
+class _InsertSection(param.Parameterized):
+    object_type = param.Selector(
+        default="Source unit",
+        objects=["Source unit", "Source group", "Border segment"],
+        label="Insert object",
+        doc="Choose which canonical EnvConf object family to place on the canvas: source unit, source group, or border segment.",
+    )
+    radius = param.Number(
+        default=3.0,
+        bounds=(1.0, 30.0),
+        label="Core source radius (mm)",
+        doc="The spatial radius of the source core. Builder UI is shown in millimeters.",
+    )
+    border_width = param.Number(
+        default=1.0,
+        bounds=(0.5, 10.0),
+        label="Border width (mm)",
+        doc="The width of the border segment line. Builder UI is shown in millimeters.",
+    )
+    color = param.String(
+        default="#4caf50",
+        label="Object color",
+        doc="Preview color used for the object and exported as the object's color.",
+    )
+    enabled = param.Boolean(
+        default=False,
+        label="Enable food grid",
+        doc="Adds an optional FoodGrid covering the arena.",
+    )
+
+
+class _OdorScapeSection(param.Parameterized):
+    enabled = param.Boolean(
+        default=False,
+        label="Enable odorscape",
+        doc="The sensory odor landscape in the arena. Preview contours appear only when at least one placed source has odor configured.",
+    )
+    mode = param.Selector(
+        default="Gaussian",
+        objects=["Gaussian", "Diffusion", "Analytical"],
+        label="Odorscape mode",
+        doc="The odorscape algorithm.",
+    )
+    color = param.String(
+        default="#4caf50",
+        label="Odorscape color",
+        doc="Preview and export color for the odorscape layer.",
+    )
+    grid_dims_x = param.Integer(
+        default=51,
+        bounds=(1, None),
+        label="Odorscape grid X",
+        doc="The spatial resolution of the odorscape grid in the X direction.",
+    )
+    grid_dims_y = param.Integer(
+        default=51,
+        bounds=(1, None),
+        label="Odorscape grid Y",
+        doc="The spatial resolution of the odorscape grid in the Y direction.",
+    )
+    initial_value = param.Number(
+        default=0.0,
+        label="Odorscape initial value",
+        doc="Initial value over the odorscape grid before source contributions are applied.",
+    )
+    fixed_max = param.Boolean(
+        default=False,
+        label="Odorscape fixed max",
+        doc="Whether the maximum odorscape value is kept constant.",
+    )
+    evap_const = param.Number(
+        default=0.9,
+        bounds=(0.0, None),
+        label="Diffusion evaporation",
+        doc="The evaporation constant of the diffusion algorithm.",
+    )
+    sigma_x = param.Number(
+        default=0.95,
+        bounds=(0.0, None),
+        label="Diffusion sigma X",
+        doc="The X component of the gaussian diffusion sigma.",
+    )
+    sigma_y = param.Number(
+        default=0.95,
+        bounds=(0.0, None),
+        label="Diffusion sigma Y",
+        doc="The Y component of the gaussian diffusion sigma.",
+    )
+
+
+class _WindScapeSection(param.Parameterized):
+    enabled = param.Boolean(
+        default=False,
+        label="Enable windscape",
+        doc="The wind landscape in the arena. Wind arrows appear in the preview only when wind speed is greater than zero.",
+    )
+    color = param.String(
+        default="#ff0000",
+        label="Wind color",
+        doc="Preview and export color for wind arrows.",
+    )
+    direction = param.Number(
+        default=180.0,
+        label="Wind direction (deg)",
+        doc="The absolute polar direction of the wind or air puff. Builder UI edits this in degrees and exports it in radians.",
+    )
+    speed = param.Number(
+        default=0.0,
+        bounds=(0.0, None),
+        label="Wind speed (m/s)",
+        doc="The speed of the wind or air puff.",
+    )
+
+
+class _ThermoScapeSection(param.Parameterized):
+    enabled = param.Boolean(
+        default=False,
+        label="Enable thermoscape",
+        doc="The thermal landscape in the arena. Preview appears only after at least one thermal source row is added.",
+    )
+    plate_temp = param.Number(
+        default=22.0,
+        label="Plate temperature (deg C)",
+        doc="Baseline plate temperature in degrees Celsius.",
+    )
+    spread = param.Number(
+        default=0.1,
+        bounds=(0.0, None),
+        label="Thermal spread",
+        doc="Spread parameter controlling how broadly each thermal source diffuses across the arena.",
+    )
+
+
+class _PresetSection(param.Parameterized):
+    preset_name = param.String(
+        default="environment_builder_config",
+        label="Unique ID",
+        doc="Name used for the saved workspace JSON file and for the Env registry entry created from this builder preset.",
+    )
+
+
+_FAMILY_BOX_STYLES = {
+    "background": "rgba(252, 252, 253, 0.99)",
+    "border": "1px solid rgba(90, 71, 96, 0.08)",
+    "border-radius": "10px",
+    "padding": "10px 12px 8px 12px",
+}
+
+_FAMILY_BOX_COMPACT_STYLES = {
+    **_FAMILY_BOX_STYLES,
+    "padding": "5px 12px 1px 12px",
+}
+
+_FAMILY_BG = "rgba(252, 252, 253, 0.99)"
+_FAMILY_FIELD_STYLESHEET = f"""
+:host {{
+  --lw-family-bg: {_FAMILY_BG};
+}}
+
+label,
+legend,
+.bk-input-group label,
+.bk-clearfix label,
+.bk-input-group legend {{
+  background: var(--lw-family-bg) !important;
+}}
+""".strip()
+
+_FAMILY_TITLE_STYLES = {
+    "color": "#4f2f5f",
+    "font-weight": "700",
+    "margin": "0 0 6px 0",
+}
+
+
+def _sync_param_with_widget(
+    section: param.Parameterized,
+    parameter_name: str,
+    widget: pn.viewable.Viewable,
+) -> None:
+    state = {"syncing_param": False, "syncing_widget": False}
+
+    def _from_param(event: param.parameterized.Event) -> None:
+        if state["syncing_widget"] or not hasattr(widget, "value"):
+            return
+        if getattr(widget, "value") == event.new:
+            return
+        state["syncing_param"] = True
+        try:
+            widget.value = event.new
+        finally:
+            state["syncing_param"] = False
+
+    def _from_widget(event: param.parameterized.Event) -> None:
+        if state["syncing_param"]:
+            return
+        if getattr(section, parameter_name) == event.new:
+            return
+        state["syncing_widget"] = True
+        try:
+            setattr(section, parameter_name, event.new)
+        finally:
+            state["syncing_widget"] = False
+
+    section.param.watch(_from_param, parameter_name)
+    widget.param.watch(_from_widget, "value")
+
+
+class _EnvironmentBuilderV2Controller:
+    def __init__(self) -> None:
+        self.legacy = _EnvironmentBuilderController()
+        self.legacy.clear_all_btn.name = "Reset configurations"
+        self.legacy.selected_color.width = 52
+        self.legacy.selected_color.sizing_mode = "fixed"
+        self.legacy.export_btn.styles = {
+            **getattr(self.legacy.export_btn, "styles", {}),
+            "font-size": "14px",
+        }
+        self.legacy.select_mode.width = None
+        self.legacy.select_mode.sizing_mode = "stretch_width"
+        self.legacy.clear_last_btn.width = None
+        self.legacy.clear_last_btn.sizing_mode = "stretch_width"
+        arena_width, arena_height = self.legacy._arena_dimensions()
+        self.arena = Area(
+            dims=(arena_width, arena_height),
+            geometry=self.legacy.arena_shape.value,
+            torus=self.legacy.arena_torus.value,
+        )
+        self.insert = _InsertSection(
+            object_type=self.legacy.object_type.value,
+            radius=self.legacy.object_radius.value,
+            border_width=self.legacy.border_width.value,
+            color=self.legacy.object_color.value,
+            enabled=self.legacy.food_grid_enabled.value,
+        )
+        self.group_distribution = Spatial_Distro(
+            N=self.legacy.group_count.value,
+            shape=self.legacy.group_shape.value,
+            mode=self.legacy.group_mode.value,
+            scale=(
+                self.legacy._group_scale_from_display_mm(
+                    self.legacy.group_shape.value,
+                    float(self.legacy.group_spread_x.value),
+                ),
+                self.legacy._group_scale_from_display_mm(
+                    self.legacy.group_shape.value,
+                    float(self.legacy.group_spread_y.value),
+                ),
+            ),
+        )
+        self.food_grid = FoodGrid(
+            color=self.legacy.food_grid_color.value,
+            grid_dims=(
+                self.legacy.food_grid_dims_x.value,
+                self.legacy.food_grid_dims_y.value,
+            ),
+            initial_value=self.legacy.food_grid_initial_value.value,
+            substrate=Substrate(
+                type=self.legacy.food_grid_substrate_type.value,
+                quality=self.legacy.food_grid_substrate_quality.value,
+            ),
+            fixed_max=self.legacy.food_grid_fixed_max.value,
+        )
+        self.food_grid_dims_x = pn.widgets.IntSlider(
+            name="Grid X",
+            start=1,
+            end=500,
+            step=1,
+            value=int(self.food_grid.grid_dims[0]),
+            sizing_mode="stretch_width",
+        )
+        self.food_grid_dims_y = pn.widgets.IntSlider(
+            name="Grid Y",
+            start=1,
+            end=500,
+            step=1,
+            value=int(self.food_grid.grid_dims[1]),
+            sizing_mode="stretch_width",
+        )
+        self.food_grid_substrate_quality = pn.widgets.FloatInput(
+            name="Grid substrate quality",
+            value=float(self.food_grid.substrate.quality),
+            step=0.01,
+            start=0.0,
+            end=1.0,
+            sizing_mode="stretch_width",
+        )
+        self.food_grid_fixed_max = pn.widgets.Checkbox(
+            name="Fixed max",
+            value=bool(self.food_grid.fixed_max),
+            sizing_mode="stretch_width",
+        )
+        self.food_grid_fixed_max_note = pn.pane.Markdown(
+            "Keep the grid maximum fixed instead of letting it grow dynamically.",
+            styles={"font-size": "11px", "color": "rgba(17, 17, 17, 0.68)"},
+            margin=(0, 0, 4, 0),
+        )
+        self.odorscape = _OdorScapeSection(
+            enabled=self.legacy.odorscape_enabled.value,
+            mode=self.legacy.odorscape_mode.value,
+            color=self.legacy.odorscape_color.value,
+            grid_dims_x=self.legacy.odorscape_grid_dims_x.value,
+            grid_dims_y=self.legacy.odorscape_grid_dims_y.value,
+            initial_value=self.legacy.odorscape_initial_value.value,
+            fixed_max=self.legacy.odorscape_fixed_max.value,
+            evap_const=self.legacy.odorscape_evap_const.value,
+            sigma_x=self.legacy.odorscape_sigma_x.value,
+            sigma_y=self.legacy.odorscape_sigma_y.value,
+        )
+        self.odorscape_grid_dims_x = pn.widgets.IntSlider(
+            name="Odorscape grid X",
+            start=1,
+            end=500,
+            step=1,
+            value=int(self.odorscape.grid_dims_x),
+            sizing_mode="stretch_width",
+        )
+        self.odorscape_grid_dims_y = pn.widgets.IntSlider(
+            name="Odorscape grid Y",
+            start=1,
+            end=500,
+            step=1,
+            value=int(self.odorscape.grid_dims_y),
+            sizing_mode="stretch_width",
+        )
+        self.windscape = _WindScapeSection(
+            enabled=self.legacy.windscape_enabled.value,
+            color=self.legacy.windscape_color.value,
+            direction=self.legacy.windscape_direction.value,
+            speed=self.legacy.windscape_speed.value,
+        )
+        self.thermoscape = _ThermoScapeSection(
+            enabled=self.legacy.thermoscape_enabled.value,
+            plate_temp=self.legacy.thermoscape_plate_temp.value,
+            spread=self.legacy.thermoscape_spread.value,
+        )
+        self.presets = _PresetSection(preset_name=self.legacy.preset_name.value)
+        self.odorscape_enabled_switch = self._make_bound_switch(
+            self.odorscape, "enabled"
+        )
+        self.windscape_enabled_switch = self._make_bound_switch(
+            self.windscape, "enabled"
+        )
+        self.thermoscape_enabled_switch = self._make_bound_switch(
+            self.thermoscape, "enabled"
+        )
+        self._bind_sections()
+        self._sync_canvas_title()
+
+    def _bind_sections(self) -> None:
+        for section, parameter_name, widget in (
+            (self.arena, "torus", self.legacy.arena_torus),
+            (self.insert, "object_type", self.legacy.object_type),
+            (self.insert, "radius", self.legacy.object_radius),
+            (self.insert, "border_width", self.legacy.border_width),
+            (self.insert, "color", self.legacy.object_color),
+            (self.presets, "preset_name", self.legacy.preset_name),
+            (self.odorscape, "enabled", self.legacy.odorscape_enabled),
+            (self.odorscape, "mode", self.legacy.odorscape_mode),
+            (self.odorscape, "color", self.legacy.odorscape_color),
+            (self.odorscape, "grid_dims_x", self.legacy.odorscape_grid_dims_x),
+            (self.odorscape, "grid_dims_y", self.legacy.odorscape_grid_dims_y),
+            (self.odorscape, "initial_value", self.legacy.odorscape_initial_value),
+            (self.odorscape, "fixed_max", self.legacy.odorscape_fixed_max),
+            (self.odorscape, "evap_const", self.legacy.odorscape_evap_const),
+            (self.odorscape, "sigma_x", self.legacy.odorscape_sigma_x),
+            (self.odorscape, "sigma_y", self.legacy.odorscape_sigma_y),
+            (self.windscape, "enabled", self.legacy.windscape_enabled),
+            (self.windscape, "color", self.legacy.windscape_color),
+            (self.windscape, "direction", self.legacy.windscape_direction),
+            (self.windscape, "speed", self.legacy.windscape_speed),
+            (self.thermoscape, "enabled", self.legacy.thermoscape_enabled),
+            (self.thermoscape, "plate_temp", self.legacy.thermoscape_plate_temp),
+            (self.thermoscape, "spread", self.legacy.thermoscape_spread),
+        ):
+            _sync_param_with_widget(section, parameter_name, widget)
+        _sync_param_with_widget(self.arena, "geometry", self.legacy.arena_shape)
+        _sync_param_with_widget(self.insert, "enabled", self.legacy.food_grid_enabled)
+        _sync_param_with_widget(self.food_grid, "fixed_max", self.food_grid_fixed_max)
+        _sync_param_with_widget(
+            self.food_grid.substrate, "quality", self.food_grid_substrate_quality
+        )
+        _sync_param_with_widget(
+            self.odorscape, "grid_dims_x", self.odorscape_grid_dims_x
+        )
+        _sync_param_with_widget(
+            self.odorscape, "grid_dims_y", self.odorscape_grid_dims_y
+        )
+        self.presets.param.watch(self._sync_canvas_title, "preset_name")
+
+    def _sync_canvas_title(self, *_: object) -> None:
+        unique_id = (
+            self.presets.preset_name or ""
+        ).strip() or "environment_builder_config"
+        self.legacy.fig.title.text = f"Environment: {unique_id}"
+
+    @staticmethod
+    def _param_pane(
+        section: param.Parameterized,
+        parameters: list[str],
+        *,
+        widget_overrides: dict[str, object] | None = None,
+    ) -> pn.Param:
+        return pn.Param(
+            section.param,
+            parameters=parameters,
+            widgets=widget_overrides or {},
+            show_name=False,
+            sizing_mode="stretch_width",
+            margin=0,
+            stylesheets=[_FAMILY_FIELD_STYLESHEET],
+        )
+
+    @staticmethod
+    def _family_box(
+        title: str,
+        *children: object,
+        header_right: pn.viewable.Viewable | None = None,
+        compact: bool = False,
+    ) -> pn.Column:
+        title_styles = dict(_FAMILY_TITLE_STYLES)
+        if header_right is not None:
+            title_styles["margin"] = "-6px 0 0 0"
+        title_pane = pn.pane.Markdown(f"**{title}**", styles=title_styles, margin=0)
+        if header_right is None:
+            header = pn.Row(
+                title_pane, sizing_mode="stretch_width", margin=(0, 0, 6, 0)
+            )
+        else:
+            header_right.margin = (0, 0, 0, 0)
+            header = pn.Row(
+                pn.Column(title_pane, sizing_mode="stretch_width", margin=0),
+                pn.Column(header_right, width=22, align="start", margin=0),
+                sizing_mode="stretch_width",
+                align="start",
+                margin=(0, 0, 6, 0),
+            )
+        return pn.Column(
+            header,
+            *children,
+            styles=_FAMILY_BOX_COMPACT_STYLES if compact else _FAMILY_BOX_STYLES,
+            sizing_mode="stretch_width",
+            margin=(0, 0, 8, 0),
+        )
+
+    @staticmethod
+    def _make_bound_switch(
+        section: param.Parameterized, parameter_name: str
+    ) -> pn.widgets.Switch:
+        widget = pn.widgets.Switch(
+            name="", value=bool(getattr(section, parameter_name)), width=18, margin=0
+        )
+        _sync_param_with_widget(section, parameter_name, widget)
+        return widget
+
+    def _arena_panel(self) -> pn.viewable.Viewable:
+        @pn.depends(self.arena.param.geometry)
+        def _view(geometry: str) -> pn.Column:
+            return self._family_box(
+                "Arena",
+                pn.Param(
+                    self.arena.param,
+                    parameters=["geometry", "torus"],
+                    widgets={"geometry": {"type": pn.widgets.Select}},
+                    show_name=False,
+                    sizing_mode="stretch_width",
+                    margin=0,
+                    stylesheets=[_FAMILY_FIELD_STYLESHEET],
+                ),
+                self.legacy.arena_width,
+                self.legacy.arena_height
+                if geometry != "circular"
+                else pn.Spacer(height=0),
+            )
+
+        return _view
+
+    def _insert_panel(self) -> pn.viewable.Viewable:
+        @pn.depends(self.insert.param.object_type)
+        def _view(object_type: str) -> pn.Column:
+            children: list[object] = [
+                self._param_pane(
+                    self.insert,
+                    ["object_type"],
+                    widget_overrides={"object_type": {"type": pn.widgets.Select}},
+                )
+            ]
+            if object_type == "Border segment":
+                children.append(
+                    self._param_pane(
+                        self.insert,
+                        ["border_width", "color"],
+                        widget_overrides={
+                            "border_width": {
+                                "type": pn.widgets.FloatInput,
+                                "step": 0.5,
+                            },
+                            "color": {"type": pn.widgets.ColorPicker},
+                        },
+                    )
+                )
+            else:
+                distro_pane = None
+                if object_type == "Source group":
+                    distro_pane = pn.Column(
+                        pn.Param(
+                            self.group_distribution.param,
+                            parameters=["N", "shape", "mode"],
+                            widgets={
+                                "shape": {"type": pn.widgets.Select},
+                                "mode": {"type": pn.widgets.Select},
+                            },
+                            show_name=False,
+                            sizing_mode="stretch_width",
+                            margin=0,
+                        ),
+                        self.legacy.group_spread_x,
+                        self.legacy.group_spread_y,
+                        sizing_mode="stretch_width",
+                        margin=0,
+                    )
+                children.append(
+                    pn.Column(
+                        self._param_pane(
+                            self.insert,
+                            ["radius", "color"],
+                            widget_overrides={
+                                "radius": {
+                                    "type": pn.widgets.FloatSlider,
+                                    "start": 1.0,
+                                    "end": 30.0,
+                                    "step": 1.0,
+                                    "sizing_mode": "stretch_width",
+                                    "width": None,
+                                },
+                                "color": {"type": pn.widgets.ColorPicker},
+                            },
+                        ),
+                        *([distro_pane] if distro_pane is not None else []),
+                        sizing_mode="stretch_width",
+                        margin=0,
+                    )
+                )
+            return self._family_box("Insert object", *children, self.legacy.status)
+
+        return _view
+
+    def _food_grid_panel(self) -> pn.viewable.Viewable:
+        @pn.depends(self.insert.param.enabled)
+        def _view(enabled: bool) -> pn.Column:
+            children: list[object] = [self._param_pane(self.insert, ["enabled"])]
+            if enabled:
+                children.extend(
+                    [
+                        pn.Param(
+                            self.food_grid.param,
+                            parameters=["color", "initial_value"],
+                            widgets={"color": {"type": pn.widgets.ColorPicker}},
+                            show_name=False,
+                            sizing_mode="stretch_width",
+                            margin=0,
+                        ),
+                        self.food_grid_dims_x,
+                        self.food_grid_dims_y,
+                        self.food_grid_fixed_max,
+                        self.food_grid_fixed_max_note,
+                        pn.layout.Divider(margin=(4, 0, 2, 0)),
+                        self.legacy.food_grid_substrate_type,
+                        self.food_grid_substrate_quality,
+                    ]
+                )
+            return self._family_box("Food grid", *children)
+
+        return _view
+
+    def _odorscape_panel(self) -> pn.viewable.Viewable:
+        @pn.depends(self.odorscape.param.enabled, self.odorscape.param.mode)
+        def _view(enabled: bool, mode: str) -> pn.Column:
+            children: list[object] = []
+            if enabled:
+                params = ["mode", "color", "initial_value", "fixed_max"]
+                if mode == "Diffusion":
+                    params.extend(["evap_const", "sigma_x", "sigma_y"])
+                children.extend(
+                    [
+                        self.odorscape_grid_dims_x,
+                        self.odorscape_grid_dims_y,
+                        self._param_pane(
+                            self.odorscape,
+                            params,
+                            widget_overrides={
+                                "mode": {"type": pn.widgets.Select},
+                                "color": {"type": pn.widgets.ColorPicker},
+                            },
+                        ),
+                    ]
+                )
+            return self._family_box(
+                "Odorscape",
+                *children,
+                header_right=self.odorscape_enabled_switch,
+                compact=not enabled,
+            )
+
+        return _view
+
+    def _windscape_panel(self) -> pn.viewable.Viewable:
+        @pn.depends(self.windscape.param.enabled)
+        def _view(enabled: bool) -> pn.Column:
+            children: list[object] = []
+            if enabled:
+                children.extend(
+                    [
+                        self._param_pane(
+                            self.windscape,
+                            ["color", "direction", "speed"],
+                            widget_overrides={
+                                "color": {"type": pn.widgets.ColorPicker}
+                            },
+                        ),
+                        self.legacy.wind_puffs_table,
+                        pn.Column(
+                            self.legacy.add_wind_puff_btn,
+                            self.legacy.remove_wind_puff_btn,
+                            sizing_mode="stretch_width",
+                            margin=0,
+                        ),
+                    ]
+                )
+            return self._family_box(
+                "Windscape",
+                *children,
+                header_right=self.windscape_enabled_switch,
+                compact=not enabled,
+            )
+
+        return _view
+
+    def _thermoscape_panel(self) -> pn.viewable.Viewable:
+        @pn.depends(self.thermoscape.param.enabled)
+        def _view(enabled: bool) -> pn.Column:
+            children: list[object] = []
+            if enabled:
+                children.extend(
+                    [
+                        self._param_pane(self.thermoscape, ["plate_temp", "spread"]),
+                        self.legacy.thermo_sources_table,
+                        pn.Column(
+                            self.legacy.add_thermo_source_btn,
+                            self.legacy.remove_thermo_source_btn,
+                            sizing_mode="stretch_width",
+                            margin=0,
+                        ),
+                    ]
+                )
+            return self._family_box(
+                "Thermoscape",
+                *children,
+                header_right=self.thermoscape_enabled_switch,
+                compact=not enabled,
+            )
+
+        return _view
+
+    def view(self) -> pn.viewable.Viewable:
+        intro = pn.pane.Markdown(
+            (
+                "### Environment Builder\n"
+                "Use this app to compose and inspect Larvaworld environments visually. Define the arena, place "
+                "source units, source groups, and borders on the canvas, configure optional food-grid and sensory-scape "
+                "layers, and then refine every object from the `Inspect / Edit` panel. The builder follows the same "
+                "canonical environment structure used by the codebase, mapping directly onto `FoodConf` / `EnvConf`: "
+                "`source_units`, `source_groups`, `food_grid`, `border_list`, `odorscape`, `windscape`, and `thermoscape`. "
+                "Food amount controls whether a source is visually filled, while odor is rendered as a Gaussian-like aura "
+                "around the source. "
+                "`Odorscape` contours appear in the preview only when at least one placed source has odor configured, "
+                "`Thermoscape` preview appears only after thermal-source rows are added, and `Windscape` arrows appear only when wind speed is greater than zero. "
+                "`Wind direction` is edited in degrees in the builder UI and converted back to radians for the exported config. "
+                f"Reference: [Arenas and Substrates]({DOCS_ARENAS_SUBSTRATES})."
+            ),
+            css_classes=["lw-env-builder-intro"],
+            margin=0,
+        )
+        controls = pn.Card(
+            pn.Column(
+                self._arena_panel(),
+                self._insert_panel(),
+                self._food_grid_panel(),
+                sizing_mode="stretch_width",
+                margin=0,
+            ),
+            title="Configuration",
+            collapsed=False,
+            sizing_mode="stretch_width",
+        )
+        presets = pn.Card(
+            pn.Column(
+                self._param_pane(
+                    self.presets,
+                    ["preset_name"],
+                    widget_overrides={"preset_name": {"type": pn.widgets.TextInput}},
+                ),
+                self.legacy.preset_select,
+                self.legacy.refresh_presets_btn,
+                self.legacy.preset_meta,
+                pn.Row(
+                    self.legacy.save_preset_btn,
+                    self.legacy.load_preset_btn,
+                    sizing_mode="stretch_width",
+                    margin=0,
+                ),
+                self.legacy.export_btn,
+                sizing_mode="stretch_width",
+                margin=0,
+            ),
+            title="Preset Configuration",
+            collapsed=False,
+            sizing_mode="stretch_width",
+        )
+        table_card = pn.Card(
+            self.legacy.table,
+            title="Placed objects",
+            collapsed=False,
+            sizing_mode="stretch_width",
+        )
+        editor_card = pn.Card(
+            pn.Column(
+                pn.Row(
+                    self.legacy.select_mode,
+                    self.legacy.clear_last_btn,
+                    sizing_mode="stretch_width",
+                    margin=0,
+                ),
+                self.legacy.selected_object,
+                self.legacy.selected_id,
+                self.legacy.selected_x,
+                self.legacy.selected_y,
+                self.legacy.selected_x2,
+                self.legacy.selected_y2,
+                self.legacy.selected_radius,
+                self.legacy.selected_width,
+                pn.Row(self.legacy.selected_color, pn.Spacer(), margin=0),
+                self.legacy._editor_food_family,
+                self.legacy._editor_source_behavior_family,
+                self.legacy._editor_substrate_family,
+                self.legacy._editor_odor_family,
+                self.legacy._editor_distribution_family,
+                pn.Column(
+                    pn.Row(
+                        self.legacy.apply_selected_btn,
+                        self.legacy.delete_selected_btn,
+                        sizing_mode="stretch_width",
+                        margin=0,
+                    ),
+                    self.legacy.clear_all_btn,
+                    sizing_mode="stretch_width",
+                    margin=(4, 0, 0, 0),
+                ),
+                sizing_mode="stretch_width",
+                margin=0,
+            ),
+            title="Inspect / Edit",
+            collapsed=False,
+            sizing_mode="stretch_width",
+        )
+        scapes_card = pn.Card(
+            pn.Column(
+                self._odorscape_panel(),
+                self._windscape_panel(),
+                self._thermoscape_panel(),
+                sizing_mode="stretch_width",
+                margin=0,
+            ),
+            title="Environment Scapes",
+            collapsed=False,
+            sizing_mode="stretch_width",
+        )
+        side = pn.Column(presets, controls, min_width=360, sizing_mode="stretch_width")
+        center = pn.Column(
+            pn.pane.Bokeh(self.legacy.fig, sizing_mode="stretch_both"),
+            table_card,
+            min_width=760,
+            sizing_mode="stretch_width",
+        )
+        right = pn.Column(
+            editor_card, scapes_card, min_width=360, sizing_mode="stretch_width"
+        )
+        main = pn.Row(side, center, right, sizing_mode="stretch_width")
+        return pn.Column(
+            intro,
+            main,
+            css_classes=["lw-env-builder-root"],
+            sizing_mode="stretch_width",
+        )
+
+
+def environment_builder_app() -> pn.viewable.Viewable:
+    pn.extension("tabulator", raw_css=[PORTAL_RAW_CSS, ENV_BUILDER_RAW_CSS])
+    controller = _EnvironmentBuilderV2Controller()
     template = pn.template.MaterialTemplate(
         title="",
         header_background=LANE_MODELS_COLOR,
