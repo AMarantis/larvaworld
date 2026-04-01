@@ -14,16 +14,14 @@ import param
 
 from ... import CONFTYPES, DATA_DIR, SIM_DIR, SIMTYPES, vprint
 from .. import reg, util
-from .larvagroup import LarvaGroup
-from ..model import (
+from ..model.agents._source import Food, Source
+from ..model.envs.obstacle import Border
+from ..model.envs.valuegrid import (
     AnalyticalValueLayer,
-    Border,
     DiffusionValueLayer,
-    Food,
     FoodGrid,
     GaussianValueLayer,
     OdorScape,
-    Source,
     ThermoScape,
     WindScape,
 )
@@ -48,6 +46,7 @@ from ..param import (
     TrackerOps,
     class_generator,
 )
+from .larvagroup import LarvaGroup
 from ..util import AttrDict, nam
 
 __all__: list[str] = [

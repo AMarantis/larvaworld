@@ -403,6 +403,39 @@ def _apply_widget_help(
     return widget
 
 
+def _optional_family_control(
+    path: str, enabled: bool, help_text: str | None
+) -> pn.viewable.Viewable:
+    widget = pn.widgets.Switch(
+        name="",
+        value=enabled,
+        width=19,
+        margin=0,
+    )
+    if help_text and hasattr(widget, "description"):
+        widget.description = help_text
+    return widget
+
+
+def _family_title_row(
+    title: str, toggle: pn.viewable.Viewable | None
+) -> pn.viewable.Viewable:
+    if toggle is None:
+        return pn.pane.HTML(
+            _field_label_html(title),
+            margin=(0, 0, 8, 0),
+        )
+    grid = pn.GridSpec(
+        ncols=12,
+        nrows=1,
+        sizing_mode="stretch_width",
+        margin=(0, 0, 8, 0),
+    )
+    grid[0, 0:11] = pn.pane.HTML(_field_label_html(title), margin=0)
+    grid[0, 11] = pn.Row(toggle, align="end", margin=0)
+    return grid
+
+
 def _json_ready(value: Any) -> Any:
     nested_conf = getattr(type(value), "nestedConf", None)
     if nested_conf is not None:
@@ -1160,6 +1193,10 @@ class _SingleExperimentController:
         if hasattr(control, "disabled"):
             control.disabled = disabled
 
+    @staticmethod
+    def _optional_toggle_enabled_value(widget: Any) -> bool:
+        return bool(getattr(widget, "value", None))
+
     def _apply_optional_family_disabled_state(self, root: str, enabled: bool) -> None:
         for path, (kind, control) in self._parameter_widgets.items():
             if path == root or not path.startswith(f"{root}."):
@@ -1172,7 +1209,9 @@ class _SingleExperimentController:
             if kind != "toggle_factory":
                 continue
             enabled_widget = control["enabled"]
-            self._apply_optional_family_disabled_state(root, bool(enabled_widget.value))
+            self._apply_optional_family_disabled_state(
+                root, self._optional_toggle_enabled_value(enabled_widget)
+            )
 
             def _sync(event: Any, root: str = root) -> None:
                 self._apply_optional_family_disabled_state(root, bool(event.new))
@@ -1185,7 +1224,7 @@ class _SingleExperimentController:
             kind, control = self._parameter_widgets.get(root, (None, None))
             if kind != "toggle_factory":
                 continue
-            enabled = bool(control["enabled"].value)
+            enabled = self._optional_toggle_enabled_value(control["enabled"])
             descendant_keys = [
                 key for key in list(updated.keys()) if key.startswith(f"{root}.")
             ]
@@ -1401,19 +1440,24 @@ class _SingleExperimentController:
         help_text = self._help_text_for_path(path)
         optional_meta = self._optional_family_meta.get(path)
         if optional_meta is not None:
-            toggle = pn.widgets.Switch(
-                name="",
-                value=bool(optional_meta["enabled"]),
-                width=34,
-                margin=0,
+            toggle = _optional_family_control(
+                path, bool(optional_meta["enabled"]), help_text
             )
-            if help_text and hasattr(toggle, "description"):
-                toggle.description = help_text
             view = pn.Row(
-                pn.pane.HTML(_field_label_html(label), margin=0),
-                pn.Spacer(),
-                toggle,
+                pn.Column(
+                    pn.pane.HTML(_field_label_html(label), margin=0),
+                    sizing_mode="stretch_width",
+                    width_policy="max",
+                    margin=0,
+                ),
+                pn.Spacer(width=16),
+                pn.Row(
+                    toggle,
+                    align="end",
+                    margin=0,
+                ),
                 sizing_mode="stretch_width",
+                width_policy="max",
                 margin=(0, 0, 6, 0),
             )
             return "toggle_factory", {"enabled": toggle}, view
@@ -1423,7 +1467,8 @@ class _SingleExperimentController:
             button = pn.widgets.Button(
                 name=button_label,
                 button_type="primary",
-                width=150,
+                width=None,
+                sizing_mode="stretch_width",
             )
             if help_text and hasattr(button, "description"):
                 button.description = help_text
@@ -1491,7 +1536,8 @@ class _SingleExperimentController:
                     value=float(value) if value is not None else 0.0,
                     step=0.1,
                     disabled=not enabled,
-                    width=120,
+                    width=None,
+                    sizing_mode="stretch_width",
                 ),
                 label,
                 help_text,
@@ -1499,7 +1545,6 @@ class _SingleExperimentController:
             enabled_toggle = pn.widgets.Checkbox(
                 name="Enabled",
                 value=enabled,
-                width=90,
                 margin=(5, 0, 0, 8),
             )
 
@@ -1564,7 +1609,8 @@ class _SingleExperimentController:
                                 name=component_label,
                                 value=int(item),
                                 step=1,
-                                width=86,
+                                width=None,
+                                sizing_mode="stretch_width",
                             ),
                             component_label,
                             help_text,
@@ -1577,7 +1623,8 @@ class _SingleExperimentController:
                                 name=component_label,
                                 value=float(item),
                                 step=0.1,
-                                width=86,
+                                width=None,
+                                sizing_mode="stretch_width",
                             ),
                             component_label,
                             help_text,
@@ -1688,18 +1735,9 @@ class _SingleExperimentController:
 
         self.parameters_editor[:] = [
             pn.Column(
-                pn.Row(
-                    pn.pane.HTML(
-                        _field_label_html(families[family_id]["title"]), margin=0
-                    ),
-                    pn.Spacer(),
-                    *(
-                        [families[family_id]["title_toggle"]]
-                        if families[family_id]["title_toggle"] is not None
-                        else []
-                    ),
-                    sizing_mode="stretch_width",
-                    margin=(0, 0, 8, 0),
+                _family_title_row(
+                    families[family_id]["title"],
+                    families[family_id]["title_toggle"],
                 ),
                 *families[family_id]["views"],
                 css_classes=[
@@ -2130,7 +2168,6 @@ class _SingleExperimentController:
             ),
             title="Configuration",
             collapsed=False,
-            min_width=180,
             sizing_mode="stretch_width",
         )
         preview = pn.Card(
@@ -2138,7 +2175,7 @@ class _SingleExperimentController:
             self.preview,
             title="Preview",
             collapsed=False,
-            sizing_mode="stretch_both",
+            sizing_mode="stretch_width",
         )
         parameters = pn.Card(
             pn.Column(
@@ -2149,26 +2186,26 @@ class _SingleExperimentController:
             ),
             title="Experiment Parameters",
             collapsed=False,
-            min_width=180,
             sizing_mode="stretch_width",
             css_classes=["lw-single-exp-params-group"],
         )
         left_column = pn.Column(
             controls,
             parameters,
-            min_width=180,
             sizing_mode="stretch_width",
         )
+        content = pn.GridSpec(
+            ncols=4,
+            nrows=1,
+            sizing_mode="stretch_width",
+        )
+        content[0, 0] = left_column
+        content[0, 1:4] = preview
         return pn.Column(
             intro,
-            pn.Row(
-                left_column,
-                pn.Spacer(width=12),
-                preview,
-                sizing_mode="stretch_width",
-            ),
+            content,
             css_classes=["lw-single-exp-root"],
-            sizing_mode="stretch_both",
+            sizing_mode="stretch_width",
         )
 
 
