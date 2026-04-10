@@ -390,6 +390,51 @@ def test_environment_builder_reset_requires_explicit_confirmation() -> None:
     assert controller.status.object == "Reset configurations cancelled."
 
 
+def test_environment_builder_clear_arena_keeps_registry_intact() -> None:
+    reg.conf.Env.set_dict(
+        util.AttrDict(
+            {
+                "custom_env": {
+                    "arena": {"geometry": "rectangular", "dims": (0.2, 0.2)},
+                    "food_params": {
+                        "source_units": {},
+                        "source_groups": {},
+                        "food_grid": None,
+                    },
+                    "border_list": {},
+                    "odorscape": None,
+                    "windscape": None,
+                    "thermoscape": None,
+                }
+            }
+        )
+    )
+    controller = _EnvironmentBuilderController()
+    controller._add_point_object(
+        object_type="Source unit",
+        x=0.01,
+        y=0.02,
+        radius=0.008,
+        color="#4caf50",
+    )
+    controller._add_border_object(
+        x0=-0.03,
+        y0=-0.03,
+        x1=0.04,
+        y1=0.04,
+        width=0.001,
+        color="#111111",
+    )
+
+    controller._on_clear_arena(None)
+
+    assert controller._objects == []
+    assert controller.food_source.data["id"] == []
+    assert controller.border_source.data["id"] == []
+    assert "custom_env" in reg.conf.Env.dict
+    assert controller.status.object == "Cleared all arena objects."
+
+
 def test_environment_builder_loads_source_groups_and_food_grid(
     tmp_path: Path,
 ) -> None:
@@ -585,6 +630,28 @@ def test_environment_builder_oval_groups_use_width_and_height_controls(
     distribution = payload["food_params"]["source_groups"]["group_001"]["distribution"]
     assert distribution["shape"] == "oval"
     assert distribution["scale"] == [pytest.approx(0.02), pytest.approx(0.012)]
+
+
+def test_environment_builder_can_hide_source_group_shape_preview() -> None:
+    controller = _EnvironmentBuilderController()
+    controller.object_type.value = "Source group"
+    controller._add_point_object(
+        object_type="Source group",
+        x=0.01,
+        y=-0.01,
+        radius=0.004,
+        color="#3355aa",
+    )
+
+    assert controller.source_group_circle_source.data["id"] == ["group_001"]
+    assert controller.source_group_member_source.data["parent_id"]
+
+    controller.selected_distribution_show_shape.value = False
+    controller._on_apply_selected_object(None)
+
+    assert controller._objects[0].distribution_show_shape is False
+    assert controller.source_group_circle_source.data["id"] == []
+    assert controller.source_group_member_source.data["parent_id"]
 
 
 def test_environment_builder_disables_workspace_presets_without_active_workspace() -> (
@@ -895,6 +962,35 @@ def test_environment_builder_blocks_arena_resize_that_excludes_source_group_memb
         controller.status.object
         == 'Source group "group_001" places member units outside the arena. Move it inward or reduce its footprint. Arena size change was cancelled.'
     )
+
+
+def test_environment_builder_locks_arena_controls_when_objects_exist() -> None:
+    controller = _EnvironmentBuilderController()
+
+    assert controller.arena_shape.disabled is False
+    assert controller.arena_width.disabled is False
+    assert controller.arena_height.disabled is False
+    assert controller.arena_torus.disabled is False
+
+    controller._add_point_object(
+        object_type="Source unit",
+        x=0.01,
+        y=0.02,
+        radius=0.008,
+        color="#4caf50",
+    )
+
+    assert controller.arena_shape.disabled is True
+    assert controller.arena_width.disabled is True
+    assert controller.arena_height.disabled is True
+    assert controller.arena_torus.disabled is True
+
+    controller._on_clear_arena(None)
+
+    assert controller.arena_shape.disabled is False
+    assert controller.arena_width.disabled is False
+    assert controller.arena_height.disabled is False
+    assert controller.arena_torus.disabled is False
 
 
 def test_environment_builder_exports_odorscape_windscape_and_thermoscape(
