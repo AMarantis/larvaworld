@@ -136,6 +136,43 @@ def test_environment_builder_loads_preset_from_workspace(tmp_path: Path) -> None
     assert 'Loaded environment preset "demo_env"' in controller.status.object
 
 
+def test_environment_builder_loads_environment_from_local_json_file() -> None:
+    controller = _EnvironmentBuilderController()
+    payload = {
+        "arena": {"geometry": "circular", "dims": [0.24, 0.24], "torus": True},
+        "food_params": {
+            "source_units": {
+                "food_file": {
+                    "pos": [0.02, -0.01],
+                    "radius": 0.012,
+                    "color": "#88cc44",
+                }
+            },
+            "source_groups": {},
+            "food_grid": {},
+        },
+        "border_list": {
+            "border_file": {
+                "vertices": [[-0.05, 0.01], [0.05, 0.01]],
+                "width": 0.002,
+                "color": "#222222",
+            }
+        },
+    }
+    controller.load_file_input.filename = "import_env.json"
+    controller.load_file_input.value = (json.dumps(payload) + "\n").encode("utf-8")
+    controller._on_load_file(None)  # type: ignore[arg-type]
+
+    assert controller.arena_shape.value == "circular"
+    assert controller.arena_torus.value is True
+    assert controller.arena_width.value == pytest.approx(0.12)
+    assert controller.arena_height.value == pytest.approx(0.12)
+    assert "food_file" in {obj.object_id for obj in controller._objects}
+    assert "border_file" in {obj.object_id for obj in controller._objects}
+    assert controller.preset_name.value == "import_env"
+    assert 'Loaded environment file "import_env"' in controller.status.object
+
+
 def test_environment_builder_loads_registry_environment_without_workspace() -> None:
     reg.conf.Env.set_dict(
         util.AttrDict(
@@ -195,6 +232,162 @@ def test_environment_builder_loads_registry_environment_without_workspace() -> N
     assert controller.odor_peak_source.data["id"] == []
     assert controller.border_source.data["id"] == ["barrier_001", "barrier_002"]
     assert 'Loaded registry environment "registry_env"' in controller.status.object
+
+
+def test_environment_builder_deletes_workspace_preset_and_registry_entry(
+    tmp_path: Path,
+) -> None:
+    workspace_root = tmp_path / "workspace"
+    initialize_workspace(workspace_root)
+    set_active_workspace_path(workspace_root)
+
+    controller = _EnvironmentBuilderController()
+    controller.preset_name.value = "Arena Alpha"
+    controller._add_point_object(
+        object_type="Source unit",
+        x=0.01,
+        y=-0.02,
+        radius=0.008,
+        color="#4caf50",
+    )
+    controller._on_save_preset(None)
+
+    preset_path = workspace_root / "environments" / "Arena_Alpha.json"
+    assert preset_path.is_file()
+    assert "Arena_Alpha" in reg.conf.Env.dict
+
+    controller.preset_select.value = "Arena_Alpha.json"
+    controller._on_delete_preset(None)
+
+    assert not preset_path.exists()
+    assert "Arena_Alpha" not in reg.conf.Env.dict
+    assert "Workspace / Arena_Alpha" not in controller.preset_select.options
+    assert (
+        'Deleted preset "Arena_Alpha" from workspace and registry.'
+        == controller.status.object
+    )
+
+
+def test_environment_builder_deletes_registry_only_preset() -> None:
+    reg.conf.Env.set_dict(
+        util.AttrDict(
+            {
+                "registry_env": {
+                    "arena": {
+                        "geometry": "rectangular",
+                        "dims": (0.25, 0.15),
+                        "torus": True,
+                    },
+                    "food_params": {
+                        "source_units": {},
+                        "source_groups": {},
+                        "food_grid": {},
+                    },
+                    "border_list": {},
+                }
+            }
+        )
+    )
+
+    controller = _EnvironmentBuilderController()
+    controller.preset_select.value = "__registry__:registry_env"
+
+    controller._on_delete_preset(None)
+
+    assert "registry_env" not in reg.conf.Env.dict
+    assert "Registry / registry_env" not in controller.preset_select.options
+    assert controller.status.object == 'Deleted preset "registry_env" from registry.'
+
+
+def test_environment_builder_reset_configurations_recreates_env_registry() -> None:
+    reg.conf.Env.set_dict(
+        util.AttrDict(
+            {
+                "custom_env": {
+                    "arena": {
+                        "geometry": "rectangular",
+                        "dims": (0.18, 0.12),
+                        "torus": False,
+                    },
+                    "food_params": {
+                        "source_units": {},
+                        "source_groups": {},
+                        "food_grid": None,
+                    },
+                    "border_list": {},
+                    "odorscape": None,
+                    "windscape": None,
+                    "thermoscape": None,
+                }
+            }
+        )
+    )
+    custom_path = Path(reg.conf.Env.path_to_dict)
+    assert custom_path.is_file()
+
+    controller = _EnvironmentBuilderController()
+    assert "Registry / custom_env" in controller.preset_select.options
+
+    controller._on_clear_all(None)
+    assert controller.reset_confirm_panel.visible is True
+    controller._on_confirm_reset_configurations(None)
+
+    assert "custom_env" not in reg.conf.Env.dict
+    assert "dish" in reg.conf.Env.dict
+    assert custom_path.is_file()
+    assert util.load_dict(str(custom_path)) == reg.conf.Env.dict
+    assert "Registry / custom_env" not in controller.preset_select.options
+    assert "Registry / dish" in controller.preset_select.options
+    assert (
+        controller.status.object
+        == "Cleared all placed objects and recreated the Env registry."
+    )
+
+
+def test_environment_builder_reset_requires_explicit_confirmation() -> None:
+    reg.conf.Env.set_dict(
+        util.AttrDict(
+            {
+                "custom_env": {
+                    "arena": {
+                        "geometry": "rectangular",
+                        "dims": (0.18, 0.12),
+                        "torus": False,
+                    },
+                    "food_params": {
+                        "source_units": {},
+                        "source_groups": {},
+                        "food_grid": None,
+                    },
+                    "border_list": {},
+                    "odorscape": None,
+                    "windscape": None,
+                    "thermoscape": None,
+                }
+            }
+        )
+    )
+    controller = _EnvironmentBuilderController()
+    controller._add_point_object(
+        object_type="Source unit",
+        x=0.01,
+        y=0.02,
+        radius=0.008,
+        color="#4caf50",
+    )
+
+    controller._on_clear_all(None)
+
+    assert "custom_env" in reg.conf.Env.dict
+    assert controller._objects
+    assert controller.reset_confirm_panel.visible is True
+    assert controller._pending_reset_confirmation is True
+    assert "Reset requested" in controller.status.object
+
+    controller._on_cancel_reset_configurations(None)
+    assert controller.reset_confirm_panel.visible is False
+    assert controller._pending_reset_confirmation is False
+    assert controller.status.object == "Reset configurations cancelled."
 
 
 def test_environment_builder_loads_source_groups_and_food_grid(
@@ -257,7 +450,7 @@ def test_environment_builder_loads_source_groups_and_food_grid(
     assert controller.source_group_ellipse_source.data["id"] == ["group_a"]
     assert controller.source_group_rect_source.data["id"] == []
     assert controller.odor_layer_source.data["id"]
-    assert controller.odor_peak_source.data["id"] == ["group_a"]
+    assert controller.odor_peak_source.data["id"] == ["group_a"] * 12
     assert controller.food_grid_enabled.value is True
     assert controller.food_grid_dims_x.value == 31
     assert controller.food_grid_dims_y.value == 29
@@ -593,6 +786,115 @@ def test_environment_builder_exports_source_group_and_food_grid(tmp_path: Path) 
         "type": "cornmeal",
         "quality": pytest.approx(0.7),
     }
+
+
+def test_environment_builder_rejects_source_group_insert_when_members_leave_arena() -> (
+    None
+):
+    controller = _EnvironmentBuilderController()
+    controller.object_type.value = "Source group"
+    controller.group_mode.value = "periphery"
+    controller.group_shape.value = "circle"
+    controller.group_count.value = 6
+    controller.group_spread_x.value = 40.0
+
+    controller._add_point_object(
+        object_type="Source group",
+        x=0.08,
+        y=0.0,
+        radius=0.004,
+        color="#3355aa",
+    )
+
+    assert controller._objects == []
+    assert (
+        controller.status.object
+        == 'Source group "group_001" places member units outside the arena. Move it inward or reduce its footprint.'
+    )
+
+
+def test_environment_builder_blocks_save_when_source_group_members_leave_arena(
+    tmp_path: Path,
+) -> None:
+    workspace_root = tmp_path / "workspace"
+    initialize_workspace(workspace_root)
+    set_active_workspace_path(workspace_root)
+
+    controller = _EnvironmentBuilderController()
+    controller.preset_name.value = "Invalid Group Arena"
+    controller.object_type.value = "Source group"
+    controller.group_mode.value = "periphery"
+    controller.group_shape.value = "circle"
+    controller.group_count.value = 6
+    controller.group_spread_x.value = 20.0
+    controller._add_point_object(
+        object_type="Source group",
+        x=0.0,
+        y=0.0,
+        radius=0.004,
+        color="#3355aa",
+    )
+
+    controller.arena_width.value = 0.04
+    controller.arena_height.value = 0.04
+
+    controller._on_save_preset(None)
+
+    preset_path = workspace_root / "environments" / "Invalid_Group_Arena.json"
+    assert not preset_path.exists()
+    assert "Invalid_Group_Arena" not in reg.conf.Env.dict
+    assert (
+        controller.status.object
+        == 'Source group "group_001" places member units outside the arena. Move it inward or reduce its footprint. Preset was not saved.'
+    )
+
+
+def test_environment_builder_blocks_arena_resize_that_excludes_source_unit() -> None:
+    controller = _EnvironmentBuilderController()
+    controller._add_point_object(
+        object_type="Source unit",
+        x=0.085,
+        y=0.0,
+        radius=0.004,
+        color="#4caf50",
+    )
+
+    controller.arena_width.value = 0.16
+
+    assert controller.arena_width.value == pytest.approx(0.2)
+    assert controller.arena_height.value == pytest.approx(0.2)
+    assert (
+        controller.status.object
+        == 'Object "food_001" has primary coordinates outside the arena. Arena size change was cancelled.'
+    )
+
+
+def test_environment_builder_blocks_arena_resize_that_excludes_source_group_members() -> (
+    None
+):
+    controller = _EnvironmentBuilderController()
+    controller.object_type.value = "Source group"
+    controller.group_mode.value = "periphery"
+    controller.group_shape.value = "circle"
+    controller.group_count.value = 6
+    controller.group_spread_x.value = 20.0
+    controller._add_point_object(
+        object_type="Source group",
+        x=0.0,
+        y=0.0,
+        radius=0.004,
+        color="#3355aa",
+    )
+
+    controller.arena_width.value = 0.04
+    controller.arena_height.value = 0.04
+
+    assert controller.arena_width.value == pytest.approx(0.2)
+    assert controller.arena_height.value == pytest.approx(0.2)
+    assert (
+        controller.status.object
+        == 'Source group "group_001" places member units outside the arena. Move it inward or reduce its footprint. Arena size change was cancelled.'
+    )
 
 
 def test_environment_builder_exports_odorscape_windscape_and_thermoscape(
