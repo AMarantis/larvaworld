@@ -261,6 +261,7 @@ class _ObjectRow:
     distribution_n: int | None = None
     distribution_scale_x: float | None = None
     distribution_scale_y: float | None = None
+    distribution_show_shape: bool | None = None
 
 
 _WIND_PUFF_COLUMNS = [
@@ -810,7 +811,7 @@ class _EnvironmentBuilderController:
         )
         self.object_color = pn.widgets.ColorPicker(name="Object color", value="#4caf50")
         self.group_count = pn.widgets.IntSlider(
-            name="Group count",
+            name="Number of units",
             start=1,
             end=100,
             step=1,
@@ -913,6 +914,10 @@ class _EnvironmentBuilderController:
             name="Group mode",
             value="uniform",
             options=["uniform", "normal", "periphery", "grid"],
+        )
+        self.selected_distribution_show_shape = pn.widgets.Checkbox(
+            name="Show group shape",
+            value=True,
         )
         self.selected_distribution_scale_x = pn.widgets.FloatSlider(
             name="Group spread X (mm)",
@@ -1156,6 +1161,7 @@ class _EnvironmentBuilderController:
             ("selected_distribution_n", self.selected_distribution_n),
             ("selected_distribution_shape", self.selected_distribution_shape),
             ("selected_distribution_mode", self.selected_distribution_mode),
+            ("selected_distribution_show_shape", self.selected_distribution_show_shape),
             ("selected_distribution_scale_x", self.selected_distribution_scale_x),
             ("selected_distribution_scale_y", self.selected_distribution_scale_y),
             ("selected_substrate_type", self.selected_substrate_type),
@@ -1197,6 +1203,7 @@ class _EnvironmentBuilderController:
             self._field_view(self.selected_distribution_n),
             self._field_view(self.selected_distribution_shape),
             self._field_view(self.selected_distribution_mode),
+            self._field_view(self.selected_distribution_show_shape),
             self._field_view(self.selected_distribution_scale_x),
             self._field_view(self.selected_distribution_scale_y),
             help_text=self._help_text_for_key("family_distribution"),
@@ -1276,7 +1283,7 @@ class _EnvironmentBuilderController:
         )
         self.delete_preset_btn = pn.widgets.Button(
             name="Delete",
-            button_type="danger",
+            button_type="warning",
         )
         self.load_file_btn = pn.widgets.Button(
             name="Load file",
@@ -1299,6 +1306,9 @@ class _EnvironmentBuilderController:
         self.clear_last_btn = pn.widgets.Button(name="Undo last", button_type="default")
         self.clear_all_btn = pn.widgets.Button(
             name="Clear canvas", button_type="danger"
+        )
+        self.clear_arena_btn = pn.widgets.Button(
+            name="Clear arena", button_type="warning"
         )
         self.export_btn = pn.widgets.FileDownload(
             name="",
@@ -1483,6 +1493,7 @@ class _EnvironmentBuilderController:
             self.selected_distribution_n,
             self.selected_distribution_shape,
             self.selected_distribution_mode,
+            self.selected_distribution_show_shape,
             self.selected_distribution_scale_x,
             self.selected_distribution_scale_y,
             self.selected_substrate_type,
@@ -1521,6 +1532,8 @@ class _EnvironmentBuilderController:
         self.remove_thermo_source_btn.sizing_mode = "stretch_width"
         self.clear_all_btn.width = None
         self.clear_all_btn.sizing_mode = "stretch_width"
+        self.clear_arena_btn.width = None
+        self.clear_arena_btn.sizing_mode = "stretch_width"
         self.export_btn.width = None
         self.export_btn.sizing_mode = "stretch_width"
         self.export_btn.styles = {
@@ -1949,6 +1962,26 @@ class _EnvironmentBuilderController:
             line_width=3,
             line_color="color",
         )
+        legend_order = [
+            "Source units",
+            "Source groups",
+            "Borders",
+            "Odor aura",
+            "Odorscape",
+            "Windscape",
+            "Thermoscape",
+        ]
+        if self.fig.legend:
+            items_by_label = {}
+            for item in self.fig.legend[0].items:
+                label = getattr(item.label, "value", None)
+                if isinstance(label, str):
+                    items_by_label[label] = item
+            self.fig.legend[0].items = [
+                items_by_label[label]
+                for label in legend_order
+                if label in items_by_label
+            ]
         self.fig.legend.location = "top_left"
         self.fig.legend.background_fill_alpha = 0.85
 
@@ -2038,6 +2071,7 @@ class _EnvironmentBuilderController:
         self.confirm_reset_btn.on_click(self._on_confirm_reset_configurations)
         self.cancel_reset_btn.on_click(self._on_cancel_reset_configurations)
         self.clear_all_btn.on_click(self._on_clear_all)
+        self.clear_arena_btn.on_click(self._on_clear_arena)
         self.add_wind_puff_btn.on_click(self._on_add_wind_puff)
         self.remove_wind_puff_btn.on_click(self._on_remove_wind_puff)
         self.add_thermo_source_btn.on_click(self._on_add_thermo_source)
@@ -2053,6 +2087,7 @@ class _EnvironmentBuilderController:
         self._sync_scape_preview()
         self._refresh_preset_controls()
         self._refresh_object_controls()
+        self._sync_arena_lock_state()
 
     def view(self) -> pn.viewable.Viewable:
         intro = pn.pane.Markdown(
@@ -2240,6 +2275,13 @@ class _EnvironmentBuilderController:
         is_circular = self.arena_shape.value == "circular"
         self.arena_width.name = "Arena radius (m)" if is_circular else "Arena width (m)"
         self._set_field_visible(self.arena_height, not is_circular)
+
+    def _sync_arena_lock_state(self) -> None:
+        locked = bool(self._objects)
+        self.arena_shape.disabled = locked
+        self.arena_width.disabled = locked
+        self.arena_height.disabled = locked
+        self.arena_torus.disabled = locked
 
     def _on_arena_shape_change(self, event: object) -> None:
         old = getattr(event, "old", None)
@@ -2996,6 +3038,7 @@ class _EnvironmentBuilderController:
         self._set_field_visible(self.selected_distribution_n, is_source_group)
         self._set_field_visible(self.selected_distribution_shape, is_source_group)
         self._set_field_visible(self.selected_distribution_mode, is_source_group)
+        self._set_field_visible(self.selected_distribution_show_shape, is_source_group)
         self._set_field_visible(self.selected_distribution_scale_x, is_source_group)
         self._set_field_visible(self.selected_distribution_scale_y, is_source_group)
         self._set_field_visible(self.selected_substrate_type, is_source)
@@ -3051,6 +3094,9 @@ class _EnvironmentBuilderController:
             obj.distribution_shape
         )
         self.selected_distribution_mode.value = str(obj.distribution_mode or "uniform")
+        self.selected_distribution_show_shape.value = bool(
+            True if obj.distribution_show_shape is None else obj.distribution_show_shape
+        )
         self.selected_distribution_scale_x.value = self._group_display_value_mm(
             self.selected_distribution_shape.value, obj.distribution_scale_x
         )
@@ -3065,6 +3111,7 @@ class _EnvironmentBuilderController:
     def _refresh_object_controls(
         self, *, selected_object_id: str | None = None
     ) -> None:
+        self._sync_arena_lock_state()
         self.selected_odor_id.options = self._odor_id_options()
         options = self._object_options()
         self.selected_object.options = options
@@ -3209,6 +3256,7 @@ class _EnvironmentBuilderController:
                                 distribution.get("shape", "circle")
                             ),
                             distribution_n=int(distribution.get("N", 30)),
+                            distribution_show_shape=True,
                             distribution_scale_x=float(scale[0]),
                             distribution_scale_y=float(scale[1]),
                         )
@@ -3657,6 +3705,11 @@ class _EnvironmentBuilderController:
                     if current.object_type == "Source group"
                     else None
                 ),
+                distribution_show_shape=(
+                    bool(self.selected_distribution_show_shape.value)
+                    if current.object_type == "Source group"
+                    else None
+                ),
                 distribution_scale_x=(
                     group_scale_x if current.object_type == "Source group" else None
                 ),
@@ -4010,6 +4063,7 @@ class _EnvironmentBuilderController:
                 distribution_n=int(self.group_count.value),
                 distribution_shape=shape,
                 distribution_mode=self.group_mode.value,
+                distribution_show_shape=True,
                 distribution_scale_x=scale_x,
                 distribution_scale_y=scale_y,
             )
@@ -4286,11 +4340,7 @@ class _EnvironmentBuilderController:
         self._clear_reset_confirmation()
         self.status.object = "Reset configurations cancelled."
 
-    def _on_clear_all(self, _: object) -> None:
-        if not self._pending_reset_confirmation:
-            self._show_reset_confirmation()
-            return
-        self._clear_reset_confirmation()
+    def _clear_arena_contents(self) -> None:
         self._objects.clear()
         self._border_start = None
         self._counter = 1
@@ -4339,6 +4389,19 @@ class _EnvironmentBuilderController:
         self._refresh_object_controls()
         self._update_insert_hint()
         self._sync_scape_preview()
+
+    def _on_clear_arena(self, _: object) -> None:
+        self._clear_overwrite_confirmation()
+        self._clear_reset_confirmation()
+        self._clear_arena_contents()
+        self.status.object = "Cleared all arena objects."
+
+    def _on_clear_all(self, _: object) -> None:
+        if not self._pending_reset_confirmation:
+            self._show_reset_confirmation()
+            return
+        self._clear_reset_confirmation()
+        self._clear_arena_contents()
         try:
             reg_config.resetConfs(conftypes=["Env"], recreate=True)
         except Exception as exc:
@@ -4468,50 +4531,55 @@ class _EnvironmentBuilderController:
                     )
                     if odor_peak is not None:
                         self._append_source_row(self.odor_peak_source, odor_peak)
-                width = max(float(obj.distribution_scale_x or 0.012) * 2.0, 0.002)
-                height = max(float(obj.distribution_scale_y or 0.012) * 2.0, 0.002)
-                shape = _normalize_group_shape(obj.distribution_shape)
-                if shape == "circle":
-                    self._append_source_row(
-                        self.source_group_circle_source,
-                        {
-                            "x": obj.x,
-                            "y": obj.y,
-                            "r": max(width, height) / 2.0,
-                            "color": obj.color,
-                            "fill_alpha": 0.08,
-                            "line_alpha": 0.9,
-                            "id": obj.object_id,
-                        },
-                    )
-                elif shape == "oval":
-                    self._append_source_row(
-                        self.source_group_ellipse_source,
-                        {
-                            "x": obj.x,
-                            "y": obj.y,
-                            "w": width,
-                            "h": height,
-                            "color": obj.color,
-                            "fill_alpha": 0.08,
-                            "line_alpha": 0.9,
-                            "id": obj.object_id,
-                        },
-                    )
-                else:
-                    self._append_source_row(
-                        self.source_group_rect_source,
-                        {
-                            "x": obj.x,
-                            "y": obj.y,
-                            "w": width,
-                            "h": height,
-                            "color": obj.color,
-                            "fill_alpha": 0.08,
-                            "line_alpha": 0.9,
-                            "id": obj.object_id,
-                        },
-                    )
+                if bool(
+                    True
+                    if obj.distribution_show_shape is None
+                    else obj.distribution_show_shape
+                ):
+                    width = max(float(obj.distribution_scale_x or 0.012) * 2.0, 0.002)
+                    height = max(float(obj.distribution_scale_y or 0.012) * 2.0, 0.002)
+                    shape = _normalize_group_shape(obj.distribution_shape)
+                    if shape == "circle":
+                        self._append_source_row(
+                            self.source_group_circle_source,
+                            {
+                                "x": obj.x,
+                                "y": obj.y,
+                                "r": max(width, height) / 2.0,
+                                "color": obj.color,
+                                "fill_alpha": 0.08,
+                                "line_alpha": 0.9,
+                                "id": obj.object_id,
+                            },
+                        )
+                    elif shape == "oval":
+                        self._append_source_row(
+                            self.source_group_ellipse_source,
+                            {
+                                "x": obj.x,
+                                "y": obj.y,
+                                "w": width,
+                                "h": height,
+                                "color": obj.color,
+                                "fill_alpha": 0.08,
+                                "line_alpha": 0.9,
+                                "id": obj.object_id,
+                            },
+                        )
+                    else:
+                        self._append_source_row(
+                            self.source_group_rect_source,
+                            {
+                                "x": obj.x,
+                                "y": obj.y,
+                                "w": width,
+                                "h": height,
+                                "color": obj.color,
+                                "fill_alpha": 0.08,
+                                "line_alpha": 0.9,
+                                "id": obj.object_id,
+                            },
+                        )
                 self._append_rows(
                     self.source_group_member_source,
                     self._build_group_member_rows(obj),
@@ -5353,14 +5421,24 @@ class _EnvironmentBuilderV2Controller:
         return widget
 
     def _arena_panel(self) -> pn.viewable.Viewable:
-        @pn.depends(self.arena.param.geometry)
-        def _view(geometry: str) -> pn.Column:
+        @pn.depends(self.arena.param.geometry, self.runtime.table.param.value)
+        def _view(geometry: str, _table_value: object) -> pn.Column:
+            locked = bool(self.runtime._objects)
             return self._family_box(
                 "Arena",
                 pn.Param(
                     self.arena.param,
                     parameters=["geometry", "torus"],
-                    widgets={"geometry": {"type": pn.widgets.Select}},
+                    widgets={
+                        "geometry": {
+                            "type": pn.widgets.Select,
+                            "disabled": locked,
+                        },
+                        "torus": {
+                            "type": pn.widgets.Checkbox,
+                            "disabled": locked,
+                        },
+                    },
                     show_name=False,
                     sizing_mode="stretch_width",
                     margin=0,
@@ -5370,6 +5448,7 @@ class _EnvironmentBuilderV2Controller:
                 self.runtime.arena_height
                 if geometry != "circular"
                 else pn.Spacer(height=0),
+                self.runtime.clear_arena_btn,
             )
 
         return _view
@@ -5646,8 +5725,13 @@ class _EnvironmentBuilderV2Controller:
         editor_card = pn.Card(
             pn.Column(
                 pn.Row(
+                    self.runtime.apply_selected_btn,
+                    self.runtime.delete_selected_btn,
+                    sizing_mode="stretch_width",
+                    margin=(0, 0, 4, 0),
+                ),
+                pn.Row(
                     self.runtime.select_mode,
-                    self.runtime.clear_last_btn,
                     sizing_mode="stretch_width",
                     margin=0,
                 ),
@@ -5660,17 +5744,11 @@ class _EnvironmentBuilderV2Controller:
                 self.runtime.selected_radius,
                 self.runtime.selected_width,
                 pn.Row(self.runtime.selected_color, pn.Spacer(), margin=0),
-                self.runtime._editor_food_family,
-                self.runtime._editor_source_behavior_family,
-                self.runtime._editor_substrate_family,
-                self.runtime._editor_odor_family,
                 self.runtime._editor_distribution_family,
-                pn.Row(
-                    self.runtime.apply_selected_btn,
-                    self.runtime.delete_selected_btn,
-                    sizing_mode="stretch_width",
-                    margin=(4, 0, 0, 0),
-                ),
+                self.runtime._editor_food_family,
+                self.runtime._editor_substrate_family,
+                self.runtime._editor_source_behavior_family,
+                self.runtime._editor_odor_family,
                 sizing_mode="stretch_width",
                 margin=0,
             ),
