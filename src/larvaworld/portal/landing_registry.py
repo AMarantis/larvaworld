@@ -274,27 +274,27 @@ ITEMS: dict[str, LandingItem] = {
     ),
     "wf.open_dataset": LandingItem(
         id="wf.open_dataset",
-        kind="placeholder",
-        status="planned",
+        kind="panel_app",
+        status="ready",
         lane="data",
         level="core",
         title="Import Experimental Datasets",
         subtitle=(
-            "Browse available datasets in your workspace.\n"
-            "Select one dataset as the active context.\n"
-            "Reuse it across viewers and analysis."
+            "Import one raw experimental dataset into the active workspace.\n"
+            "Discover candidate folders under a chosen raw-data root.\n"
+            "Save the imported dataset in workspace-owned storage."
         ),
         cta="Import",
-        prereq_hint="Dataset selection is currently handled inside each app.",
+        panel_app_id="wf.open_dataset",
         learn_more=LearnMore(
             issue_url=GITHUB_ISSUES,
             docs_url=DOCS_REFERENCE_DATASETS,
         ),
         preview_md=(
-            "### Import Experimental Datasets (Planned)\n"
-            "- Browse datasets under the configured data directory\n"
-            "- Preview metadata (duration, N, timestamps)\n"
-            "- Set active dataset for downstream tools\n"
+            "### Import Experimental Datasets\n"
+            "- Choose a lab format and raw-data root\n"
+            "- Discover one candidate dataset at a time\n"
+            "- Import it into the active workspace with clear status feedback\n"
         ),
     ),
     "wf.model_evaluation": LandingItem(

@@ -5,6 +5,7 @@ Configuration and Generator classes for higher-order objects in the larvaworld p
 from __future__ import annotations
 from typing import Any, Optional
 
+import inspect
 import os
 import shutil
 
@@ -794,12 +795,24 @@ class LabFormat(NestedConf):
         if self.filesystem.structure == "per_larva":
             read_sequence = self.filesystem.read_sequence
             store_sequence = self.get_store_sequence(save_mode)
-        return self.import_func(
-            source_dir=source_dir,
-            tracker=self.tracker,
-            filesystem=self.filesystem,
+        import_params = inspect.signature(self.import_func).parameters
+        import_kws = {
+            "tracker": self.tracker,
+            "filesystem": self.filesystem,
             **kwargs,
-        )
+        }
+        if "source_dir" in import_params:
+            import_kws["source_dir"] = source_dir
+        if "source_files" in import_params and "source_files" not in import_kws:
+            source_dirs = [source_dir] if isinstance(source_dir, str) else source_dir
+            import_kws["source_files"] = util.flatten_list(
+                [
+                    self.filesystem.valid_files_in_folder(dir)
+                    for dir in source_dirs
+                    if os.path.isdir(dir)
+                ]
+            )
+        return self.import_func(**import_kws)
 
     def build_dataset(
         self,
