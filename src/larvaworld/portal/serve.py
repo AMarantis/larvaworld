@@ -22,6 +22,7 @@ APP_ID_TO_FACTORY_PATH: dict[str, str] = {
     "landing": "larvaworld.portal.landing_app:landing_app",
     "notebook": "larvaworld.portal.notebook_launch_app:notebook_launch_app",
     "wf.run_experiment": "larvaworld.portal.single_experiment_app:single_experiment_app",
+    "wf.open_dataset": "larvaworld.portal.import_datasets_app:import_datasets_app",
     "wf.environment_builder": "larvaworld.portal.models_architecture.environment_builder_app:environment_builder_app",
     # Legacy destinations (served as-is)
     "track_viewer": "larvaworld.dashboards.track_viewer:track_viewer_app",
