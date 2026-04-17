@@ -91,9 +91,8 @@ def test_import_into_workspace_uses_active_workspace_and_explicit_backend_call_s
     assert record is sentinel
     assert seen_dataset_dirs == [dataset_dir.resolve()]
     assert len(fake_lab.import_calls) == 1
-    assert fake_lab.import_calls[0] == {
+    assert {k: v for k, v in fake_lab.import_calls[0].items() if k != "raw_folder"} == {
         "parent_dir": "exploration/dish01",
-        "raw_folder": "/tmp/raw",
         "merged": True,
         "proc_folder": str(
             (workspace.datasets_dir / "imported" / "Schleyer").resolve()
@@ -105,6 +104,7 @@ def test_import_into_workspace_uses_active_workspace_and_explicit_backend_call_s
         "save_dataset": True,
         "sample": "sample_ref",
     }
+    assert Path(fake_lab.import_calls[0]["raw_folder"]) == Path("/tmp/raw")
 
 
 def test_import_into_workspace_passes_refid_only_when_requested(
