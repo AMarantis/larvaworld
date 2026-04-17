@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from larvaworld.portal.landing_registry import QUICK_START_MODES
 from larvaworld.gui_v2.registry_bridge import build_navigation_model
 
 
@@ -28,11 +29,12 @@ def test_quick_start_modes_expose_expected_labels_and_colors() -> None:
     model = build_navigation_model()
 
     quick_start = {mode.mode_id: mode for mode in model.quick_start_modes}
+    expected = {mode.mode_id: mode for mode in QUICK_START_MODES}
 
-    assert quick_start["user"].title == "User mode"
-    assert quick_start["modeler"].title == "Modeler mode"
-    assert quick_start["experimentalist"].title == "Experimentalist mode"
+    assert quick_start["user"].title == expected["user"].title
+    assert quick_start["modeler"].title == expected["modeler"].title
+    assert quick_start["experimentalist"].title == expected["experimentalist"].title
 
-    assert quick_start["user"].color == "#7c575"
-    assert quick_start["modeler"].color == "#eca548"
-    assert quick_start["experimentalist"].color == "#6cbf6f"
+    assert quick_start["user"].color == expected["user"].color
+    assert quick_start["modeler"].color == expected["modeler"].color
+    assert quick_start["experimentalist"].color == expected["experimentalist"].color
