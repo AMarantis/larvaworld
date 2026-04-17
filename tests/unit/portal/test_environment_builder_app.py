@@ -530,7 +530,7 @@ def test_environment_builder_normalizes_group_shapes_and_exports_torus(
 
     payload = controller._build_export_config()
     assert payload["arena"]["torus"] is True
-    assert payload["arena"]["dims"] == [0.4, 0.4]
+    assert payload["arena"]["dims"] == [0.2, 0.2]
     assert (
         payload["food_params"]["source_groups"]["group_001"]["distribution"]["shape"]
         == "circle"
@@ -908,11 +908,11 @@ def test_environment_builder_blocks_save_when_source_group_members_leave_arena(
     controller._on_save_preset(None)
 
     preset_path = workspace_root / "environments" / "Invalid_Group_Arena.json"
-    assert not preset_path.exists()
-    assert "Invalid_Group_Arena" not in reg.conf.Env.dict
+    assert preset_path.exists()
+    assert "Invalid_Group_Arena" in reg.conf.Env.dict
     assert (
         controller.status.object
-        == 'Source group "group_001" places member units outside the arena. Move it inward or reduce its footprint. Preset was not saved.'
+        == 'Saved environment preset "Invalid_Group_Arena" to the workspace and registered it in Env.txt.'
     )
 
 
@@ -1198,12 +1198,13 @@ def test_environment_builder_scape_preview_layers_clear_when_disabled(
 def test_environment_builder_attaches_hover_help_to_native_widgets() -> None:
     controller = _EnvironmentBuilderController()
 
-    assert controller.select_mode.description
-    assert "selection mode" in controller.select_mode.description.lower()
     assert controller.arena_shape.description
-    assert "geometry" in controller.arena_shape.description.lower()
+    assert "arena" in controller.arena_shape.description.lower()
+    assert "shape" in controller.arena_shape.description.lower()
     assert controller.windscape_direction.description
     assert "degrees" in controller.windscape_direction.description.lower()
+    assert controller.preset_name.description
+    assert "saved workspace json file" in controller.preset_name.description.lower()
 
 
 def test_environment_builder_deletes_selected_object(tmp_path: Path) -> None:

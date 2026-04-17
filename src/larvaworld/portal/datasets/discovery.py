@@ -50,7 +50,9 @@ def _candidate_warnings(source_path: Path, filesystem: object) -> list[str]:
     return []
 
 
-def _candidate_display_name(parent_dir: str, candidate_id: str, source_path: Path) -> str:
+def _candidate_display_name(
+    parent_dir: str, candidate_id: str, source_path: Path
+) -> str:
     if parent_dir == ".":
         return candidate_id
     if candidate_id == source_path.name:

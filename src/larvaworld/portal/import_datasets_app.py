@@ -101,7 +101,7 @@ def _candidate_summary_html(candidate: RawDatasetCandidate | None) -> str:
         f"<div><strong>Candidate</strong>: {escape(candidate.candidate_id)}</div>"
         f"<div><strong>Parent dir</strong>: {escape(candidate.parent_dir)}</div>"
         f"<div><strong>Source path</strong>: {escape(str(candidate.source_path))}</div>"
-        f"<div style=\"margin-top:6px;\"><strong>Warnings</strong>:</div>{warnings_html}"
+        f'<div style="margin-top:6px;"><strong>Warnings</strong>:</div>{warnings_html}'
         "</div>"
     )
 
@@ -143,9 +143,7 @@ class _ImportDatasetsController:
         self.group_id_input = pn.widgets.TextInput(
             name="Group ID override", placeholder="optional", width=260
         )
-        self.color_input = pn.widgets.TextInput(
-            name="Color", value="black", width=160
-        )
+        self.color_input = pn.widgets.TextInput(name="Color", value="black", width=160)
         self.import_button = pn.widgets.Button(
             name="Import into workspace",
             button_type="primary",
@@ -218,7 +216,9 @@ class _ImportDatasetsController:
         proc_root = None
         if self.lab_select.value:
             try:
-                proc_root = build_workspace_proc_folder(self.workspace, self.lab_select.value)
+                proc_root = build_workspace_proc_folder(
+                    self.workspace, self.lab_select.value
+                )
             except Exception:
                 proc_root = None
         target_html = ""
@@ -235,7 +235,9 @@ class _ImportDatasetsController:
         )
 
     def _candidate_option_key(self, candidate: RawDatasetCandidate) -> str:
-        return f"{candidate.parent_dir}::{candidate.candidate_id}::{candidate.source_path}"
+        return (
+            f"{candidate.parent_dir}::{candidate.candidate_id}::{candidate.source_path}"
+        )
 
     def _clear_candidates(self) -> None:
         self._candidate_by_key.clear()
@@ -247,7 +249,9 @@ class _ImportDatasetsController:
 
     def _sync_controls(self) -> None:
         workspace_ready = self._active_workspace_ready()
-        source_ready = bool(workspace_ready and self.lab_select.value and self._raw_root_text())
+        source_ready = bool(
+            workspace_ready and self.lab_select.value and self._raw_root_text()
+        )
         candidate_ready = self._selected_candidate() is not None
         self.discover_button.disabled = not source_ready
         self.candidate_select.disabled = not bool(self._candidate_by_key)
@@ -255,7 +259,9 @@ class _ImportDatasetsController:
         self.group_id_input.disabled = not candidate_ready
         self.color_input.disabled = not candidate_ready
         self.import_button.disabled = not (workspace_ready and candidate_ready)
-        self.lab_select.disabled = not bool(self.lab_select.options) or not workspace_ready
+        self.lab_select.disabled = (
+            not bool(self.lab_select.options) or not workspace_ready
+        )
         self.raw_root_input.disabled = not workspace_ready
         self.reset_button.disabled = not (
             workspace_ready and (self._raw_root_text() or self._candidate_by_key)
@@ -335,7 +341,9 @@ class _ImportDatasetsController:
         candidate = self._selected_candidate()
         raw_root = self._raw_root_path()
         if candidate is None or raw_root is None:
-            raise RuntimeError("Import is not ready: select a discovered candidate first")
+            raise RuntimeError(
+                "Import is not ready: select a discovered candidate first"
+            )
         dataset_id = self.dataset_id_input.value.strip() or candidate.candidate_id
         group_id = self.group_id_input.value.strip() or None
         extra_kwargs = _candidate_import_overrides(
