@@ -376,27 +376,27 @@ ITEMS: dict[str, LandingItem] = {
     ),
     "wf.dataset_manager": LandingItem(
         id="wf.dataset_manager",
-        kind="placeholder",
-        status="planned",
+        kind="panel_app",
+        status="ready",
         lane="data",
         level="core",
         title="Dataset Manager",
+        panel_app_id="wf.dataset_manager",
         subtitle=(
-            "Browse dataset folders in read-only mode.\n"
-            "Preview table structure and key columns.\n"
-            "Inspect summary info before analysis."
+            "Browse imported datasets stored in the active workspace.\n"
+            "Inspect lightweight record details and stored artifacts.\n"
+            "Refresh, copy paths, and remove imported datasets safely."
         ),
         cta="Manage",
-        prereq_hint="Not available yet in the web UI.",
         learn_more=LearnMore(
             issue_url=GITHUB_ISSUES,
             docs_url=DOCS_DATA_PROCESSING,
         ),
         preview_md=(
-            "### Dataset Manager (Planned)\n"
-            "- View datasets in a workspace\n"
-            "- Tag and annotate runs\n"
-            "- Quick metadata preview and actions\n"
+            "### Dataset Manager\n"
+            "- Browse imported datasets in the current workspace\n"
+            "- Inspect IDs, labs, paths, and stored artifacts\n"
+            "- Refresh the catalog and remove imported datasets safely\n"
         ),
     ),
     "wf.export_center": LandingItem(

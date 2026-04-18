@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from larvaworld.portal import import_datasets_app
+from larvaworld.portal.datasets import import_datasets_app
 from larvaworld.portal.datasets.discovery import RawDatasetCandidate
 from larvaworld.portal.datasets.models import WorkspaceDatasetRecord
 from larvaworld.portal.workspace import (
