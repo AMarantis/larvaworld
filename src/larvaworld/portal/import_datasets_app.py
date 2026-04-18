@@ -6,6 +6,7 @@ from pathlib import Path
 import panel as pn
 
 from larvaworld.lib import reg
+from larvaworld.portal.landing_registry import DOCS_DATA_PROCESSING
 from larvaworld.portal.datasets.discovery import (
     RawDatasetCandidate,
     _candidate_import_overrides,
@@ -61,6 +62,56 @@ IMPORT_DATASETS_RAW_CSS = """
   border-color: rgba(160,40,40,0.24);
   background: rgba(160,40,40,0.10);
 }
+
+.lw-import-datasets-flow-section {
+  background: rgba(252, 252, 253, 0.99);
+  border: 1px solid rgba(90, 71, 96, 0.10);
+  border-radius: 10px;
+  padding: 10px 12px 8px 12px;
+  margin-top: 4px;
+}
+
+.lw-import-datasets-flow-title {
+  margin: 0 0 6px 0;
+  color: #4f2f5f;
+  font-weight: 700;
+}
+
+.lw-import-datasets-flow-title p {
+  margin: 0;
+}
+
+.lw-import-datasets-source-row {
+  gap: 0;
+  align-items: flex-end;
+}
+
+.lw-import-datasets-source-input .bk-input,
+.lw-import-datasets-source-input input {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-right: 0 !important;
+}
+
+.lw-import-datasets-source-browse .bk-btn,
+.lw-import-datasets-source-browse button {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  min-height: 40px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.lw-import-datasets-source-browse {
+  margin-top: 13px;
+}
+
+.lw-import-datasets-color-picker {
+  width: 52px;
+  min-width: 52px;
+  margin-top: 0;
+}
+
 """.strip()
 
 
@@ -87,7 +138,7 @@ def _candidate_summary_html(candidate: RawDatasetCandidate | None) -> str:
     if candidate is None:
         return (
             '<div class="lw-import-datasets-summary">'
-            "Select one discovered candidate to inspect its source path and warnings."
+            "No candidate selected yet."
             "</div>"
         )
     warnings_html = (
@@ -107,6 +158,20 @@ def _candidate_summary_html(candidate: RawDatasetCandidate | None) -> str:
     )
 
 
+def _flow_section(title: str, *children: object) -> pn.Column:
+    return pn.Column(
+        pn.pane.Markdown(
+            f"**{title}**",
+            css_classes=["lw-import-datasets-flow-title"],
+            margin=(0, 0, 4, 0),
+        ),
+        *children,
+        css_classes=["lw-import-datasets-flow-section"],
+        sizing_mode="stretch_width",
+        margin=0,
+    )
+
+
 class _ImportDatasetsController:
     def __init__(self) -> None:
         self.workspace = get_active_workspace()
@@ -123,11 +188,13 @@ class _ImportDatasetsController:
             name="Raw root",
             placeholder="/path/to/raw/data",
             width=520,
+            css_classes=["lw-import-datasets-source-input"],
         )
         self.browse_raw_root_button = pn.widgets.Button(
-            name="Browse raw root",
+            name="Browse",
             button_type="default",
-            width=160,
+            width=110,
+            css_classes=["lw-import-datasets-source-browse"],
         )
         self.reset_button = pn.widgets.Button(
             name="Reset source",
@@ -145,11 +212,18 @@ class _ImportDatasetsController:
             value="",
             width=520,
         )
+        self.candidate_select.description = "Select one discovered candidate to inspect its source path and warnings before importing it into the active workspace."
         self.dataset_id_input = pn.widgets.TextInput(name="Dataset ID", width=260)
         self.group_id_input = pn.widgets.TextInput(
             name="Group ID override", placeholder="optional", width=260
         )
-        self.color_input = pn.widgets.TextInput(name="Color", value="black", width=160)
+        self.color_input = pn.widgets.ColorPicker(
+            name="Color",
+            value="#000000",
+            width=52,
+            sizing_mode="fixed",
+            css_classes=["lw-import-datasets-color-picker"],
+        )
         self.import_button = pn.widgets.Button(
             name="Import into workspace",
             button_type="primary",
@@ -176,10 +250,7 @@ class _ImportDatasetsController:
                 tone="warning",
             )
         else:
-            self._set_status(
-                "Choose a lab format and raw root, then discover one import candidate.",
-                tone="neutral",
-            )
+            self.status.object = ""
         self._sync_controls()
 
     @staticmethod
@@ -235,8 +306,7 @@ class _ImportDatasetsController:
             )
         self.workspace_summary.object = (
             '<div class="lw-import-datasets-summary">'
-            f"<div><strong>Workspace</strong>: {escape(self.workspace.name)}</div>"
-            f"<div><strong>Root</strong>: {escape(str(self.workspace.root))}</div>"
+            f"<div><strong>Workspace</strong>: {escape(str(self.workspace.root))}</div>"
             f"{target_html}"
             "</div>"
         )
@@ -301,7 +371,7 @@ class _ImportDatasetsController:
     def _handle_reset(self, _event=None) -> None:
         self.raw_root_input.value = ""
         self.group_id_input.value = ""
-        self.color_input.value = "black"
+        self.color_input.value = "#000000"
         self._clear_candidates()
         if self.workspace is not None:
             self._set_status(
@@ -379,7 +449,7 @@ class _ImportDatasetsController:
             raw_folder=raw_root,
             group_id=group_id,
             dataset_id=dataset_id,
-            color=self.color_input.value.strip() or "black",
+            color=(self.color_input.value or "#000000"),
             extra_kwargs=extra_kwargs,
         )
 
@@ -410,74 +480,66 @@ class _ImportDatasetsController:
         raw_root_row = pn.Row(
             self.raw_root_input,
             self.browse_raw_root_button,
+            css_classes=["lw-import-datasets-source-row"],
             sizing_mode="stretch_width",
         )
-        source_actions = pn.Row(
+        source_section = _flow_section(
+            "Source",
+            self.lab_select,
+            raw_root_row,
             self.discover_button,
-            self.reset_button,
-            sizing_mode="stretch_width",
+            self.status,
         )
-        source_section = pn.Card(
-            pn.Column(
-                self.lab_select,
-                raw_root_row,
-                source_actions,
-                sizing_mode="stretch_width",
-            ),
-            title="Source",
-            collapsed=False,
-            sizing_mode="stretch_width",
+        discovery_section = _flow_section(
+            "Discovery",
+            self.candidate_select,
+            self.candidate_summary,
         )
-        discovery_section = pn.Card(
-            pn.Column(
-                self.candidate_select,
-                self.candidate_summary,
-                sizing_mode="stretch_width",
-            ),
-            title="Discovery",
-            collapsed=False,
-            sizing_mode="stretch_width",
-        )
-        import_section = pn.Card(
-            pn.Column(
-                pn.Row(
+        import_section = _flow_section(
+            "Import Options",
+            pn.Row(
+                pn.Column(
                     self.dataset_id_input,
-                    self.group_id_input,
                     self.color_input,
-                    sizing_mode="stretch_width",
+                    margin=(0, 0, 0, 0),
+                    width=260,
                 ),
+                self.group_id_input,
+                sizing_mode="stretch_width",
+            ),
+            pn.Row(
                 self.import_button,
+                self.reset_button,
                 sizing_mode="stretch_width",
             ),
-            title="Import Options",
-            collapsed=False,
-            sizing_mode="stretch_width",
+            pn.Spacer(height=8),
+            self.workspace_summary,
         )
-        status_section = pn.Card(
+        workflow_section = pn.Card(
             pn.Column(
-                self.workspace_summary,
-                self.status,
+                source_section,
+                discovery_section,
+                import_section,
                 sizing_mode="stretch_width",
             ),
-            title="Status",
+            title="Import Workflow",
             collapsed=False,
             sizing_mode="stretch_width",
         )
         intro = pn.pane.HTML(
             (
                 '<div class="lw-import-datasets-intro">'
-                "Import one experimental raw dataset into the active workspace. "
-                "This MVP stays workspace-first and does not set active-dataset state or register references."
+                "Import one experimental raw dataset into the active workspace through a small workspace-first pipeline. "
+                "Use the Source step to choose a lab format and point the app at a local raw-data folder, then run Discovery to resolve one import candidate and review its candidate-specific warnings before importing. "
+                "The app writes into workspace-owned dataset storage, reuses the central Larvaworld import backend, and does not register references or set global active-dataset state. "
+                f'See the data-processing documentation on Read the Docs for the broader dataset pipeline: <a href="{escape(DOCS_DATA_PROCESSING)}" target="_blank">Read the Docs</a>.'
                 "</div>"
             ),
             margin=0,
         )
         return pn.Column(
             intro,
-            source_section,
-            discovery_section,
-            import_section,
-            status_section,
+            workflow_section,
             css_classes=["lw-import-datasets-root"],
             sizing_mode="stretch_width",
         )
