@@ -80,6 +80,95 @@ def test_import_datasets_controller_discovers_candidates_and_enables_import(
     assert "exploration/dish01" in controller.candidate_summary.object
 
 
+def test_import_datasets_browse_raw_root_clears_existing_candidates(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    workspace = initialize_workspace(tmp_path / "workspace")
+    set_active_workspace_path(workspace.root)
+    original_root = tmp_path / "raw"
+    new_root = tmp_path / "raw-next"
+    candidate = RawDatasetCandidate(
+        candidate_id="dish01",
+        parent_dir="exploration/dish01",
+        display_name="exploration/dish01",
+        source_path=original_root / "exploration" / "dish01",
+        warnings=[],
+    )
+    monkeypatch.setattr(
+        import_datasets_app,
+        "discover_raw_datasets",
+        lambda _lab_id, _raw_root: [candidate],
+    )
+    monkeypatch.setattr(
+        import_datasets_app,
+        "pick_directory",
+        lambda *args, **kwargs: (new_root, None),
+    )
+
+    controller = import_datasets_app._ImportDatasetsController()
+    controller.raw_root_input.value = str(original_root)
+    controller._handle_discover()
+    candidate_key = next(
+        value for value in controller.candidate_select.options.values() if value
+    )
+    controller.candidate_select.value = candidate_key
+
+    assert controller.import_button.disabled is False
+
+    controller._handle_browse_raw_root()
+
+    assert controller.raw_root_input.value == str(new_root)
+    assert controller.candidate_select.disabled is True
+    assert controller.candidate_select.value == ""
+    assert controller.dataset_id_input.value == ""
+    assert "Source changed." in controller.status.object
+
+
+def test_import_datasets_browse_raw_root_cancel_is_silent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    workspace = initialize_workspace(tmp_path / "workspace")
+    set_active_workspace_path(workspace.root)
+    raw_root = tmp_path / "raw"
+    monkeypatch.setattr(
+        import_datasets_app,
+        "pick_directory",
+        lambda *args, **kwargs: (None, None),
+    )
+
+    controller = import_datasets_app._ImportDatasetsController()
+    controller.raw_root_input.value = str(raw_root)
+    initial_status = controller.status.object
+
+    controller._handle_browse_raw_root()
+
+    assert controller.raw_root_input.value == str(raw_root)
+    assert controller.status.object == initial_status
+
+
+def test_import_datasets_browse_raw_root_surfaces_picker_errors(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    workspace = initialize_workspace(tmp_path / "workspace")
+    set_active_workspace_path(workspace.root)
+    monkeypatch.setattr(
+        import_datasets_app,
+        "pick_directory",
+        lambda *args, **kwargs: (
+            None,
+            "No folder picker is available in this environment.",
+        ),
+    )
+
+    controller = import_datasets_app._ImportDatasetsController()
+
+    controller._handle_browse_raw_root()
+
+    assert (
+        "No folder picker is available in this environment." in controller.status.object
+    )
+
+
 def test_import_datasets_controller_builds_request_and_reports_success(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

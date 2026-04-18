@@ -17,6 +17,7 @@ from larvaworld.portal.datasets.import_adapter import (
 )
 from larvaworld.portal.datasets.models import ImportRequest
 from larvaworld.portal.panel_components import PORTAL_RAW_CSS, build_app_header
+from larvaworld.portal.path_picker import pick_directory
 from larvaworld.portal.workspace import get_active_workspace
 
 
@@ -123,6 +124,11 @@ class _ImportDatasetsController:
             placeholder="/path/to/raw/data",
             width=520,
         )
+        self.browse_raw_root_button = pn.widgets.Button(
+            name="Browse raw root",
+            button_type="default",
+            width=160,
+        )
         self.reset_button = pn.widgets.Button(
             name="Reset source",
             button_type="default",
@@ -158,6 +164,7 @@ class _ImportDatasetsController:
         self.lab_select.param.watch(self._on_source_change, "value")
         self.raw_root_input.param.watch(self._on_source_change, "value")
         self.candidate_select.param.watch(self._on_candidate_change, "value")
+        self.browse_raw_root_button.on_click(self._handle_browse_raw_root)
         self.reset_button.on_click(self._handle_reset)
         self.discover_button.on_click(self._handle_discover)
         self.import_button.on_click(self._handle_import)
@@ -263,6 +270,7 @@ class _ImportDatasetsController:
             not bool(self.lab_select.options) or not workspace_ready
         )
         self.raw_root_input.disabled = not workspace_ready
+        self.browse_raw_root_button.disabled = not workspace_ready
         self.reset_button.disabled = not (
             workspace_ready and (self._raw_root_text() or self._candidate_by_key)
         )
@@ -300,6 +308,20 @@ class _ImportDatasetsController:
                 "Source state cleared. Enter a raw root path to start a new discovery pass."
             )
         self._sync_controls()
+
+    def _handle_browse_raw_root(self, _event=None) -> None:
+        fallback_dir = self.workspace.root if self.workspace is not None else None
+        selected, error = pick_directory(
+            initial_dir=self._raw_root_path(),
+            fallback_dir=fallback_dir,
+            title="Select raw dataset root",
+        )
+        if selected is not None:
+            self.raw_root_input.value = str(selected)
+            return
+        if error is not None:
+            self._set_status(error, tone="warning")
+            self._sync_controls()
 
     def _handle_discover(self, _event=None) -> None:
         raw_root = self._raw_root_path()
@@ -385,6 +407,11 @@ class _ImportDatasetsController:
         self._sync_controls()
 
     def view(self) -> pn.viewable.Viewable:
+        raw_root_row = pn.Row(
+            self.raw_root_input,
+            self.browse_raw_root_button,
+            sizing_mode="stretch_width",
+        )
         source_actions = pn.Row(
             self.discover_button,
             self.reset_button,
@@ -393,7 +420,7 @@ class _ImportDatasetsController:
         source_section = pn.Card(
             pn.Column(
                 self.lab_select,
-                self.raw_root_input,
+                raw_root_row,
                 source_actions,
                 sizing_mode="stretch_width",
             ),
