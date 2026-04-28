@@ -4,7 +4,6 @@ import base64
 import importlib.metadata as im
 from html import escape
 from pathlib import Path
-from typing import Callable
 
 import panel as pn
 
@@ -15,6 +14,8 @@ from larvaworld.portal.registry_logic import (
     resolve_target,
 )
 from larvaworld.portal.registry_types import LandingItem, LaneSpec
+from larvaworld.portal.workspace import get_active_workspace
+from larvaworld.portal.workspace_ui import WorkspaceUiController
 
 
 PORTAL_RAW_CSS = """
@@ -179,30 +180,127 @@ PORTAL_RAW_CSS = """
   display: flex;
   align-items: center;
   gap: 12px;
+  flex: 0 0 auto;
 }
 
-.lw-portal-icon-link,
-.lw-portal-topbar .lw-portal-settings-btn .bk-btn {
+.lw-portal-workspace-chip {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  height: 34px;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 10px;
   border-radius: 10px;
   border: 1px solid rgba(0,0,0,0.18);
   background: #ffffff;
   color: #111111;
-  text-decoration: none;
+  white-space: nowrap;
+}
+
+.lw-portal-workspace-chip--missing {
+  background: rgba(255,255,255,0.88);
+}
+
+.lw-portal-workspace-chip-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(0,0,0,0.56);
+}
+
+.lw-portal-workspace-chip-value {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.lw-portal-workspace-chip-path {
+  font-size: 11px;
+  color: rgba(0,0,0,0.56);
+}
+
+.lw-portal-topbar .lw-portal-workspace-chip {
+  border-color: rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.16);
+  color: rgba(255,255,255,0.96);
+}
+
+.lw-portal-topbar .lw-portal-workspace-chip-label,
+.lw-portal-topbar .lw-portal-workspace-chip-path {
+  color: rgba(255,255,255,0.78);
 }
 
 .lw-portal-icon-link {
   width: 38px;
+  min-width: 38px;
+  height: 38px;
   padding: 0;
+  flex: 0 0 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(17,17,17,0.14);
+  background: #ffffff;
+  color: #111111;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.lw-portal-workspace-trigger-shell {
+  position: relative;
+  width: 22px;
+  min-width: 22px;
+  max-width: 22px;
+  height: 22px;
+  min-height: 22px;
+  max-height: 22px;
+  flex: 0 0 22px;
+  margin: 0 !important;
+}
+
+.lw-portal-workspace-led {
+  position: absolute;
+  inset: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 2px solid rgba(255,255,255,0.92);
+  box-shadow: 0 0 0 1px rgba(17,17,17,0.12), 0 1px 2px rgba(15, 23, 42, 0.12);
+  box-sizing: border-box;
+}
+
+.lw-portal-workspace-led--active {
+  background: #2f8f4e;
+  box-shadow: 0 0 0 1px rgba(17,17,17,0.12), 0 0 8px rgba(47, 143, 78, 0.28);
+}
+
+.lw-portal-workspace-led--inactive {
+  background: #d94841;
+}
+
+.lw-portal-workspace-trigger-button,
+.lw-portal-workspace-trigger-button .bk-btn,
+.lw-portal-workspace-trigger-button button,
+.lw-portal-workspace-trigger-button .mdc-button,
+.lw-portal-workspace-trigger-button [class*="mdc-button"] {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 22px !important;
+  min-width: 22px !important;
+  max-width: 22px !important;
+  height: 22px !important;
+  min-height: 22px !important;
+  max-height: 22px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  opacity: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
 }
 
 .lw-portal-icon-link:hover,
 .lw-portal-topbar .lw-portal-settings-btn .bk-btn:hover {
-  background: #f3f4f6;
-  color: #111111;
   text-decoration: none;
 }
 
@@ -228,20 +326,27 @@ PORTAL_RAW_CSS = """
   display: flex;
   display: inline-flex;
   align-items: center;
-  width: auto !important;
-  flex: 0 0 auto;
+  width: 22px !important;
+  min-width: 22px !important;
+  max-width: 22px !important;
+  flex: 0 0 22px;
   align-self: center !important;
+  margin-right: 0 !important;
+  overflow: visible;
 }
 
 .lw-portal-settings-panel {
   position: absolute;
   top: 40px;
   right: 0;
-  min-width: 260px;
+  width: min(388px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+  min-width: 0;
   padding: 0;
   border: 0;
   background: #ffffff;
   box-shadow: 0 10px 28px rgba(15, 23, 42, 0.16);
+  box-sizing: border-box;
   z-index: 30;
   color: #111111 !important;
   opacity: 1;
@@ -255,13 +360,30 @@ PORTAL_RAW_CSS = """
   color: #111111;
 }
 
+.lw-portal-settings-title--dark {
+  color: rgba(241,245,249,0.96) !important;
+}
+
+.lw-portal-field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(17,17,17,0.76);
+}
+
+.lw-portal-field-label--dark {
+  color: rgba(241,245,249,0.92) !important;
+}
+
 .lw-portal-settings-body {
-  min-width: 260px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   border: 1px solid rgba(0,0,0,0.22);
   border-radius: 12px;
   padding: 10px 12px;
   background: #ffffff !important;
   box-shadow: none;
+  box-sizing: border-box;
   color: #111111 !important;
   opacity: 1;
   backdrop-filter: none;
@@ -309,6 +431,200 @@ PORTAL_RAW_CSS = """
 
 .lw-portal-settings-body * {
   color: #111111 !important;
+}
+
+.lw-portal-workspace-status {
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.35;
+  border: 1px solid rgba(0,0,0,0.10);
+  background: rgba(0,0,0,0.03);
+  color: rgba(17,17,17,0.84);
+}
+
+.lw-portal-workspace-status--success {
+  border-color: rgba(62,124,67,0.24);
+  background: rgba(62,124,67,0.10);
+}
+
+.lw-portal-workspace-status--warning {
+  border-color: rgba(176,112,33,0.28);
+  background: rgba(245,161,66,0.12);
+}
+
+.lw-portal-workspace-status--danger {
+  border-color: rgba(160,40,40,0.24);
+  background: rgba(160,40,40,0.10);
+}
+
+.lw-portal-workspace-status-detail {
+  margin-top: 4px;
+  font-size: 11px;
+  opacity: 0.84;
+  word-break: break-word;
+}
+
+.lw-portal-workspace-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(176,112,33,0.24);
+  background: linear-gradient(135deg, rgba(245,161,66,0.16), rgba(245,161,66,0.08));
+  color: #111111;
+}
+
+.lw-portal-workspace-callout-title {
+  font-size: 15px;
+  font-weight: 650;
+  margin: 0 0 4px 0;
+}
+
+.lw-portal-workspace-callout-copy {
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(17,17,17,0.82);
+}
+
+.lw-portal-workspace-controls--dark .lw-portal-settings-title,
+.lw-portal-workspace-controls--dark .lw-portal-settings-title--dark,
+.lw-portal-workspace-controls--dark .lw-portal-field-label,
+.lw-portal-workspace-controls--dark .lw-portal-field-label--dark,
+.lw-portal-workspace-controls--dark label,
+.lw-portal-workspace-controls--dark .bk-input-group label,
+.lw-portal-workspace-controls--dark .bk-form-group label {
+  color: rgba(241, 245, 249, 0.96) !important;
+}
+
+.lw-portal-workspace-status--theme-dark,
+.lw-portal-workspace-status--theme-dark .lw-portal-workspace-status-detail,
+.lw-portal-workspace-controls--dark .lw-portal-workspace-status,
+.lw-portal-workspace-controls--dark .lw-portal-workspace-status *,
+.lw-portal-workspace-controls--dark .lw-portal-workspace-status-detail {
+  color: rgba(241, 245, 249, 0.94) !important;
+}
+
+.lw-portal-workspace-status--neutral.lw-portal-workspace-status--theme-dark,
+.lw-portal-workspace-controls--dark .lw-portal-workspace-status {
+  border-color: rgba(245, 161, 66, 0.28);
+  background: rgba(255,255,255,0.08);
+}
+
+.lw-portal-workspace-status--success.lw-portal-workspace-status--theme-dark,
+.lw-portal-workspace-controls--dark .lw-portal-workspace-status--success {
+  border-color: rgba(134, 239, 172, 0.32);
+  background: rgba(22, 101, 52, 0.28);
+}
+
+.lw-portal-workspace-status--warning.lw-portal-workspace-status--theme-dark,
+.lw-portal-workspace-controls--dark .lw-portal-workspace-status--warning {
+  border-color: rgba(245, 161, 66, 0.34);
+  background: rgba(245, 161, 66, 0.16);
+}
+
+.lw-portal-workspace-status--danger.lw-portal-workspace-status--theme-dark,
+.lw-portal-workspace-controls--dark .lw-portal-workspace-status--danger {
+  border-color: rgba(248, 113, 113, 0.34);
+  background: rgba(127, 29, 29, 0.24);
+}
+
+.lw-portal-workspace-controls {
+  width: 100%;
+  max-width: 100%;
+}
+
+.lw-portal-workspace-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 12px;
+  row-gap: 10px;
+  align-items: stretch;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.lw-portal-workspace-path-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.lw-portal-workspace-path-row > :first-child {
+  width: 100% !important;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 0 !important;
+}
+
+.lw-portal-workspace-actions > * {
+  width: 100% !important;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.lw-portal-workspace-input {
+  width: 100% !important;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.lw-portal-workspace-actions .bk-btn,
+.lw-portal-workspace-actions button,
+.lw-portal-workspace-browse-btn .bk-btn,
+.lw-portal-workspace-browse-btn button {
+  margin: 0 !important;
+}
+
+.lw-portal-workspace-actions .bk-btn,
+.lw-portal-workspace-actions button {
+  width: 100% !important;
+}
+
+.lw-portal-workspace-input .bk,
+.lw-portal-workspace-input .bk-input-group,
+.lw-portal-workspace-input .bk-input-group input {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.lw-portal-workspace-browse-btn .bk-btn,
+.lw-portal-workspace-browse-btn button,
+.lw-portal-workspace-browse-btn .bk-btn:hover,
+.lw-portal-workspace-browse-btn button:hover,
+.lw-portal-workspace-browse-btn .bk-btn:focus,
+.lw-portal-workspace-browse-btn button:focus,
+.lw-portal-workspace-browse-btn .bk-btn:active,
+.lw-portal-workspace-browse-btn button:active {
+  min-height: 36px !important;
+  padding: 0 10px !important;
+  color: #ffffff !important;
+}
+
+.lw-portal-workspace-browse-btn .bk-btn *,
+.lw-portal-workspace-browse-btn button *,
+.lw-portal-workspace-browse-btn .mdc-button__label,
+.lw-portal-workspace-browse-btn [class*="mdc-button"] *,
+.lw-portal-workspace-browse-btn span {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+
+.lw-portal-settings-panel .lw-portal-workspace-input .bk-input-group input {
+  width: 100% !important;
+  min-height: 36px;
+  padding: 7px 10px !important;
+  border: 1px solid rgba(0,0,0,0.18) !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
 }
 
 .lw-portal-settings-panel .bk-input-group,
@@ -888,7 +1204,6 @@ button.lw-portal-qs-top-tab--active,
 
 
 def _load_icon_data_uri(filename: str, mime_type: str) -> str:
-    # English comments inside code.
     icon_path = Path(__file__).with_name("icons") / filename
     try:
         encoded = base64.b64encode(icon_path.read_bytes()).decode("ascii")
@@ -898,7 +1213,6 @@ def _load_icon_data_uri(filename: str, mime_type: str) -> str:
 
 
 def _resolve_portal_version() -> str:
-    # English comments inside code.
     try:
         return im.version("larvaworld")
     except Exception:
@@ -912,7 +1226,6 @@ _PORTAL_VERSION = _resolve_portal_version()
 
 
 def _portal_logo_html(*, version: str) -> str:
-    # English comments inside code.
     logo_img = ""
     if _LOGO_DATA_URI:
         logo_img = f'<img class="lw-portal-logo-img" src="{_LOGO_DATA_URI}" alt="Larvaworld logo"/>'
@@ -931,7 +1244,6 @@ def _portal_logo_html(*, version: str) -> str:
 
 
 def _header_links_html() -> str:
-    # English comments inside code.
     docs_icon = ""
     if _RTD_ICON_DATA_URI:
         docs_icon = (
@@ -961,7 +1273,6 @@ def _header_links_html() -> str:
 
 
 def _badge_html(badge: str) -> str:
-    # English comments inside code.
     cls = "lw-portal-badge"
     if badge.strip().lower() in {"under construction", "planned"}:
         cls += " lw-portal-badge--under-construction"
@@ -976,7 +1287,6 @@ def _button_html(
     extra_classes: tuple[str, ...] = (),
     tooltip: str | None = None,
 ) -> str:
-    # English comments inside code.
     normalized_label = label.strip().lower()
     button_classes = ["lw-portal-btn"]
     if normalized_label in {"learn more", "notebook"}:
@@ -985,11 +1295,10 @@ def _button_html(
         button_classes.append("lw-portal-btn--notebook")
     button_classes.extend(extra_classes)
     class_attr = " ".join(button_classes)
+    title_attr = f' title="{escape(tooltip)}"' if tooltip else ""
 
     if not enabled or not href:
-        return (
-            f'<span class="{class_attr} lw-portal-btn--disabled">{escape(label)}</span>'
-        )
+        return f'<span class="{class_attr} lw-portal-btn--disabled"{title_attr}>{escape(label)}</span>'
 
     attrs = ""
     if normalized_label == "notebook":
@@ -997,12 +1306,10 @@ def _button_html(
     elif href.startswith("http://") or href.startswith("https://"):
         attrs = ' target="_blank" rel="noopener noreferrer"'
 
-    title_attr = f' title="{escape(tooltip)}"' if tooltip else ""
     return f'<a class="{class_attr}" href="{escape(href)}"{attrs}{title_attr}>{escape(label)}</a>'
 
 
 def _subtitle_html(text: str) -> str:
-    # English comments inside code.
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     if not lines:
         lines = [""]
@@ -1010,7 +1317,6 @@ def _subtitle_html(text: str) -> str:
 
 
 def build_footer() -> pn.viewable.Viewable:
-    # English comments inside code.
     html = (
         '<div class="lw-portal-footer-shell"><div class="lw-portal-footer-bar">'
         "<span>&copy; Larvaworld</span>"
@@ -1029,11 +1335,8 @@ def build_footer() -> pn.viewable.Viewable:
     return pn.pane.HTML(html, margin=0, sizing_mode="stretch_width")
 
 
-def build_template_header(
-    *,
-    on_dark_mode_change: Callable[[bool], None] | None = None,
-) -> pn.viewable.Viewable:
-    # English comments inside code.
+def build_template_header() -> pn.viewable.Viewable:
+    workspace_ui = WorkspaceUiController()
     left = pn.pane.HTML(
         _portal_logo_html(version=_PORTAL_VERSION),
         margin=0,
@@ -1043,33 +1346,16 @@ def build_template_header(
         _header_links_html(),
         margin=0,
     )
-    settings_button = pn.widgets.Button(
-        name="Settings",
-        button_type="default",
-        width=88,
-        margin=0,
-        css_classes=["lw-portal-settings-btn"],
-    )
-    advanced_toggle = pn.pane.HTML(
-        (
-            '<div class="lw-portal-settings-row lw-portal-settings-advanced">'
-            '<span class="lw-portal-settings-check">☑</span>'
-            "<span>Show Advanced items</span>"
-            "</div>"
-        ),
-        margin=0,
-    )
-    dark_mode_toggle = pn.widgets.Switch(name="Dark mode", value=False, margin=0)
+    workspace_controls = workspace_ui.build_controls()
     settings_body = pn.Column(
-        advanced_toggle,
-        dark_mode_toggle,
+        workspace_controls,
         css_classes=["lw-portal-settings-body"],
         sizing_mode="stretch_width",
         margin=0,
     )
     settings_panel = pn.Column(
         settings_body,
-        visible=False,
+        visible=get_active_workspace() is None,
         css_classes=["lw-portal-settings-panel"],
         margin=0,
     )
@@ -1077,17 +1363,10 @@ def build_template_header(
     def _toggle_settings(_: object) -> None:
         settings_panel.visible = not settings_panel.visible
 
-    if on_dark_mode_change is not None:
-
-        def _toggle_dark_mode(event: object) -> None:
-            value = bool(getattr(event, "new", False))
-            on_dark_mode_change(value)
-
-        dark_mode_toggle.param.watch(_toggle_dark_mode, "value")
-    settings_button.on_click(_toggle_settings)
+    workspace_ui.trigger_button.on_click(_toggle_settings)
 
     settings_dropdown = pn.Column(
-        settings_button,
+        workspace_ui.trigger_view,
         settings_panel,
         css_classes=["lw-portal-settings-dropdown-wrap"],
         margin=0,
@@ -1117,7 +1396,7 @@ def build_template_header(
 def build_app_header(
     *, title: str, back_href: str = "/landing"
 ) -> pn.viewable.Viewable:
-    # English comments inside code.
+    workspace_ui = WorkspaceUiController()
     back_button = pn.pane.HTML(
         (
             f'<a class="lw-portal-app-back" href="{escape(back_href)}" '
@@ -1134,6 +1413,7 @@ def build_app_header(
         back_button,
         title_pane,
         pn.Spacer(sizing_mode="stretch_width"),
+        workspace_ui.chip_pane,
         css_classes=["lw-portal-app-topbar"],
         sizing_mode="stretch_width",
         margin=0,
@@ -1146,8 +1426,9 @@ def render_card(
     show_lane_accent: bool = True,
     notebook_urls: dict[str, str] | None = None,
     notebook_names: dict[str, str] | None = None,
+    notebook_enabled: bool = True,
+    notebook_disabled_reason: str | None = None,
 ) -> pn.viewable.Viewable:
-    # English comments inside code.
     action = compute_primary_action(item)
     badges = compute_badges(item)
     card_href = resolve_target(item) or f"/{item.id}"
@@ -1174,7 +1455,10 @@ def render_card(
     )
     notebook_href = notebook_urls.get(item.id) if notebook_urls else None
     notebook_action_html = ""
-    if notebook_href:
+    notebook_available = bool(
+        notebook_href or (notebook_names is not None and item.id in notebook_names)
+    )
+    if notebook_available:
         notebook_lane_classes = {
             "simulate": "lw-portal-btn--notebook-simulate",
             "data": "lw-portal-btn--notebook-data",
@@ -1187,13 +1471,17 @@ def render_card(
             extra_classes = (notebook_lane_class,)
         notebook_action_html = _button_html(
             label="Notebook",
-            href=notebook_href,
-            enabled=True,
+            href=notebook_href if notebook_enabled else None,
+            enabled=notebook_enabled and bool(notebook_href),
             extra_classes=extra_classes,
             tooltip=(
-                f"Open notebook: {notebook_names[item.id]}"
-                if notebook_names and item.id in notebook_names
-                else "Open notebook"
+                notebook_disabled_reason
+                if not notebook_enabled and notebook_disabled_reason
+                else (
+                    f"Open notebook: {notebook_names[item.id]}"
+                    if notebook_names and item.id in notebook_names
+                    else "Open notebook"
+                )
             ),
         )
 
@@ -1264,13 +1552,20 @@ def render_lane(
     items: list[LandingItem],
     notebook_urls: dict[str, str] | None = None,
     notebook_names: dict[str, str] | None = None,
+    notebook_enabled: bool = True,
+    notebook_disabled_reason: str | None = None,
 ) -> pn.viewable.Viewable:
-    # English comments inside code.
     title = pn.pane.HTML(
         f'<div class="lw-portal-section-title">{escape(lane.title)}</div>', margin=0
     )
     cards = [
-        render_card(item, notebook_urls=notebook_urls, notebook_names=notebook_names)
+        render_card(
+            item,
+            notebook_urls=notebook_urls,
+            notebook_names=notebook_names,
+            notebook_enabled=notebook_enabled,
+            notebook_disabled_reason=notebook_disabled_reason,
+        )
         for item in items
     ]
     grid = pn.pane.HTML("", visible=False)  # placeholder to keep types simple

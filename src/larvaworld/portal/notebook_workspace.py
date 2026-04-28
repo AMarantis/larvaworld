@@ -18,6 +18,11 @@ from urllib.parse import quote, urlparse
 from urllib.request import Request, urlopen
 
 from larvaworld.portal.landing_registry import NOTEBOOK_TUTORIAL_BY_ITEM_ID
+from larvaworld.portal.workspace import (
+    WorkspaceError,
+    get_active_workspace,
+    get_notebook_workspace_dir,
+)
 
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -32,21 +37,18 @@ _TRUTHY = {"1", "true", "yes", "on"}
 
 
 def _workspace_dir() -> Path:
-    # English comments inside code.
     raw = os.getenv("LARVAWORLD_PORTAL_NOTEBOOK_WORKSPACE")
     if raw:
         return Path(raw).expanduser().resolve()
-    return (_REPO_ROOT / "portal_notebooks").resolve()
+    return get_notebook_workspace_dir()
 
 
 def _kernel_name() -> str:
-    # English comments inside code.
     kernel = os.getenv("LARVAWORLD_PORTAL_NOTEBOOK_KERNEL", "python3").strip()
     return kernel or "python3"
 
 
 def _normalize_base_url(raw_base: str) -> str:
-    # English comments inside code.
     base = raw_base.strip()
     base = base.rstrip("/") or "http://127.0.0.1:8888"
     parsed = urlparse(base)
@@ -65,13 +67,11 @@ def _normalize_base_url(raw_base: str) -> str:
 
 
 def _has_explicit_jupyter_base_url() -> bool:
-    # English comments inside code.
     raw = os.getenv("LARVAWORLD_JUPYTER_BASE_URL")
     return bool(raw and raw.strip())
 
 
 def _jupyter_base_url() -> str:
-    # English comments inside code.
     if _RUNTIME_JUPYTER_BASE_URL:
         return _RUNTIME_JUPYTER_BASE_URL
     raw = os.getenv("LARVAWORLD_JUPYTER_BASE_URL", "http://127.0.0.1:8888")
@@ -79,15 +79,19 @@ def _jupyter_base_url() -> str:
 
 
 def _jupyter_root_dir() -> Path:
-    # English comments inside code.
     raw = os.getenv("LARVAWORLD_JUPYTER_ROOT_DIR")
     if raw:
         return Path(raw).expanduser().resolve()
+    raw_notebook_workspace = os.getenv("LARVAWORLD_PORTAL_NOTEBOOK_WORKSPACE")
+    if raw_notebook_workspace:
+        return Path(raw_notebook_workspace).expanduser().resolve()
+    active_workspace = get_active_workspace()
+    if active_workspace is not None:
+        return active_workspace.root
     return _REPO_ROOT
 
 
 def _jupyter_state_dirs() -> dict[str, Path]:
-    # English comments inside code.
     base = _workspace_dir() / ".jupyter_state"
     runtime_base = Path(tempfile.gettempdir()) / "larvaworld_jupyter_runtime"
     try:
@@ -102,18 +106,15 @@ def _jupyter_state_dirs() -> dict[str, Path]:
 
 
 def _jupyter_log_path() -> Path:
-    # English comments inside code.
     return _workspace_dir() / ".jupyter_state" / "jupyter.log"
 
 
 def _notebook_autostart_enabled() -> bool:
-    # English comments inside code.
     value = os.getenv("LARVAWORLD_PORTAL_NOTEBOOK_AUTOSTART", "1").strip().lower()
     return value in _TRUTHY
 
 
 def _jupyter_host_port() -> tuple[str, int]:
-    # English comments inside code.
     parsed = urlparse(_jupyter_base_url())
     host = parsed.hostname or "127.0.0.1"
     if parsed.port:
@@ -124,7 +125,6 @@ def _jupyter_host_port() -> tuple[str, int]:
 
 
 def _jupyter_reachable(*, timeout: float = 1.0) -> bool:
-    # English comments inside code.
     base = _jupyter_base_url()
     request = Request(f"{base}/api", headers={"Accept": "application/json"})
     try:
@@ -137,7 +137,6 @@ def _jupyter_reachable(*, timeout: float = 1.0) -> bool:
 
 
 def _startup_timeout_seconds() -> float:
-    # English comments inside code.
     raw = os.getenv("LARVAWORLD_JUPYTER_STARTUP_TIMEOUT_SEC", "75").strip()
     try:
         timeout = float(raw)
@@ -147,19 +146,16 @@ def _startup_timeout_seconds() -> float:
 
 
 def _is_port_in_use(host: str, port: int) -> bool:
-    # English comments inside code.
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.settimeout(0.3)
         return sock.connect_ex((host, port)) == 0
 
 
 def _build_base_url_with_port(host: str, port: int) -> str:
-    # English comments inside code.
     return f"http://{host}:{port}"
 
 
 def _find_free_port(host: str, start_port: int, max_tries: int = 20) -> int | None:
-    # English comments inside code.
     port = start_port
     for _ in range(max_tries):
         if not _is_port_in_use(host, port):
@@ -169,7 +165,6 @@ def _find_free_port(host: str, start_port: int, max_tries: int = 20) -> int | No
 
 
 def _available_notebook_item_ids() -> list[str]:
-    # English comments inside code.
     available: list[str] = []
     for item_id, notebook_name in NOTEBOOK_TUTORIAL_BY_ITEM_ID.items():
         if (_TUTORIALS_DIR / notebook_name).exists():
@@ -178,7 +173,6 @@ def _available_notebook_item_ids() -> list[str]:
 
 
 def _terminate_jupyter_process() -> None:
-    # English comments inside code.
     global _JUPYTER_PROCESS
     global _JUPYTER_LOG_HANDLE
     if _JUPYTER_PROCESS is None:
@@ -201,7 +195,6 @@ def _terminate_jupyter_process() -> None:
 
 
 def _tail_jupyter_log(max_lines: int = 16) -> str:
-    # English comments inside code.
     log_path = _jupyter_log_path()
     try:
         content = log_path.read_text(encoding="utf-8", errors="ignore").splitlines()
@@ -213,7 +206,6 @@ def _tail_jupyter_log(max_lines: int = 16) -> str:
 
 
 def _start_jupyter_process() -> bool:
-    # English comments inside code.
     global _JUPYTER_PROCESS
     global _LAST_RUNTIME_ERROR
     global _RUNTIME_JUPYTER_BASE_URL
@@ -284,8 +276,12 @@ def _start_jupyter_process() -> bool:
         _JUPYTER_PROCESS = subprocess.Popen(
             cmd,
             env=env,
-            stdout=_JUPYTER_LOG_HANDLE if _JUPYTER_LOG_HANDLE is not None else subprocess.DEVNULL,
-            stderr=subprocess.STDOUT if _JUPYTER_LOG_HANDLE is not None else subprocess.DEVNULL,
+            stdout=_JUPYTER_LOG_HANDLE
+            if _JUPYTER_LOG_HANDLE is not None
+            else subprocess.DEVNULL,
+            stderr=subprocess.STDOUT
+            if _JUPYTER_LOG_HANDLE is not None
+            else subprocess.DEVNULL,
         )
     except OSError:
         _JUPYTER_PROCESS = None
@@ -328,7 +324,6 @@ def _start_jupyter_process() -> bool:
 
 
 def ensure_notebook_runtime() -> bool:
-    # English comments inside code.
     global _LAST_RUNTIME_ERROR
     if _jupyter_reachable():
         _LAST_RUNTIME_ERROR = None
@@ -340,7 +335,6 @@ def ensure_notebook_runtime() -> bool:
 
 
 def _normalize_notebook_kernel(notebook_path: Path, *, kernel_name: str) -> None:
-    # English comments inside code.
     try:
         notebook = json.loads(notebook_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
@@ -363,7 +357,6 @@ def _normalize_notebook_kernel(notebook_path: Path, *, kernel_name: str) -> None
 
 
 def _build_jupyter_url(notebook_path: Path) -> str:
-    # English comments inside code.
     jupyter_root = _jupyter_root_dir()
     try:
         relative = notebook_path.resolve().relative_to(jupyter_root)
@@ -374,7 +367,6 @@ def _build_jupyter_url(notebook_path: Path) -> str:
 
 
 def _prepare_notebook_urls() -> dict[str, str]:
-    # English comments inside code.
     workspace_dir = _workspace_dir()
     workspace_dir.mkdir(parents=True, exist_ok=True)
     kernel = _kernel_name()
@@ -397,7 +389,6 @@ def _prepare_notebook_urls() -> dict[str, str]:
 
 
 def notebook_urls_by_item() -> dict[str, str]:
-    # English comments inside code.
     global _NOTEBOOK_BUTTON_URLS_CACHE
     if _NOTEBOOK_BUTTON_URLS_CACHE is None:
         _NOTEBOOK_BUTTON_URLS_CACHE = {
@@ -408,7 +399,6 @@ def notebook_urls_by_item() -> dict[str, str]:
 
 
 def notebook_names_by_item() -> dict[str, str]:
-    # English comments inside code.
     names: dict[str, str] = {}
     for item_id, notebook_name in NOTEBOOK_TUTORIAL_BY_ITEM_ID.items():
         if (_TUTORIALS_DIR / notebook_name).exists():
@@ -417,12 +407,16 @@ def notebook_names_by_item() -> dict[str, str]:
 
 
 def launch_notebook_for_item(item_id: str) -> tuple[str | None, str | None]:
-    # English comments inside code.
     notebook_name = NOTEBOOK_TUTORIAL_BY_ITEM_ID.get(item_id)
     if not notebook_name:
         return None, f'Unknown notebook id "{item_id}".'
     if not (_TUTORIALS_DIR / notebook_name).exists():
         return None, f'Notebook source "{notebook_name}" was not found.'
+    if get_active_workspace() is None:
+        return (
+            None,
+            "Configure an active workspace before opening notebooks.",
+        )
     if not ensure_notebook_runtime():
         return None, _LAST_RUNTIME_ERROR or "Notebook runtime is unavailable."
 

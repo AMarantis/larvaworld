@@ -27,10 +27,14 @@ DOCS_DATA_PROCESSING = f"{DOCS_ROOT}data_pipeline/data_processing.html"
 DOCS_PLOTTING_API = f"{DOCS_ROOT}visualization/plotting_api.html"
 
 DOCS_ARENAS_SUBSTRATES = f"{DOCS_ROOT}agents_environments/arenas_and_substrates.html"
-DOCS_AGENT_ARCHITECTURE = f"{DOCS_ROOT}agents_environments/larva_agent_architecture.html"
+DOCS_AGENT_ARCHITECTURE = (
+    f"{DOCS_ROOT}agents_environments/larva_agent_architecture.html"
+)
 
 DOCS_MODEL_EVALUATION = f"{DOCS_ROOT}working_with_larvaworld/model_evaluation.html"
-DOCS_GA_OPTIMIZATION = f"{DOCS_ROOT}working_with_larvaworld/ga_optimization_advanced.html"
+DOCS_GA_OPTIMIZATION = (
+    f"{DOCS_ROOT}working_with_larvaworld/ga_optimization_advanced.html"
+)
 DOCS_COMPARE_DATASETS = f"{DOCS_MODEL_EVALUATION}#statistical-comparison-plots"
 
 NOTEBOOK_TUTORIAL_BY_ITEM_ID: dict[str, str] = {
@@ -243,54 +247,54 @@ ITEMS: dict[str, LandingItem] = {
     # ---- Planned workflows / placeholders ----
     "wf.run_experiment": LandingItem(
         id="wf.run_experiment",
-        kind="placeholder",
-        status="planned",
+        kind="panel_app",
+        status="ready",
         lane="simulate",
         level="core",
         title="Single Experiment",
         subtitle=(
-            "Select a preset and configure key options.\n"
-            "Run one simulation from the web workflow.\n"
-            "Store outputs for immediate follow-up."
+            "Select an experiment template and key run settings.\n"
+            "Optionally apply a workspace environment preset.\n"
+            "Prepare one simulation in the browser workflow."
         ),
         cta="Run",
-        prereq_hint="Not available yet in the web UI.",
+        panel_app_id="wf.run_experiment",
         learn_more=LearnMore(
             issue_url=GITHUB_ISSUES,
             docs_url=DOCS_SINGLE_EXPERIMENTS,
         ),
         badges=["Developer"],
         preview_md=(
-            "### Single Experiment (Planned)\n"
-            "- Pick an experiment preset (curated list)\n"
-            "- Adjust key parameters (model/env/seed)\n"
-            "- Run and persist dataset outputs\n"
-            "- One-click open in Track Viewer / Evaluation\n"
+            "### Single Experiment\n"
+            "- Pick an experiment template from the Larvaworld registry\n"
+            "- Apply a workspace environment preset or keep the template default\n"
+            "- Adjust run duration and larvae-per-group override\n"
+            "- Prepare an interactive arena preview for one single-run experiment\n"
         ),
     ),
     "wf.open_dataset": LandingItem(
         id="wf.open_dataset",
-        kind="placeholder",
-        status="planned",
+        kind="panel_app",
+        status="ready",
         lane="data",
         level="core",
         title="Import Experimental Datasets",
         subtitle=(
-            "Browse available datasets in your workspace.\n"
-            "Select one dataset as the active context.\n"
-            "Reuse it across viewers and analysis."
+            "Import one raw experimental dataset into the active workspace.\n"
+            "Discover candidate folders under a chosen raw-data root.\n"
+            "Save the imported dataset in workspace-owned storage."
         ),
         cta="Import",
-        prereq_hint="Dataset selection is currently handled inside each app.",
+        panel_app_id="wf.open_dataset",
         learn_more=LearnMore(
             issue_url=GITHUB_ISSUES,
             docs_url=DOCS_REFERENCE_DATASETS,
         ),
         preview_md=(
-            "### Import Experimental Datasets (Planned)\n"
-            "- Browse datasets under the configured data directory\n"
-            "- Preview metadata (duration, N, timestamps)\n"
-            "- Set active dataset for downstream tools\n"
+            "### Import Experimental Datasets\n"
+            "- Choose a lab format and raw-data root\n"
+            "- Discover one candidate dataset at a time\n"
+            "- Import it into the active workspace with clear status feedback\n"
         ),
     ),
     "wf.model_evaluation": LandingItem(
@@ -372,27 +376,27 @@ ITEMS: dict[str, LandingItem] = {
     ),
     "wf.dataset_manager": LandingItem(
         id="wf.dataset_manager",
-        kind="placeholder",
-        status="planned",
+        kind="panel_app",
+        status="ready",
         lane="data",
         level="core",
         title="Dataset Manager",
+        panel_app_id="wf.dataset_manager",
         subtitle=(
-            "Browse dataset folders in read-only mode.\n"
-            "Preview table structure and key columns.\n"
-            "Inspect summary info before analysis."
+            "Browse imported datasets stored in the active workspace.\n"
+            "Inspect lightweight record details and stored artifacts.\n"
+            "Refresh, copy paths, and remove imported datasets safely."
         ),
         cta="Manage",
-        prereq_hint="Not available yet in the web UI.",
         learn_more=LearnMore(
             issue_url=GITHUB_ISSUES,
             docs_url=DOCS_DATA_PROCESSING,
         ),
         preview_md=(
-            "### Dataset Manager (Planned)\n"
-            "- View datasets in a workspace\n"
-            "- Tag and annotate runs\n"
-            "- Quick metadata preview and actions\n"
+            "### Dataset Manager\n"
+            "- Browse imported datasets in the current workspace\n"
+            "- Inspect IDs, labs, paths, and stored artifacts\n"
+            "- Refresh the catalog and remove imported datasets safely\n"
         ),
     ),
     "wf.export_center": LandingItem(
@@ -439,9 +443,9 @@ ITEMS: dict[str, LandingItem] = {
         ),
         badges=["Developer"],
         preview_md=(
-            "### Environment Builder (Planned)\n"
-            "- Configure arena geometry and obstacles\n"
-            "- Define sensory landscapes\n"
+            "### Environment Builder\n"
+            "- Configure arena geometry, borders, and obstacles\n"
+            "- Define source, grid, and scape parameters\n"
             "- Save and reuse environment presets\n"
         ),
     ),

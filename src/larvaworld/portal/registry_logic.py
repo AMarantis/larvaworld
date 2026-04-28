@@ -13,7 +13,6 @@ from larvaworld.portal.registry_types import LandingItem, PrimaryAction
 
 
 def validate_registry(*, strict: bool = True) -> None:
-    # English comments inside code.
     def _err(msg: str) -> None:
         raise ValueError(f"[larvaworld.portal] {msg}")
 
@@ -43,7 +42,9 @@ def validate_registry(*, strict: bool = True) -> None:
         if strict and len(mode.item_ids) != 3:
             _err(f"Quick-start mode '{mode.mode_id}' must include exactly 3 items")
 
-    hidden_in_refs = [item_id for item_id in referenced if ITEMS[item_id].status == "hidden"]
+    hidden_in_refs = [
+        item_id for item_id in referenced if ITEMS[item_id].status == "hidden"
+    ]
     if hidden_in_refs:
         _err(f"Hidden items must not be referenced in lanes/pinned: {hidden_in_refs}")
 
@@ -100,7 +101,6 @@ def validate_registry(*, strict: bool = True) -> None:
 
 
 def resolve_target(item: LandingItem) -> str | None:
-    # English comments inside code.
     if item.kind == "panel_app":
         return f"/{item.panel_app_id}"
     if item.kind == "external_link":
@@ -109,7 +109,6 @@ def resolve_target(item: LandingItem) -> str | None:
 
 
 def compute_badges(item: LandingItem) -> list[str]:
-    # English comments inside code.
     badges: list[str] = []
 
     if item.level == "core":
@@ -130,12 +129,13 @@ def compute_badges(item: LandingItem) -> list[str]:
 
 
 def compute_primary_action(item: LandingItem) -> PrimaryAction:
-    # English comments inside code.
     if item.status == "hidden":
         return PrimaryAction(label="Hidden", href=None, enabled=False)
 
     if item.learn_more and item.learn_more.docs_url:
-        return PrimaryAction(label=item.cta, href=item.learn_more.docs_url, enabled=True)
+        return PrimaryAction(
+            label=item.cta, href=item.learn_more.docs_url, enabled=True
+        )
 
     if item.kind == "panel_app":
         return PrimaryAction(label=item.cta, href=resolve_target(item), enabled=True)
