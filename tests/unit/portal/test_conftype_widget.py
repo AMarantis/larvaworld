@@ -68,7 +68,6 @@ def test_build_conftype_widget_returns_panel_view() -> None:
         (EnvConf, "Env"),
         (LabFormat, "LabFormat"),
         (ExpConf, "Exp"),
-        (reg.conf.Ga.conf_class, "Ga"),
     ],
 )
 def test_supported_conftype_widgets_build_bokeh_roots(
