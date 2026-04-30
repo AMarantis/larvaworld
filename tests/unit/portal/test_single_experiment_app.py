@@ -3,13 +3,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import holoviews as hv
 import numpy as np
 import pytest
 
 from larvaworld.lib import util
 from larvaworld.lib.reg.larvagroup import LarvaGroup
 from larvaworld.portal.landing_registry import ITEMS
-from larvaworld.portal.single_experiment_app import (
+from larvaworld.portal.simulation.single_experiment_app import (
     _ExperimentPreview,
     _SingleExperimentController,
     _builder_obstacle_border_vertices,
@@ -27,6 +28,8 @@ from larvaworld.portal.workspace import (
 SINGLE_EXPERIMENT_APP_INCOMPLETE_REASON = (
     "single_experiment_app is incomplete; re-enable after app stabilization"
 )
+
+hv.extension("bokeh")
 
 
 @pytest.fixture(autouse=True)
@@ -141,14 +144,77 @@ def test_single_experiment_builder_obstacles_are_translated_into_border_entries(
     assert isinstance(border_list["Obstacle_obstacle_1"]["vertices"][0], tuple)
 
 
-@pytest.mark.skip(reason=SINGLE_EXPERIMENT_APP_INCOMPLETE_REASON)
+class _DummyPreviewAgents(list):
+    head = type("Head", (), {"front_end": []})()
+
+    def get_position(self):
+        return []
+
+
+class _DummyPreviewLauncher:
+    def __init__(
+        self,
+        *,
+        agents: _DummyPreviewAgents | None = None,
+        sources: list[object] | None = None,
+        borders: list[object] | None = None,
+        t: int = 0,
+        nsteps: int = 8,
+        step_hook=None,
+    ) -> None:
+        self.p = util.AttrDict(
+            {
+                "steps": nsteps,
+                "env_params": util.AttrDict(
+                    {
+                        "arena": util.AttrDict(
+                            {"geometry": "circular", "dims": (0.2, 0.2)}
+                        )
+                    }
+                ),
+            }
+        )
+        self.dt = 0.1
+        self.Nsteps = nsteps
+        self.t = t
+        self.agents = agents if agents is not None else _DummyPreviewAgents()
+        self.sources = sources if sources is not None else []
+        self.borders = borders if borders is not None else []
+        self.step_calls = 0
+        self._step_hook = step_hook
+
+    def sim_step(self) -> None:
+        self.step_calls += 1
+        if self._step_hook is not None:
+            self._step_hook()
+            return
+        self.t += 1
+
+
+class _ProgressRecorder:
+    def __init__(self) -> None:
+        self.updates: list[int] = []
+
+    @property
+    def value(self) -> int:
+        if not self.updates:
+            return 0
+        return self.updates[-1]
+
+    @value.setter
+    def value(self, value: int) -> None:
+        self.updates.append(value)
+
+
+def _disable_dynamic_preview_layers(preview: _ExperimentPreview) -> None:
+    preview.draw_ops.draw_centroid = False
+    preview.draw_ops.draw_head = False
+    preview.draw_ops.draw_midline = False
+    preview.draw_ops.visible_trails = False
+    preview.draw_ops.draw_segs = False
+
+
 def test_single_experiment_preview_overlay_draws_sources_odors_and_borders() -> None:
-    class DummyAgents(list):
-        head = type("Head", (), {"front_end": []})()
-
-        def get_position(self):
-            return []
-
     source = util.AttrDict(
         {
             "pos": (0.02, 0.01),
@@ -164,39 +230,119 @@ def test_single_experiment_preview_overlay_draws_sources_odors_and_borders() -> 
             "border_xy": [np.array([[0.0, 0.0], [0.04, 0.0]])],
         }
     )
-    launcher = util.AttrDict(
-        {
-            "p": util.AttrDict(
-                {
-                    "steps": 8,
-                    "env_params": util.AttrDict(
-                        {
-                            "arena": util.AttrDict(
-                                {"geometry": "circular", "dims": (0.2, 0.2)}
-                            )
-                        }
-                    ),
-                }
-            ),
-            "dt": 0.1,
-            "Nsteps": 8,
-            "t": 0,
-            "agents": DummyAgents(),
-            "sources": [source],
-            "borders": [border],
-        }
-    )
+    launcher = _DummyPreviewLauncher(sources=[source], borders=[border])
 
     preview = _ExperimentPreview(launcher, launcher_ready=True)
-    preview.draw_ops.draw_centroid = False
-    preview.draw_ops.draw_head = False
-    preview.draw_ops.draw_midline = False
-    preview.draw_ops.visible_trails = False
-    preview.draw_ops.draw_segs = False
+    _disable_dynamic_preview_layers(preview)
 
     overlay = preview._draw_overlay()
 
     assert len(overlay) == 4
+
+
+def test_single_experiment_preview_disabled_layers_skip_expensive_agent_attrs() -> None:
+    class ExplodingAgent:
+        color = "#111111"
+
+        @property
+        def segs(self):
+            raise AssertionError("segs should not be accessed")
+
+        @property
+        def midline_xy(self):
+            raise AssertionError("midline_xy should not be accessed")
+
+        @property
+        def trajectory(self):
+            raise AssertionError("trajectory should not be accessed")
+
+    launcher = _DummyPreviewLauncher(agents=_DummyPreviewAgents([ExplodingAgent()]))
+    preview = _ExperimentPreview(launcher, launcher_ready=True)
+    _disable_dynamic_preview_layers(preview)
+
+    preview._draw_overlay()
+
+
+def test_single_experiment_preview_static_layers_are_cached(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls = {"source": 0, "odor": 0, "border": 0}
+
+    def source_layers(self):
+        calls["source"] += 1
+        return []
+
+    def odor_layers(self):
+        calls["odor"] += 1
+        return []
+
+    def border_layers(self):
+        calls["border"] += 1
+        return []
+
+    monkeypatch.setattr(_ExperimentPreview, "_source_layers", source_layers)
+    monkeypatch.setattr(_ExperimentPreview, "_odor_layers", odor_layers)
+    monkeypatch.setattr(_ExperimentPreview, "_border_layers", border_layers)
+
+    preview = _ExperimentPreview(_DummyPreviewLauncher(), launcher_ready=True)
+    _disable_dynamic_preview_layers(preview)
+
+    preview._draw_overlay()
+    preview._draw_overlay()
+
+    assert calls == {"source": 1, "odor": 1, "border": 1}
+
+
+def test_single_experiment_preview_image_for_tick_batches_progress_update_once() -> (
+    None
+):
+    launcher = _DummyPreviewLauncher(t=0, nsteps=8)
+    preview = _ExperimentPreview(launcher, launcher_ready=True)
+    _disable_dynamic_preview_layers(preview)
+    progress = _ProgressRecorder()
+    preview.progress_bar = progress
+
+    preview._image_for_tick(3)
+
+    assert launcher.t == 3
+    assert launcher.step_calls == 3
+    assert progress.updates == [3]
+
+
+def test_single_experiment_preview_current_tick_only_redraws() -> None:
+    def fail_step() -> None:
+        raise AssertionError("sim_step should not be called for the current tick")
+
+    launcher = _DummyPreviewLauncher(t=2, nsteps=8, step_hook=fail_step)
+    preview = _ExperimentPreview(launcher, launcher_ready=True)
+    _disable_dynamic_preview_layers(preview)
+    preview.forward_only_note.object = _ExperimentPreview._FORWARD_ONLY_MESSAGE
+    progress = _ProgressRecorder()
+    preview.progress_bar = progress
+
+    preview._image_for_tick(2)
+
+    assert launcher.step_calls == 0
+    assert preview.forward_only_note.object == ""
+    assert progress.updates == []
+
+
+def test_single_experiment_preview_backward_seek_syncs_to_current_tick() -> None:
+    def fail_step() -> None:
+        raise AssertionError("sim_step should not be called on backward seek")
+
+    launcher = _DummyPreviewLauncher(t=4, nsteps=8, step_hook=fail_step)
+    preview = _ExperimentPreview(launcher, launcher_ready=True)
+    _disable_dynamic_preview_layers(preview)
+    progress = _ProgressRecorder()
+    preview.progress_bar = progress
+
+    preview._image_for_tick(1)
+
+    assert launcher.step_calls == 0
+    assert preview.time_slider.value == 4
+    assert "forward-only" in preview.forward_only_note.object
+    assert progress.updates == [4]
 
 
 @pytest.mark.skip(reason=SINGLE_EXPERIMENT_APP_INCOMPLETE_REASON)
@@ -283,7 +429,7 @@ def test_single_experiment_run_experiment_writes_plan_and_reports_storage(
             return ["dataset_a", "dataset_b"]
 
     monkeypatch.setattr(
-        "larvaworld.portal.single_experiment_app.sim.ExpRun",
+        "larvaworld.portal.simulation.single_experiment_app.sim.ExpRun",
         DummyRun,
     )
 
@@ -326,11 +472,11 @@ def test_single_experiment_run_experiment_shows_running_state_before_deferred_ex
             return ["dataset_a"]
 
     monkeypatch.setattr(
-        "larvaworld.portal.single_experiment_app.sim.ExpRun",
+        "larvaworld.portal.simulation.single_experiment_app.sim.ExpRun",
         DummyRun,
     )
     monkeypatch.setattr(
-        "larvaworld.portal.single_experiment_app.pn.state",
+        "larvaworld.portal.simulation.single_experiment_app.pn.state",
         "curdoc",
         DummyDoc(),
         raising=False,
@@ -399,7 +545,7 @@ def test_single_experiment_run_experiment_passes_video_screen_kws(
             return ["dataset_a"]
 
     monkeypatch.setattr(
-        "larvaworld.portal.single_experiment_app.sim.ExpRun",
+        "larvaworld.portal.simulation.single_experiment_app.sim.ExpRun",
         DummyRun,
     )
 
@@ -438,7 +584,7 @@ def test_single_experiment_run_experiment_explicitly_closes_screen_manager(
             return ["dataset_a"]
 
     monkeypatch.setattr(
-        "larvaworld.portal.single_experiment_app.sim.ExpRun",
+        "larvaworld.portal.simulation.single_experiment_app.sim.ExpRun",
         DummyRun,
     )
 
@@ -474,11 +620,11 @@ def test_single_experiment_preview_status_uses_reserved_run_directory_wording(
             return "preview"
 
     monkeypatch.setattr(
-        "larvaworld.portal.single_experiment_app._SingleExperimentController._prepare_preview_launcher",
+        "larvaworld.portal.simulation.single_experiment_app._SingleExperimentController._prepare_preview_launcher",
         lambda self, experiment, parameters, run_dir: (DummyPreviewLauncher(), None),
     )
     monkeypatch.setattr(
-        "larvaworld.portal.single_experiment_app._ExperimentPreview",
+        "larvaworld.portal.simulation.single_experiment_app._ExperimentPreview",
         DummyPreview,
     )
 
@@ -517,7 +663,7 @@ def test_single_experiment_preview_launcher_falls_back_when_overlap_elimination_
         return DummyLauncher(parameters)
 
     monkeypatch.setattr(
-        "larvaworld.portal.single_experiment_app.sim.ExpRun",
+        "larvaworld.portal.simulation.single_experiment_app.sim.ExpRun",
         fake_exp_run,
     )
 

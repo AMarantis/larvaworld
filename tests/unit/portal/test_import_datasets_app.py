@@ -94,12 +94,17 @@ def test_import_datasets_controller_requires_active_workspace() -> None:
 
     assert controller.discover_button.disabled is True
     assert controller.import_button.disabled is True
+    assert controller.merged_checkbox.disabled is True
     assert "Configure an active workspace" in controller.status.object
 
 
 def test_import_datasets_lab_config_panel_loads_selected_configuration() -> None:
     controller = import_datasets_app._ImportDatasetsController()
 
+    assert isinstance(
+        controller.lab_actions,
+        import_datasets_app.ConftypeActionsController,
+    )
     assert controller.lab_config_name_input.value == controller.lab_select.value
     assert len(controller.lab_editor_sections.objects) == 3
     assert "Loaded LabFormat" in controller.lab_status.object
@@ -255,6 +260,45 @@ def test_import_datasets_tracker_framerate_panel_is_separate() -> None:
     ]
 
 
+def test_import_datasets_merged_checkbox_disables_candidate_dropdown_and_sets_request_flag(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace = initialize_workspace(tmp_path / "workspace")
+    set_active_workspace_path(workspace.root)
+
+    controller = import_datasets_app._ImportDatasetsController()
+    controller.raw_root_input.value = str(tmp_path / "raw")
+
+    candidate = RawDatasetCandidate(
+        candidate_id="dish01",
+        parent_dir="exploration",
+        display_name="exploration / dish01",
+        source_path=tmp_path / "raw" / "exploration" / "dish01",
+        warnings=[],
+    )
+    candidate_key = controller._candidate_option_key(candidate)
+    controller._candidate_by_key = {candidate_key: candidate}
+    controller.candidate_select.options = {
+        "Select a candidate": "",
+        candidate.display_name: candidate_key,
+    }
+    controller.candidate_select.value = candidate_key
+    controller.merged_checkbox.value = True
+    controller._sync_controls()
+
+    monkeypatch.setattr(
+        import_datasets_app,
+        "_candidate_import_overrides",
+        lambda _lab_id, _raw_root, _candidate: {},
+    )
+
+    request = controller._build_import_request()
+
+    assert controller.candidate_select.disabled is True
+    assert request.merged is True
+
+
 def test_import_datasets_lab_config_save_and_delete_use_registry_contract(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -274,8 +318,9 @@ def test_import_datasets_lab_config_save_and_delete_use_registry_contract(
         "delete",
         lambda config_id: deleted.append(config_id),
     )
-    monkeypatch.setattr(controller, "_refresh_lab_options", lambda **kwargs: None)
-    monkeypatch.setattr(controller, "_load_working_lab", lambda _lab_id: None)
+    monkeypatch.setattr(controller.lab_actions, "refresh_registry", lambda: None)
+    controller.lab_actions.on_save = None
+    controller.lab_actions.on_delete = None
 
     controller.lab_config_name_input.value = "LabCopy"
     controller._handle_lab_save()
@@ -306,18 +351,16 @@ def test_import_datasets_lab_config_reset_recreates_registry(
         lambda **kwargs: reset_calls.append(kwargs),
     )
     monkeypatch.setattr(
-        controller,
-        "_refresh_lab_options",
-        lambda **kwargs: refreshed.append(kwargs),
+        controller.lab_actions,
+        "refresh_registry",
+        lambda: refreshed.append({}),
     )
-    monkeypatch.setattr(
-        controller, "_load_working_lab", lambda lab_id: loaded.append(lab_id)
-    )
+    controller.lab_actions.on_reset = lambda lab_id: loaded.append(lab_id)
 
     controller._handle_lab_reset()
 
     assert reset_calls == [{"recreate": True}]
-    assert refreshed == [{"select_id": selected_lab_id}]
+    assert refreshed == [{}]
     assert loaded == [selected_lab_id]
     assert "registry recreated" in controller.lab_status.object
 

@@ -620,6 +620,10 @@ def _join_help_parts(*parts: str | None) -> str | None:
 
 
 class _ExperimentPreview:
+    _FORWARD_ONLY_MESSAGE = (
+        "Preview is forward-only; prepare the preview again to replay from the start."
+    )
+
     def __init__(
         self,
         launcher: sim.ExpRun,
@@ -653,15 +657,18 @@ class _ExperimentPreview:
             max=self.launcher.Nsteps - 1,
             value=self.launcher.t,
         )
-        self.time_slider = pn.widgets.Player(
+        self.time_slider = pn.widgets.IntSlider(
             name="Tick",
             width=int(self.size / 2),
             start=0,
             end=preview_steps - 1,
-            interval=max(int(1000 * self.launcher.dt), 1),
+            step=1,
             value=0,
         )
+        self.forward_only_note = pn.pane.HTML("", sizing_mode="stretch_width")
+        self._syncing_slider = False
         self.tank_plot = self._get_tank_plot()
+        self.static_overlay = self._build_static_overlay()
 
     def _get_tank_plot(self) -> hv.element.Overlay:
         arena = self.env.arena
@@ -723,68 +730,104 @@ class _ExperimentPreview:
                 )
         return border_layers
 
-    def _draw_overlay(self) -> hv.Overlay:
+    def _build_static_overlay(self) -> hv.Overlay:
+        return hv.Overlay(
+            [self.tank_plot]
+            + self._odor_layers()
+            + self._source_layers()
+            + self._border_layers()
+        )
+
+    def _dynamic_agent_layers(self) -> list[Any]:
         agents = self.launcher.agents
-        draw_layers = util.AttrDict(
-            {
-                "draw_segs": hv.Overlay(
+        layers = []
+        if self.draw_ops.draw_segs:
+            layers.append(
+                hv.Overlay(
                     [
                         hv.Polygons([seg.vertices for seg in agent.segs]).opts(
                             color=agent.color
                         )
                         for agent in agents
                     ]
-                ),
-                "draw_centroid": hv.Points(agents.get_position()).opts(
+                )
+            )
+        if self.draw_ops.draw_centroid:
+            layers.append(
+                hv.Points(agents.get_position()).opts(
                     size=5,
                     color="black",
-                ),
-                "draw_head": hv.Points(agents.head.front_end).opts(
+                )
+            )
+        if self.draw_ops.draw_head:
+            layers.append(
+                hv.Points(agents.head.front_end).opts(
                     size=5,
                     color="red",
-                ),
-                "draw_midline": hv.Overlay(
+                )
+            )
+        if self.draw_ops.draw_midline:
+            layers.append(
+                hv.Overlay(
                     [
                         hv.Path(agent.midline_xy).opts(color="blue", line_width=2)
                         for agent in agents
                     ]
-                ),
-                "visible_trails": hv.Contours(
-                    [agent.trajectory[-self.Nfade :] for agent in agents]
-                ).opts(color="black"),
-            }
-        )
-        source_layers = self._source_layers()
-        odor_layers = self._odor_layers()
-        border_layers = self._border_layers()
-        agent_layers = [
-            layer for key, layer in draw_layers.items() if getattr(self.draw_ops, key)
-        ]
-        return hv.Overlay(
-            [self.tank_plot]
-            + odor_layers
-            + source_layers
-            + border_layers
-            + agent_layers
-        ).opts(
+                )
+            )
+        if self.draw_ops.visible_trails:
+            layers.append(
+                hv.Contours([agent.trajectory[-self.Nfade :] for agent in agents]).opts(
+                    color="black"
+                )
+            )
+        return layers
+
+    def _draw_overlay(self) -> hv.Overlay:
+        agent_layers = self._dynamic_agent_layers()
+        overlay = self.static_overlay
+        if agent_layers:
+            overlay = overlay * hv.Overlay(agent_layers)
+        return overlay.opts(
             responsive=False,
             **self.image_kws,
         )
 
+    def _sync_slider_to_current_tick(self) -> None:
+        self._syncing_slider = True
+        try:
+            self.time_slider.value = self.launcher.t
+        finally:
+            self._syncing_slider = False
+
+    def _image_for_tick(self, i: int) -> hv.Overlay:
+        if self._syncing_slider:
+            return self._draw_overlay()
+        if i < self.launcher.t:
+            self.forward_only_note.object = self._FORWARD_ONLY_MESSAGE
+            self._sync_slider_to_current_tick()
+            self.progress_bar.value = self.launcher.t
+            return self._draw_overlay()
+        self.forward_only_note.object = ""
+        if i == self.launcher.t:
+            return self._draw_overlay()
+        while i > self.launcher.t:
+            self.launcher.sim_step()
+        self.progress_bar.value = self.launcher.t
+        return self._draw_overlay()
+
     def view(self) -> pn.viewable.Viewable:
         @pn.depends(i=self.time_slider)
         def _image(i: int) -> hv.Overlay:
-            while i > self.launcher.t:
-                self.launcher.sim_step()
-                self.progress_bar.value = self.launcher.t
-            return self._draw_overlay()
+            return self._image_for_tick(i)
 
         preview = hv.DynamicMap(_image)
         return pn.Row(
             preview,
             pn.Column(
                 pn.Row(pn.Column("Tick", self.time_slider)),
-                pn.Row(pn.Column("Simulation timestep", self.progress_bar)),
+                pn.Row(pn.Column("Computed timestep", self.progress_bar)),
+                self.forward_only_note,
                 pn.Param(self.draw_ops),
             ),
             sizing_mode="stretch_width",
