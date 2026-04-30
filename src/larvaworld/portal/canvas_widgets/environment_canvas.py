@@ -6,7 +6,7 @@ from typing import Any, Iterable
 import numpy as np
 import panel as pn
 from bokeh.colors import named as named_colors
-from bokeh.models import ColumnDataSource, WheelZoomTool
+from bokeh.models import ColumnDataSource, LegendItem, WheelZoomTool
 from bokeh.plotting import figure
 
 from larvaworld.lib.param.xy_distro import Spatial_Distro
@@ -56,6 +56,24 @@ def _safe_int(value: Any, default: int = 0) -> int:
         return int(value)
     except (TypeError, ValueError):
         return default
+
+
+def _optional_float(value: Any, default: float) -> float:
+    if value is None:
+        return default
+    return _safe_float(value, default)
+
+
+def _distribution_scale_pair(obj: CanvasObject) -> tuple[float, float]:
+    if obj.object_type == "source_group":
+        return (
+            _safe_float(obj.distribution_scale_x or 0.012, 0.012),
+            _safe_float(obj.distribution_scale_y or 0.012, 0.012),
+        )
+    return (
+        _optional_float(obj.distribution_scale_x, 0.012),
+        _optional_float(obj.distribution_scale_y, 0.012),
+    )
 
 
 def _mix_hex_colors(color_a: Any, color_b: Any, ratio: float) -> str:
@@ -124,6 +142,23 @@ def _stable_preview_seed(*parts: object) -> int:
             seed ^= ord(char)
             seed = (seed * 16777619) & 0xFFFFFFFF
     return seed
+
+
+def _stable_member_angle(obj: CanvasObject, member_index: int) -> float:
+    seed = _stable_preview_seed(
+        "larva_member_angle",
+        obj.object_id,
+        member_index,
+        obj.distribution_mode,
+        obj.distribution_shape,
+        obj.distribution_n,
+        obj.x,
+        obj.y,
+        obj.distribution_scale_x,
+        obj.distribution_scale_y,
+    )
+    rng = np.random.default_rng(seed)
+    return float(rng.uniform(0.0, 2.0 * math.pi))
 
 
 def _normalize_group_shape(value: str | None) -> str:
@@ -339,9 +374,10 @@ class EnvironmentCanvas:
         self.larva_group_member_source = ColumnDataSource(
             _empty(
                 [
-                    "x",
-                    "y",
-                    "r",
+                    "x0",
+                    "y0",
+                    "x1",
+                    "y1",
                     "fill_color",
                     "line_color",
                     "fill_alpha",
@@ -437,7 +473,7 @@ class EnvironmentCanvas:
             fill_color="fill_color",
             fill_alpha="fill_alpha",
         )
-        self.fig.circle(
+        self._thermoscape_aura_renderer = self.fig.circle(
             x="x",
             y="y",
             radius="r",
@@ -449,7 +485,7 @@ class EnvironmentCanvas:
             line_width=1,
             legend_label="Thermoscape",
         )
-        self.fig.segment(
+        self._windscape_segment_renderer = self.fig.segment(
             x0="x0",
             y0="y0",
             x1="x1",
@@ -460,7 +496,7 @@ class EnvironmentCanvas:
             line_width=2,
             legend_label="Windscape",
         )
-        self.fig.scatter(
+        self._windscape_head_renderer = self.fig.scatter(
             x="x",
             y="y",
             source=self.windscape_head_source,
@@ -472,7 +508,7 @@ class EnvironmentCanvas:
             fill_alpha=0.75,
             line_alpha=0.85,
         )
-        self.fig.circle(
+        self._odorscape_renderer = self.fig.circle(
             x="x",
             y="y",
             radius="r",
@@ -483,7 +519,7 @@ class EnvironmentCanvas:
             fill_alpha=0.0,
             legend_label="Odorscape",
         )
-        self.fig.scatter(
+        self._thermoscape_marker_renderer = self.fig.scatter(
             x="x",
             y="y",
             source=self.thermoscape_marker_source,
@@ -494,7 +530,7 @@ class EnvironmentCanvas:
             fill_alpha=0.9,
             line_alpha=0.95,
         )
-        self.fig.circle(
+        self._odor_aura_renderer = self.fig.circle(
             x="x",
             y="y",
             radius="r",
@@ -504,7 +540,7 @@ class EnvironmentCanvas:
             fill_alpha="fill_alpha",
             legend_label="Odor aura",
         )
-        self.fig.circle(
+        self._source_units_renderer = self.fig.circle(
             x="x",
             y="y",
             radius="r",
@@ -516,7 +552,7 @@ class EnvironmentCanvas:
             line_width="line_width",
             legend_label="Source units",
         )
-        self.fig.circle(
+        self._odor_peak_renderer = self.fig.circle(
             x="x",
             y="y",
             radius="r",
@@ -525,7 +561,7 @@ class EnvironmentCanvas:
             fill_color="color",
             fill_alpha="fill_alpha",
         )
-        self.fig.circle(
+        self._source_group_circle_renderer = self.fig.circle(
             x="x",
             y="y",
             radius="r",
@@ -546,7 +582,7 @@ class EnvironmentCanvas:
             line_width=2,
             legend_label="Source groups",
         )
-        self.fig.ellipse(
+        self._source_group_ellipse_renderer = self.fig.ellipse(
             x="x",
             y="y",
             width="w",
@@ -558,7 +594,7 @@ class EnvironmentCanvas:
             line_alpha="line_alpha",
             line_width=2,
         )
-        self.fig.rect(
+        self._source_group_rect_renderer = self.fig.rect(
             x="x",
             y="y",
             width="w",
@@ -570,7 +606,7 @@ class EnvironmentCanvas:
             line_alpha="line_alpha",
             line_width=2,
         )
-        self.fig.circle(
+        self._source_group_member_renderer = self.fig.circle(
             x="x",
             y="y",
             radius="r",
@@ -610,7 +646,7 @@ class EnvironmentCanvas:
             fill_color=None,
             line_width=4,
         )
-        self.fig.segment(
+        self._border_renderer = self.fig.segment(
             x0="x0",
             y0="y0",
             x1="x1",
@@ -629,7 +665,7 @@ class EnvironmentCanvas:
             line_color=HIGHLIGHT_COLOR,
             line_width="w",
         )
-        self.fig.circle(
+        self._larva_group_circle_renderer = self.fig.circle(
             x="x",
             y="y",
             radius="r",
@@ -642,7 +678,7 @@ class EnvironmentCanvas:
             line_width=2,
             legend_label="Larva groups",
         )
-        self.fig.ellipse(
+        self._larva_group_ellipse_renderer = self.fig.ellipse(
             x="x",
             y="y",
             width="w",
@@ -655,7 +691,7 @@ class EnvironmentCanvas:
             line_dash="dashed",
             line_width=2,
         )
-        self.fig.rect(
+        self._larva_group_rect_renderer = self.fig.rect(
             x="x",
             y="y",
             width="w",
@@ -668,14 +704,13 @@ class EnvironmentCanvas:
             line_dash="dashed",
             line_width=2,
         )
-        self.fig.circle(
-            x="x",
-            y="y",
-            radius="r",
+        self._larva_group_member_renderer = self.fig.segment(
+            x0="x0",
+            y0="y0",
+            x1="x1",
+            y1="y1",
             source=self.larva_group_member_source,
             line_color="line_color",
-            fill_color="fill_color",
-            fill_alpha="fill_alpha",
             line_alpha="line_alpha",
             line_width="line_width",
         )
@@ -708,10 +743,67 @@ class EnvironmentCanvas:
             fill_color=None,
             line_width=4,
         )
+        self._order_legend()
+
         self.fig.legend.click_policy = "hide"
         self.fig.legend.location = "top_left"
+        self.fig.legend.background_fill_alpha = 0.85
 
         self._pane = pn.pane.Bokeh(self.fig, sizing_mode="stretch_width")
+
+    def _order_legend(self) -> None:
+        if not self.fig.legend:
+            return
+        self.fig.legend[0].items = [
+            LegendItem(
+                label="Source units",
+                renderers=[self._source_units_renderer],
+            ),
+            LegendItem(
+                label="Source groups",
+                renderers=[
+                    self._source_group_circle_renderer,
+                    self._source_group_ellipse_renderer,
+                    self._source_group_rect_renderer,
+                    self._source_group_member_renderer,
+                ],
+            ),
+            LegendItem(
+                label="Borders",
+                renderers=[self._border_renderer],
+            ),
+            LegendItem(
+                label="Larva groups",
+                renderers=[
+                    self._larva_group_circle_renderer,
+                    self._larva_group_ellipse_renderer,
+                    self._larva_group_rect_renderer,
+                    self._larva_group_member_renderer,
+                ],
+            ),
+            LegendItem(
+                label="Odor aura",
+                renderers=[self._odor_aura_renderer, self._odor_peak_renderer],
+            ),
+            LegendItem(
+                label="Odorscape",
+                renderers=[self._odorscape_renderer],
+            ),
+            LegendItem(
+                label="Windscape",
+                renderers=[
+                    self._windscape_segment_renderer,
+                    self._windscape_head_renderer,
+                ],
+            ),
+            LegendItem(
+                label="Thermoscape",
+                renderers=[
+                    self._thermoscape_aura_renderer,
+                    self._thermoscape_marker_renderer,
+                ],
+            ),
+        ]
 
     def view(self) -> pn.viewable.Viewable:
         return self._pane
@@ -803,9 +895,10 @@ class EnvironmentCanvas:
         )
         self.larva_group_member_source.data = _empty(
             [
-                "x",
-                "y",
-                "r",
+                "x0",
+                "y0",
+                "x1",
+                "y1",
                 "fill_color",
                 "line_color",
                 "fill_alpha",
@@ -1336,9 +1429,10 @@ class EnvironmentCanvas:
         self.larva_group_member_source.data = _rows_to_data(
             larva_member_rows,
             [
-                "x",
-                "y",
-                "r",
+                "x0",
+                "y0",
+                "x1",
+                "y1",
                 "fill_color",
                 "line_color",
                 "fill_alpha",
@@ -1391,8 +1485,9 @@ class EnvironmentCanvas:
             return
         if obj.distribution_show_shape is False:
             return
-        width = max(_safe_float(obj.distribution_scale_x, 0.012) * 2.0, 0.002)
-        height = max(_safe_float(obj.distribution_scale_y, 0.012) * 2.0, 0.002)
+        scale_x, scale_y = _distribution_scale_pair(obj)
+        width = max(scale_x * 2.0, 0.002)
+        height = max(scale_y * 2.0, 0.002)
         color = str(obj.color or default_color)
         row = {
             "x": float(obj.x),
@@ -1403,8 +1498,9 @@ class EnvironmentCanvas:
             "id": obj.object_id,
         }
         shape = _normalize_group_shape(obj.distribution_shape)
-        if shape == "circle" and math.isclose(
-            width, height, rel_tol=1e-6, abs_tol=1e-9
+        if shape == "circle" and (
+            obj.object_type == "source_group"
+            or math.isclose(width, height, rel_tol=1e-6, abs_tol=1e-9)
         ):
             circle_rows.append({**row, "r": max(width, height) / 2.0})
         elif shape in {"circle", "oval"}:
@@ -1421,11 +1517,13 @@ class EnvironmentCanvas:
     ) -> None:
         if obj.x is None or obj.y is None:
             return
-        width = max(_safe_float(obj.distribution_scale_x, 0.012) * 2.0, 0.002)
-        height = max(_safe_float(obj.distribution_scale_y, 0.012) * 2.0, 0.002)
+        scale_x, scale_y = _distribution_scale_pair(obj)
+        width = max(scale_x * 2.0, 0.002)
+        height = max(scale_y * 2.0, 0.002)
         shape = _normalize_group_shape(obj.distribution_shape)
-        if shape == "circle" and math.isclose(
-            width, height, rel_tol=1e-6, abs_tol=1e-9
+        if shape == "circle" and (
+            obj.object_type == "source_group"
+            or math.isclose(width, height, rel_tol=1e-6, abs_tol=1e-9)
         ):
             circle_source.data = {
                 "x": [obj.x],
@@ -1465,10 +1563,7 @@ class EnvironmentCanvas:
             shape=_normalize_group_shape(obj.distribution_shape),
             mode=str(obj.distribution_mode or "uniform"),
             loc=(float(obj.x), float(obj.y)),
-            scale=(
-                float(obj.distribution_scale_x or 0.012),
-                float(obj.distribution_scale_y or 0.012),
-            ),
+            scale=_distribution_scale_pair(obj),
         )
         state = np.random.get_state()
         seed = _stable_preview_seed(
@@ -1501,6 +1596,28 @@ class EnvironmentCanvas:
         base_color = str(obj.color or default_color)
         fill_color = _mix_hex_colors(base_color, "#ffffff", 0.18)
         line_color = _mix_hex_colors(base_color, "#111111", 0.04)
+        if obj.object_type == "larva_group":
+            half_len = 0.00045
+            rows: list[dict[str, Any]] = []
+            for idx, (member_x, member_y) in enumerate(positions):
+                angle = _stable_member_angle(obj, idx)
+                dx = half_len * math.cos(angle)
+                dy = half_len * math.sin(angle)
+                rows.append(
+                    {
+                        "x0": member_x - dx,
+                        "y0": member_y - dy,
+                        "x1": member_x + dx,
+                        "y1": member_y + dy,
+                        "fill_color": fill_color,
+                        "line_color": line_color,
+                        "fill_alpha": 0.0,
+                        "line_alpha": 0.95,
+                        "line_width": 1.4,
+                        "parent_id": obj.object_id,
+                    }
+                )
+            return rows
         radius = max(_safe_float(obj.radius, 0.0018), 0.0012)
         return [
             {

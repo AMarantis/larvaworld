@@ -100,6 +100,48 @@ def test_env_params_to_canvas_state_maps_static_environment_layers() -> None:
     assert objects["explorer"].distribution_n == 6
 
 
+def test_env_params_to_canvas_state_can_hide_group_shapes() -> None:
+    env_params = {
+        "arena": {"geometry": "rectangular", "dims": [0.2, 0.1]},
+        "food_params": {
+            "source_units": {},
+            "source_groups": {
+                "cluster": {
+                    "distribution": {
+                        "N": 4,
+                        "loc": [0.0, 0.01],
+                        "mode": "uniform",
+                        "shape": "circle",
+                        "scale": [0.02, 0.01],
+                    }
+                }
+            },
+        },
+    }
+    larva_groups = {
+        "explorer": util.AttrDict(
+            {
+                "distribution": {
+                    "N": 6,
+                    "loc": [0.0, -0.02],
+                    "shape": "circle",
+                    "scale": [0.01, 0.01],
+                },
+            }
+        )
+    }
+
+    state = env_params_to_canvas_state(
+        env_params,
+        larva_groups=larva_groups,
+        show_group_shapes=False,
+    )
+    objects = {obj.object_id: obj for obj in state.objects}
+
+    assert objects["cluster"].distribution_show_shape is False
+    assert objects["explorer"].distribution_show_shape is False
+
+
 def test_env_params_to_canvas_state_skips_malformed_optional_sections() -> None:
     env_params = {
         "arena": {"geometry": "rectangular", "dims": [0.2, 0.1]},

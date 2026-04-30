@@ -127,7 +127,54 @@ def test_environment_canvas_draws_static_environment_sources() -> None:
     assert len(canvas.source_group_member_source.data["x"]) == 5
     assert canvas.border_source.data["id"] == ["wall"]
     assert canvas.larva_group_circle_source.data["id"] == ["larvae"]
-    assert len(canvas.larva_group_member_source.data["x"]) == 8
+    assert len(canvas.larva_group_member_source.data["x0"]) == 8
+
+
+def test_environment_canvas_source_group_circle_matches_builder_semantics() -> None:
+    canvas = EnvironmentCanvas()
+    state = EnvironmentCanvasState(
+        arena=CanvasArena("rectangular", (0.1, 0.06)),
+        objects=(
+            CanvasObject(
+                object_id="source-group",
+                object_type="source_group",
+                x=0.0,
+                y=0.0,
+                color="#4caf50",
+                distribution_mode="uniform",
+                distribution_shape="circle",
+                distribution_n=4,
+                distribution_scale_x=0.005,
+                distribution_scale_y=0.02,
+            ),
+        ),
+    )
+
+    canvas.set_state(state)
+
+    assert canvas.source_group_circle_source.data["id"] == ["source-group"]
+    assert canvas.source_group_circle_source.data["r"] == [0.02]
+    assert canvas.source_group_ellipse_source.data["id"] == []
+
+
+def test_environment_canvas_legend_order_matches_builder_with_larva_extension() -> None:
+    canvas = EnvironmentCanvas()
+    legend_labels = [
+        item.label.value
+        for item in canvas.fig.legend[0].items
+        if isinstance(getattr(item.label, "value", None), str)
+    ]
+
+    assert legend_labels == [
+        "Source units",
+        "Source groups",
+        "Borders",
+        "Larva groups",
+        "Odor aura",
+        "Odorscape",
+        "Windscape",
+        "Thermoscape",
+    ]
 
 
 def test_environment_canvas_source_group_members_are_deterministic() -> None:
@@ -227,7 +274,7 @@ def test_environment_canvas_larva_group_unequal_circle_scale_draws_ellipse() -> 
     assert canvas.larva_group_ellipse_source.data["id"] == ["navigator"]
     assert canvas.larva_group_ellipse_source.data["w"] == [0.01]
     assert canvas.larva_group_ellipse_source.data["h"] == [0.04]
-    assert len(canvas.larva_group_member_source.data["x"]) == 8
+    assert len(canvas.larva_group_member_source.data["x0"]) == 8
 
 
 def test_environment_canvas_named_colors_do_not_fallback_to_green() -> None:
@@ -262,6 +309,23 @@ def test_environment_canvas_named_colors_do_not_fallback_to_green() -> None:
     canvas.set_state(state)
 
     assert canvas.food_source.data["fill_color"] == ["#adadff"]
+    x0 = canvas.larva_group_member_source.data["x0"]
+    x1 = canvas.larva_group_member_source.data["x1"]
+    y0 = canvas.larva_group_member_source.data["y0"]
+    y1 = canvas.larva_group_member_source.data["y1"]
+    assert len(x0) == 5
+    assert len(x1) == 5
+    assert len(y0) == 5
+    assert len(y1) == 5
+    for i in range(5):
+        cx = 0.5 * (x0[i] + x1[i])
+        cy = 0.5 * (y0[i] + y1[i])
+        length = ((x1[i] - x0[i]) ** 2 + (y1[i] - y0[i]) ** 2) ** 0.5
+        assert cx == pytest.approx(-0.04)
+        assert cy == pytest.approx(0.0)
+        assert length == pytest.approx(0.0009)
+    assert "r" not in canvas.larva_group_member_source.data
+    assert "size" not in canvas.larva_group_member_source.data
     assert canvas.larva_group_member_source.data["fill_color"] == [
         "#2e2e2e",
         "#2e2e2e",

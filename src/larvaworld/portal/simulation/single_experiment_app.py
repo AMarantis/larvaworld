@@ -2104,6 +2104,7 @@ class _SingleExperimentController:
             state = env_params_to_canvas_state(
                 parameters.env_params,
                 larva_groups=parameters.get("larva_groups", {}),
+                show_group_shapes=False,
             )
             canvas = EnvironmentCanvas(editable=False)
             canvas.set_state(state)

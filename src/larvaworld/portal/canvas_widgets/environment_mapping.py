@@ -10,6 +10,7 @@ def env_params_to_canvas_state(
     env_params: Any,
     *,
     larva_groups: Mapping[str, Any] | None = None,
+    show_group_shapes: bool = True,
 ) -> EnvironmentCanvasState:
     """Map resolved environment parameters into normalized canvas state."""
 
@@ -34,7 +35,9 @@ def env_params_to_canvas_state(
 
     if _is_mapping(source_groups):
         for group_id, group in source_groups.items():
-            obj = _source_group_to_canvas_object(str(group_id), group)
+            obj = _source_group_to_canvas_object(
+                str(group_id), group, show_shape=show_group_shapes
+            )
             if obj is not None:
                 objects.append(obj)
 
@@ -44,7 +47,9 @@ def env_params_to_canvas_state(
 
     if _is_mapping(larva_groups):
         for group_id, group in larva_groups.items():
-            obj = _larva_group_to_canvas_object(str(group_id), group)
+            obj = _larva_group_to_canvas_object(
+                str(group_id), group, show_shape=show_group_shapes
+            )
             if obj is not None:
                 objects.append(obj)
 
@@ -78,7 +83,9 @@ def _source_unit_to_canvas_object(object_id: str, source: Any) -> CanvasObject |
     )
 
 
-def _source_group_to_canvas_object(object_id: str, group: Any) -> CanvasObject | None:
+def _source_group_to_canvas_object(
+    object_id: str, group: Any, *, show_shape: bool
+) -> CanvasObject | None:
     distribution = _get(group, "distribution", {}) or {}
     pos = _pair(
         _get(distribution, "loc", _get(group, "pos", None)), default=(None, None)
@@ -104,7 +111,9 @@ def _source_group_to_canvas_object(object_id: str, group: Any) -> CanvasObject |
         distribution_n=_int_or_none(_get(distribution, "N", None)),
         distribution_scale_x=scale[0],
         distribution_scale_y=scale[1],
-        distribution_show_shape=bool(_get(group, "distribution_show_shape", True)),
+        distribution_show_shape=(
+            bool(_get(group, "distribution_show_shape", True)) if show_shape else False
+        ),
     )
 
 
@@ -137,7 +146,9 @@ def _border_to_canvas_objects(object_id: str, border: Any) -> list[CanvasObject]
     return objects
 
 
-def _larva_group_to_canvas_object(object_id: str, group: Any) -> CanvasObject | None:
+def _larva_group_to_canvas_object(
+    object_id: str, group: Any, *, show_shape: bool
+) -> CanvasObject | None:
     distribution = _get(group, "distribution", {}) or {}
     pos = _pair(_get(distribution, "loc", None), default=(None, None))
     x, y = pos
@@ -155,7 +166,7 @@ def _larva_group_to_canvas_object(object_id: str, group: Any) -> CanvasObject | 
         distribution_n=_int_or_none(_get(distribution, "N", None)),
         distribution_scale_x=scale[0],
         distribution_scale_y=scale[1],
-        distribution_show_shape=True,
+        distribution_show_shape=show_shape,
     )
 
 

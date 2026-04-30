@@ -194,9 +194,10 @@ def test_single_experiment_configuration_preview_uses_mapped_canvas_state(
         def view(self):
             return canvas_view
 
-    def fake_mapping(env_params, *, larva_groups=None):
+    def fake_mapping(env_params, *, larva_groups=None, show_group_shapes=True):
         captured["env_params"] = env_params
         captured["larva_groups"] = larva_groups
+        captured["show_group_shapes"] = show_group_shapes
         return mapped_state
 
     monkeypatch.setattr(
@@ -214,6 +215,7 @@ def test_single_experiment_configuration_preview_uses_mapped_canvas_state(
     assert captured["state"] is mapped_state
     assert captured["env_params"] is not None
     assert captured["larva_groups"] is not None
+    assert captured["show_group_shapes"] is False
     assert controller.preview[0] is canvas_view
 
 
