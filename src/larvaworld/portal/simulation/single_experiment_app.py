@@ -15,6 +15,10 @@ import param
 
 from larvaworld.lib import reg, screen, sim, util
 from larvaworld.lib.param.custom import ClassAttr, ClassDict
+from larvaworld.portal.canvas_widgets import (
+    EnvironmentCanvas,
+    env_params_to_canvas_state,
+)
 from larvaworld.portal.landing_registry import (
     DOCS_EXPERIMENT_TYPES,
     DOCS_SINGLE_EXPERIMENTS,
@@ -152,6 +156,7 @@ _ENRICHMENT_ANOT_KEY_OPTIONS = [
 ]
 _ODORSCAPE_OPTIONS = ["Analytical", "Gaussian", "Diffusion"]
 _PREVIEW_STEP_CAP = 300
+_REGISTRY_ENV_PRESET_PREFIX = "__registry__:"
 _NONE_OPTION_LABEL = "None"
 
 
@@ -857,8 +862,12 @@ class _SingleExperimentController:
             button_type="default",
         )
         self.prepare_btn = pn.widgets.Button(
-            name="Prepare preview",
+            name="Prepare configuration preview",
             button_type="primary",
+        )
+        self.simulation_preview_btn = pn.widgets.Button(
+            name="Generate simulation preview",
+            button_type="default",
         )
         self.run_btn = pn.widgets.Button(
             name="Run experiment",
@@ -881,6 +890,8 @@ class _SingleExperimentController:
         self.show_display = pn.widgets.Checkbox(name="Show display", value=False)
         self.prepare_btn.width = None
         self.prepare_btn.sizing_mode = "stretch_width"
+        self.simulation_preview_btn.width = None
+        self.simulation_preview_btn.sizing_mode = "stretch_width"
         self.run_btn.width = None
         self.run_btn.sizing_mode = "stretch_width"
         self.summary = pn.pane.HTML(
@@ -938,7 +949,7 @@ class _SingleExperimentController:
                 (
                     '<div class="lw-single-exp-preview-placeholder">'
                     "Choose an experiment template, optionally apply a workspace environment preset, "
-                    "and prepare the simulation preview here."
+                    "and prepare the configuration preview here."
                     "</div>"
                 ),
                 margin=0,
@@ -953,6 +964,7 @@ class _SingleExperimentController:
         self.save_video.param.watch(self._on_save_video_change, "value")
         self.refresh_environments_btn.on_click(self._on_refresh_environments)
         self.prepare_btn.on_click(self._on_prepare_preview)
+        self.simulation_preview_btn.on_click(self._on_generate_simulation_preview)
         self.run_btn.on_click(self._on_run_experiment)
 
         self._refresh_environment_options()
@@ -970,17 +982,39 @@ class _SingleExperimentController:
         options = {"Template default environment": "__template__"}
         preset_dir = self._environment_dir()
         preset_dir.mkdir(parents=True, exist_ok=True)
+        workspace_labels: set[str] = set()
         for path in sorted(preset_dir.glob("*.json")):
+            workspace_labels.add(path.stem)
             options[path.stem] = path.name
+        registry_options = {
+            f"Registry / {name}": f"{_REGISTRY_ENV_PRESET_PREFIX}{name}"
+            for name in sorted(str(key) for key in reg.conf.Env.dict.keys())
+            if name not in workspace_labels
+        }
+        options.update(registry_options)
         return options
 
     def _load_selected_environment(self) -> util.AttrDict | None:
         selected = self.environment_select.value
         if selected in {None, "", "__template__"}:
             return None
+        if str(selected).startswith(_REGISTRY_ENV_PRESET_PREFIX):
+            registry_id = str(selected)[len(_REGISTRY_ENV_PRESET_PREFIX) :]
+            return util.AttrDict(reg.conf.Env.getID(registry_id)).get_copy()
         preset_path = self._environment_dir() / str(selected)
         payload = json.loads(preset_path.read_text(encoding="utf-8"))
         return util.AttrDict(payload)
+
+    def _selected_environment_label(self) -> str:
+        selected = self.environment_select.value
+        if selected == "__template__":
+            return "template default"
+        if selected is not None and str(selected).startswith(
+            _REGISTRY_ENV_PRESET_PREFIX
+        ):
+            registry_id = str(selected)[len(_REGISTRY_ENV_PRESET_PREFIX) :]
+            return f"registry / {registry_id}"
+        return str(selected)
 
     @staticmethod
     def _apply_environment_payload(
@@ -1931,6 +1965,7 @@ class _SingleExperimentController:
 
     def _set_run_controls_disabled(self, disabled: bool) -> None:
         self.prepare_btn.disabled = disabled
+        self.simulation_preview_btn.disabled = disabled
         self.run_btn.disabled = disabled
         self.refresh_environments_btn.disabled = disabled
 
@@ -2060,30 +2095,65 @@ class _SingleExperimentController:
             parameters = self._build_parameters()
             run_dir = self._build_run_directory()
         except (WorkspaceError, OSError, json.JSONDecodeError) as exc:
-            self.status.object = f"Cannot prepare the single experiment preview: {exc}"
+            self.status.object = f"Cannot prepare the configuration preview: {exc}"
             return
 
-        selected_env = (
-            "template default"
-            if self.environment_select.value == "__template__"
-            else str(self.environment_select.value)
+        selected_env = self._selected_environment_label()
+        self._set_run_controls_disabled(True)
+        try:
+            state = env_params_to_canvas_state(
+                parameters.env_params,
+                larva_groups=parameters.get("larva_groups", {}),
+            )
+            canvas = EnvironmentCanvas(editable=False)
+            canvas.set_state(state)
+        except Exception as exc:
+            self.preview_meta.object = ""
+            self.preview[:] = [
+                pn.pane.HTML(
+                    (
+                        '<div class="lw-single-exp-preview-placeholder">'
+                        f"Configuration preview failed: {exc}"
+                        "</div>"
+                    ),
+                    margin=0,
+                )
+            ]
+            self.status.object = f"Cannot prepare the configuration preview: {exc}"
+            self._set_run_controls_disabled(False)
+            return
+
+        self.preview_meta.object = self._preview_metadata_html(parameters, selected_env)
+        self.preview[:] = [canvas.view()]
+        self.status.object = (
+            f'Prepared configuration preview for "{self.experiment.value}" using '
+            f"{selected_env}. Reserved output directory for a future run: "
+            f"<code>{run_dir}</code>. No simulation has been run."
         )
+        self._set_run_controls_disabled(False)
+
+    def _on_generate_simulation_preview(self, *_: object) -> None:
+        try:
+            parameters = self._build_parameters()
+            run_dir = self._build_run_directory()
+        except (WorkspaceError, OSError, json.JSONDecodeError) as exc:
+            self.status.object = f"Cannot generate the simulation preview: {exc}"
+            return
+
+        selected_env = self._selected_environment_label()
         self.preview_meta.object = self._preview_metadata_html(parameters, selected_env)
         self.preview[:] = [
             pn.pane.HTML(
                 (
                     '<div class="lw-single-exp-preview-placeholder">'
-                    "Preparing preview. The simulation environment and agents are being initialized."
+                    "Generating simulation preview. The environment and agents are being initialized."
                     "</div>"
                 ),
                 margin=0,
             )
         ]
-        self.status.object = (
-            f'Preparing preview for "{self.experiment.value}" using {selected_env}.'
-        )
-        self.prepare_btn.disabled = True
-        self.run_btn.disabled = True
+        self.status.object = f'Generating simulation preview for "{self.experiment.value}" using {selected_env}.'
+        self._set_run_controls_disabled(True)
         try:
             launcher, fallback_note = self._prepare_preview_launcher(
                 self.experiment.value,
@@ -2103,23 +2173,21 @@ class _SingleExperimentController:
                     margin=0,
                 )
             ]
-            self.status.object = f"Cannot prepare the single experiment preview: {exc}"
-            self.prepare_btn.disabled = False
-            self.run_btn.disabled = False
+            self.status.object = f"Cannot generate the simulation preview: {exc}"
+            self._set_run_controls_disabled(False)
             return
 
         self.preview_meta.object = self._preview_metadata_html(parameters, selected_env)
         self.preview[:] = [preview]
         status = (
-            f'Prepared preview for "{self.experiment.value}" using {selected_env}. '
+            f'Generated simulation preview for "{self.experiment.value}" using {selected_env}. '
             f"Reserved output directory for a future run: <code>{run_dir}</code>. "
             "The interactive preview is capped to the first 300 steps for responsiveness."
         )
         if fallback_note:
             status = f"{status} {fallback_note}"
         self.status.object = status
-        self.prepare_btn.disabled = False
-        self.run_btn.disabled = False
+        self._set_run_controls_disabled(False)
 
     def _on_run_experiment(self, *_: object) -> None:
         try:
@@ -2129,11 +2197,7 @@ class _SingleExperimentController:
             self.status.object = f"Cannot start the single experiment run: {exc}"
             return
 
-        selected_env = (
-            "template default"
-            if self.environment_select.value == "__template__"
-            else str(self.environment_select.value)
-        )
+        selected_env = self._selected_environment_label()
         self.status.object = (
             f'Running "{self.experiment.value}" using {selected_env}. '
             f"Outputs will be stored under <code>{run_dir}</code>. "
@@ -2201,6 +2265,7 @@ class _SingleExperimentController:
                 self.summary,
                 pn.Row(
                     self.prepare_btn,
+                    self.simulation_preview_btn,
                     self.run_btn,
                     sizing_mode="stretch_width",
                     margin=0,

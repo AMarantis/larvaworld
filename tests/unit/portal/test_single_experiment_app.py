@@ -5,10 +5,15 @@ from pathlib import Path
 
 import holoviews as hv
 import numpy as np
+import panel as pn
 import pytest
 
 from larvaworld.lib import util
 from larvaworld.lib.reg.larvagroup import LarvaGroup
+from larvaworld.portal.canvas_widgets.environment_models import (
+    CanvasArena,
+    EnvironmentCanvasState,
+)
 from larvaworld.portal.landing_registry import ITEMS
 from larvaworld.portal.simulation.single_experiment_app import (
     _ExperimentPreview,
@@ -56,6 +61,28 @@ def test_single_experiment_lists_workspace_environment_presets(tmp_path: Path) -
     assert controller.environment_select.options["dish_custom"] == "dish_custom.json"
 
 
+def test_single_experiment_lists_and_loads_registry_environment_presets(
+    tmp_path: Path,
+) -> None:
+    workspace_root = tmp_path / "workspace"
+    initialize_workspace(workspace_root)
+    set_active_workspace_path(workspace_root)
+
+    controller = _SingleExperimentController()
+
+    assert "Registry / maze" in controller.environment_select.options
+    controller.experiment.value = "dish"
+    controller.environment_select.value = controller.environment_select.options[
+        "Registry / maze"
+    ]
+
+    parameters = controller._build_parameters()
+
+    assert parameters.env_params.arena.geometry == "rectangular"
+    assert "Maze" in parameters.env_params.border_list
+    assert controller._selected_environment_label() == "registry / maze"
+
+
 def test_single_experiment_build_parameters_applies_environment_override(
     tmp_path: Path,
 ) -> None:
@@ -100,6 +127,132 @@ def test_single_experiment_build_parameters_applies_environment_override(
     assert "patch" in parameters.env_params.food_params.source_units
     assert parameters.env_params.food_params.source_units["patch"]["pos"] == (0.02, 0.0)
     assert isinstance(parameters, util.AttrDict)
+
+
+def test_single_experiment_configuration_preview_does_not_call_exp_run(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace_root = tmp_path / "workspace"
+    initialize_workspace(workspace_root)
+    set_active_workspace_path(workspace_root)
+
+    captured: dict[str, object] = {}
+    canvas_view = pn.pane.HTML("canvas-view")
+
+    class DummyCanvas:
+        def __init__(self, *, editable=False):
+            captured["editable"] = editable
+
+        def set_state(self, state):
+            captured["state"] = state
+
+        def view(self):
+            return canvas_view
+
+    def fail_exp_run(**kwargs):
+        raise AssertionError("configuration preview should not instantiate ExpRun")
+
+    monkeypatch.setattr(
+        "larvaworld.portal.simulation.single_experiment_app.EnvironmentCanvas",
+        DummyCanvas,
+    )
+    monkeypatch.setattr(
+        "larvaworld.portal.simulation.single_experiment_app.sim.ExpRun",
+        fail_exp_run,
+    )
+
+    controller = _SingleExperimentController()
+    controller.run_name.value = "dish_config_preview"
+    controller._on_prepare_preview()
+
+    assert captured["editable"] is False
+    assert "state" in captured
+    assert controller.preview[0] is canvas_view
+    assert "No simulation has been run" in controller.status.object
+
+
+def test_single_experiment_configuration_preview_uses_mapped_canvas_state(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace_root = tmp_path / "workspace"
+    initialize_workspace(workspace_root)
+    set_active_workspace_path(workspace_root)
+
+    mapped_state = EnvironmentCanvasState(arena=CanvasArena("rectangular", (0.2, 0.1)))
+    captured: dict[str, object] = {}
+    canvas_view = pn.pane.HTML("canvas-view")
+
+    class DummyCanvas:
+        def __init__(self, *, editable=False):
+            pass
+
+        def set_state(self, state):
+            captured["state"] = state
+
+        def view(self):
+            return canvas_view
+
+    def fake_mapping(env_params, *, larva_groups=None):
+        captured["env_params"] = env_params
+        captured["larva_groups"] = larva_groups
+        return mapped_state
+
+    monkeypatch.setattr(
+        "larvaworld.portal.simulation.single_experiment_app.EnvironmentCanvas",
+        DummyCanvas,
+    )
+    monkeypatch.setattr(
+        "larvaworld.portal.simulation.single_experiment_app.env_params_to_canvas_state",
+        fake_mapping,
+    )
+
+    controller = _SingleExperimentController()
+    controller._on_prepare_preview()
+
+    assert captured["state"] is mapped_state
+    assert captured["env_params"] is not None
+    assert captured["larva_groups"] is not None
+    assert controller.preview[0] is canvas_view
+
+
+def test_single_experiment_configuration_preview_uses_environment_preset_override(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace_root = tmp_path / "workspace"
+    initialize_workspace(workspace_root)
+    set_active_workspace_path(workspace_root)
+    (workspace_root / "environments" / "rect_env.json").write_text(
+        json.dumps({"arena": {"geometry": "rectangular", "dims": [0.2, 0.1]}}) + "\n",
+        encoding="utf-8",
+    )
+
+    captured: dict[str, object] = {}
+
+    class DummyCanvas:
+        def __init__(self, *, editable=False):
+            pass
+
+        def set_state(self, state):
+            captured["state"] = state
+
+        def view(self):
+            return "canvas-view"
+
+    monkeypatch.setattr(
+        "larvaworld.portal.simulation.single_experiment_app.EnvironmentCanvas",
+        DummyCanvas,
+    )
+
+    controller = _SingleExperimentController()
+    controller.environment_select.value = "rect_env.json"
+    controller._on_prepare_preview()
+
+    state = captured["state"]
+    assert state.arena.geometry == "rectangular"
+    assert state.arena.dims == (0.2, 0.1)
 
 
 def test_single_experiment_builder_obstacles_are_translated_into_border_entries(
@@ -630,7 +783,7 @@ def test_single_experiment_preview_status_uses_reserved_run_directory_wording(
 
     controller = _SingleExperimentController()
     controller.run_name.value = "dish_preview"
-    controller._on_prepare_preview()
+    controller._on_generate_simulation_preview()
 
     assert "Reserved output directory for a future run" in controller.status.object
 
