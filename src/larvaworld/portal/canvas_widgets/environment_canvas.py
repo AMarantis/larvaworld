@@ -11,7 +11,12 @@ from bokeh.plotting import figure
 
 from larvaworld.lib.param.xy_distro import Spatial_Distro
 
-from .environment_models import CanvasArena, CanvasObject, EnvironmentCanvasState
+from .environment_models import (
+    CanvasArena,
+    CanvasObject,
+    EnvironmentCanvasState,
+    LarvaPreviewFrame,
+)
 
 
 LANE_MODELS_COLOR_DARK = "#5a4760"
@@ -56,6 +61,28 @@ def _safe_int(value: Any, default: int = 0) -> int:
         return int(value)
     except (TypeError, ValueError):
         return default
+
+
+def _valid_xy(value: Any) -> tuple[float, float] | None:
+    if not isinstance(value, (list, tuple)) or len(value) < 2:
+        return None
+    try:
+        x = float(value[0])
+        y = float(value[1])
+    except (TypeError, ValueError):
+        return None
+    if not (math.isfinite(x) and math.isfinite(y)):
+        return None
+    return (x, y)
+
+
+def _valid_path(value: Any) -> tuple[tuple[float, float], ...]:
+    if not isinstance(value, (list, tuple)):
+        return ()
+    points = tuple(
+        xy for xy in (_valid_xy(candidate) for candidate in value) if xy is not None
+    )
+    return points if len(points) >= 2 else ()
 
 
 def _optional_float(value: Any, default: float) -> float:
@@ -396,6 +423,16 @@ class EnvironmentCanvas:
         self.larva_group_rect_highlight_source = ColumnDataSource(
             {"x": [], "y": [], "w": [], "h": [], "color": []}
         )
+        self.sim_larva_centroid_source = ColumnDataSource(
+            _empty(["x", "y", "color", "id"])
+        )
+        self.sim_larva_head_source = ColumnDataSource(_empty(["x", "y", "color", "id"]))
+        self.sim_larva_midline_source = ColumnDataSource(
+            _empty(["xs", "ys", "color", "id"])
+        )
+        self.sim_larva_trail_source = ColumnDataSource(
+            _empty(["xs", "ys", "color", "id"])
+        )
 
         self.fig = figure(
             title="Environment canvas",
@@ -561,15 +598,6 @@ class EnvironmentCanvas:
             fill_color="color",
             fill_alpha="fill_alpha",
         )
-        self._food_highlight_renderer = self.fig.circle(
-            x="x",
-            y="y",
-            radius="r",
-            source=self.food_highlight_source,
-            line_color=HIGHLIGHT_COLOR,
-            fill_color=None,
-            line_width=4,
-        )
         self._source_group_circle_renderer = self.fig.circle(
             x="x",
             y="y",
@@ -617,35 +645,6 @@ class EnvironmentCanvas:
             line_alpha="line_alpha",
             line_width="line_width",
         )
-        self.fig.circle(
-            x="x",
-            y="y",
-            radius="r",
-            source=self.source_group_circle_highlight_source,
-            line_color=HIGHLIGHT_COLOR,
-            fill_color=None,
-            line_width=4,
-        )
-        self.fig.ellipse(
-            x="x",
-            y="y",
-            width="w",
-            height="h",
-            source=self.source_group_ellipse_highlight_source,
-            line_color=HIGHLIGHT_COLOR,
-            fill_color=None,
-            line_width=4,
-        )
-        self.fig.rect(
-            x="x",
-            y="y",
-            width="w",
-            height="h",
-            source=self.source_group_rect_highlight_source,
-            line_color=HIGHLIGHT_COLOR,
-            fill_color=None,
-            line_width=4,
-        )
         self._border_renderer = self.fig.segment(
             x0="x0",
             y0="y0",
@@ -655,15 +654,6 @@ class EnvironmentCanvas:
             line_color="color",
             line_width="w",
             legend_label="Borders",
-        )
-        self.fig.segment(
-            x0="x0",
-            y0="y0",
-            x1="x1",
-            y1="y1",
-            source=self.border_highlight_source,
-            line_color=HIGHLIGHT_COLOR,
-            line_width="w",
         )
         self._larva_group_circle_renderer = self.fig.circle(
             x="x",
@@ -713,6 +703,89 @@ class EnvironmentCanvas:
             line_color="line_color",
             line_alpha="line_alpha",
             line_width="line_width",
+        )
+        self._sim_larva_trail_renderer = self.fig.multi_line(
+            xs="xs",
+            ys="ys",
+            source=self.sim_larva_trail_source,
+            line_color="color",
+            line_alpha=0.32,
+            line_width=1.5,
+        )
+        self._sim_larva_midline_renderer = self.fig.multi_line(
+            xs="xs",
+            ys="ys",
+            source=self.sim_larva_midline_source,
+            line_color="color",
+            line_alpha=0.85,
+            line_width=2.0,
+        )
+        self._sim_larva_centroid_renderer = self.fig.circle(
+            x="x",
+            y="y",
+            source=self.sim_larva_centroid_source,
+            size=6,
+            fill_color="color",
+            line_color="#111111",
+            fill_alpha=0.90,
+            line_alpha=0.75,
+        )
+        self._sim_larva_head_renderer = self.fig.circle(
+            x="x",
+            y="y",
+            source=self.sim_larva_head_source,
+            size=4,
+            fill_color="color",
+            line_color="#111111",
+            fill_alpha=1.0,
+            line_alpha=0.80,
+        )
+        self._food_highlight_renderer = self.fig.circle(
+            x="x",
+            y="y",
+            radius="r",
+            source=self.food_highlight_source,
+            line_color=HIGHLIGHT_COLOR,
+            fill_color=None,
+            line_width=4,
+        )
+        self.fig.circle(
+            x="x",
+            y="y",
+            radius="r",
+            source=self.source_group_circle_highlight_source,
+            line_color=HIGHLIGHT_COLOR,
+            fill_color=None,
+            line_width=4,
+        )
+        self.fig.ellipse(
+            x="x",
+            y="y",
+            width="w",
+            height="h",
+            source=self.source_group_ellipse_highlight_source,
+            line_color=HIGHLIGHT_COLOR,
+            fill_color=None,
+            line_width=4,
+        )
+        self.fig.rect(
+            x="x",
+            y="y",
+            width="w",
+            height="h",
+            source=self.source_group_rect_highlight_source,
+            line_color=HIGHLIGHT_COLOR,
+            fill_color=None,
+            line_width=4,
+        )
+        self.fig.segment(
+            x0="x0",
+            y0="y0",
+            x1="x1",
+            y1="y1",
+            source=self.border_highlight_source,
+            line_color=HIGHLIGHT_COLOR,
+            line_width="w",
         )
         self.fig.circle(
             x="x",
@@ -782,6 +855,18 @@ class EnvironmentCanvas:
                 ],
             ),
             LegendItem(
+                label="Simulated larvae",
+                renderers=[
+                    self._sim_larva_centroid_renderer,
+                    self._sim_larva_head_renderer,
+                    self._sim_larva_midline_renderer,
+                ],
+            ),
+            LegendItem(
+                label="Larva trails",
+                renderers=[self._sim_larva_trail_renderer],
+            ),
+            LegendItem(
                 label="Odor aura",
                 renderers=[self._odor_aura_renderer, self._odor_peak_renderer],
             ),
@@ -807,6 +892,80 @@ class EnvironmentCanvas:
 
     def view(self) -> pn.viewable.Viewable:
         return self._pane
+
+    def set_larva_frame(self, frame: LarvaPreviewFrame) -> None:
+        centroid_rows: list[dict[str, Any]] = []
+        head_rows: list[dict[str, Any]] = []
+        midline_rows: list[dict[str, Any]] = []
+        trail_rows: list[dict[str, Any]] = []
+
+        for index, centroid in enumerate(frame.centroids):
+            centroid_xy = _valid_xy(centroid)
+            if centroid_xy is None:
+                continue
+            raw_color = frame.colors[index] if index < len(frame.colors) else None
+            color = str(raw_color) if raw_color else DEFAULT_LARVA_COLOR
+            larva_id = f"larva_{index}"
+            centroid_rows.append(
+                {
+                    "x": centroid_xy[0],
+                    "y": centroid_xy[1],
+                    "color": color,
+                    "id": larva_id,
+                }
+            )
+            if index < len(frame.heads):
+                head_xy = _valid_xy(frame.heads[index])
+                if head_xy is not None:
+                    head_rows.append(
+                        {
+                            "x": head_xy[0],
+                            "y": head_xy[1],
+                            "color": color,
+                            "id": larva_id,
+                        }
+                    )
+            if index < len(frame.midlines):
+                midline_points = _valid_path(frame.midlines[index])
+                if midline_points:
+                    midline_rows.append(
+                        {
+                            "xs": [point[0] for point in midline_points],
+                            "ys": [point[1] for point in midline_points],
+                            "color": color,
+                            "id": larva_id,
+                        }
+                    )
+            if index < len(frame.trails):
+                trail_points = _valid_path(frame.trails[index])
+                if trail_points:
+                    trail_rows.append(
+                        {
+                            "xs": [point[0] for point in trail_points],
+                            "ys": [point[1] for point in trail_points],
+                            "color": color,
+                            "id": larva_id,
+                        }
+                    )
+
+        self.sim_larva_centroid_source.data = _rows_to_data(
+            centroid_rows, ["x", "y", "color", "id"]
+        )
+        self.sim_larva_head_source.data = _rows_to_data(
+            head_rows, ["x", "y", "color", "id"]
+        )
+        self.sim_larva_midline_source.data = _rows_to_data(
+            midline_rows, ["xs", "ys", "color", "id"]
+        )
+        self.sim_larva_trail_source.data = _rows_to_data(
+            trail_rows, ["xs", "ys", "color", "id"]
+        )
+
+    def clear_larva_frame(self) -> None:
+        self.sim_larva_centroid_source.data = _empty(["x", "y", "color", "id"])
+        self.sim_larva_head_source.data = _empty(["x", "y", "color", "id"])
+        self.sim_larva_midline_source.data = _empty(["xs", "ys", "color", "id"])
+        self.sim_larva_trail_source.data = _empty(["xs", "ys", "color", "id"])
 
     def clear(self) -> None:
         self.arena_source.data = {"x": [], "y": [], "w": [], "h": []}
@@ -907,6 +1066,7 @@ class EnvironmentCanvas:
                 "parent_id",
             ]
         )
+        self.clear_larva_frame()
         self.set_selected_object(None)
         self._state = None
 

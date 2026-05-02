@@ -7,6 +7,7 @@ from .environment_models import (
     CanvasObject,
     CanvasObjectType,
     EnvironmentCanvasState,
+    LarvaPreviewFrame,
 )
 
 __all__ = [
@@ -15,5 +16,6 @@ __all__ = [
     "CanvasObjectType",
     "EnvironmentCanvas",
     "EnvironmentCanvasState",
+    "LarvaPreviewFrame",
     "env_params_to_canvas_state",
 ]

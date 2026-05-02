@@ -49,3 +49,13 @@ class EnvironmentCanvasState:
     odorscape: dict[str, Any] | None = None
     windscape: dict[str, Any] | None = None
     thermoscape: dict[str, Any] | None = None
+
+
+@dataclass(frozen=True)
+class LarvaPreviewFrame:
+    tick: int
+    centroids: tuple[tuple[float, float], ...] = ()
+    heads: tuple[tuple[float, float], ...] = ()
+    midlines: tuple[tuple[tuple[float, float], ...], ...] = ()
+    trails: tuple[tuple[tuple[float, float], ...], ...] = ()
+    colors: tuple[str, ...] = ()
