@@ -17,6 +17,7 @@ from larvaworld.lib import reg, screen, sim, util
 from larvaworld.lib.param.custom import ClassAttr, ClassDict
 from larvaworld.portal.canvas_widgets import (
     EnvironmentCanvas,
+    LarvaPreviewFrame,
     env_params_to_canvas_state,
 )
 from larvaworld.portal.landing_registry import (
@@ -24,6 +25,7 @@ from larvaworld.portal.landing_registry import (
     DOCS_SINGLE_EXPERIMENTS,
 )
 from larvaworld.portal.panel_components import PORTAL_RAW_CSS, build_app_header
+from larvaworld.portal.simulation.preview_frames import generate_preview_frames
 from larvaworld.portal.workspace import WorkspaceError, get_workspace_dir
 
 
@@ -839,6 +841,62 @@ class _ExperimentPreview:
         )
 
 
+class _FrameSimulationPreview:
+    def __init__(
+        self,
+        *,
+        canvas: EnvironmentCanvas,
+        frames: list[LarvaPreviewFrame],
+        dt: float,
+    ) -> None:
+        if not frames:
+            raise ValueError("frames must not be empty")
+        self.canvas = canvas
+        self.frames = list(frames)
+        self.dt = max(0.0, float(dt))
+        self.frame_slider = pn.widgets.IntSlider(
+            name="Frame",
+            start=0,
+            end=len(self.frames) - 1,
+            value=0,
+            step=1,
+            width=320,
+        )
+        self.metadata = pn.pane.HTML("", sizing_mode="stretch_width")
+        self.frame_slider.param.watch(self._on_frame_change, "value")
+        self._apply_frame(0)
+
+    def _set_metadata(self, index: int) -> None:
+        frame = self.frames[index]
+        end_index = len(self.frames) - 1
+        timestamp = frame.tick * self.dt
+        end_time = self.frames[-1].tick * self.dt
+        self.metadata.object = (
+            '<div class="lw-single-exp-preview-meta">'
+            f"<strong>Frame:</strong> {index}/{end_index}; "
+            f"<strong>Tick:</strong> {frame.tick}; "
+            f"<strong>Time:</strong> {timestamp:.1f} s; "
+            f"<strong>Displayed range:</strong> 0.0-{end_time:.1f} s."
+            "</div>"
+        )
+
+    def _apply_frame(self, index: int) -> None:
+        clamped = max(0, min(index, len(self.frames) - 1))
+        self.canvas.set_larva_frame(self.frames[clamped])
+        self._set_metadata(clamped)
+
+    def _on_frame_change(self, event: Any) -> None:
+        self._apply_frame(int(event.new))
+
+    def view(self) -> pn.viewable.Viewable:
+        return pn.Column(
+            self.canvas.view(),
+            pn.Row(pn.Column("Frame", self.frame_slider), sizing_mode="stretch_width"),
+            self.metadata,
+            sizing_mode="stretch_width",
+        )
+
+
 class _SingleExperimentController:
     def __init__(self) -> None:
         experiment_ids = list(reg.conf.Exp.confIDs)
@@ -1091,6 +1149,9 @@ class _SingleExperimentController:
             flat[path] = self._parse_widget_value(kind, widget)
         flat = self._apply_optional_family_states(flat)
         return util.AttrDict(_coerce_xy_sequences(util.AttrDict(flat.unflatten())))
+
+    def _resolve_experiment_parameters(self) -> util.AttrDict:
+        return self._build_parameters()
 
     def _refresh_environment_options(self) -> None:
         try:
@@ -2092,7 +2153,7 @@ class _SingleExperimentController:
 
     def _on_prepare_preview(self, *_: object) -> None:
         try:
-            parameters = self._build_parameters()
+            parameters = self._resolve_experiment_parameters()
             run_dir = self._build_run_directory()
         except (WorkspaceError, OSError, json.JSONDecodeError) as exc:
             self.status.object = f"Cannot prepare the configuration preview: {exc}"
@@ -2135,7 +2196,7 @@ class _SingleExperimentController:
 
     def _on_generate_simulation_preview(self, *_: object) -> None:
         try:
-            parameters = self._build_parameters()
+            parameters = self._resolve_experiment_parameters()
             run_dir = self._build_run_directory()
         except (WorkspaceError, OSError, json.JSONDecodeError) as exc:
             self.status.object = f"Cannot generate the simulation preview: {exc}"
@@ -2155,13 +2216,32 @@ class _SingleExperimentController:
         ]
         self.status.object = f'Generating simulation preview for "{self.experiment.value}" using {selected_env}.'
         self._set_run_controls_disabled(True)
+        launcher = None
         try:
             launcher, fallback_note = self._prepare_preview_launcher(
                 self.experiment.value,
                 parameters,
                 run_dir,
             )
-            preview = _ExperimentPreview(launcher, launcher_ready=True).view()
+            preview_steps = max(1, min(int(launcher.p.steps), _PREVIEW_STEP_CAP))
+            frames = generate_preview_frames(
+                launcher,
+                preview_steps=preview_steps,
+            )
+            if not frames:
+                raise ValueError("No preview frames were generated.")
+            state = env_params_to_canvas_state(
+                parameters.env_params,
+                larva_groups=parameters.get("larva_groups", {}),
+                show_group_shapes=False,
+            )
+            canvas = EnvironmentCanvas(editable=False)
+            canvas.set_state(state)
+            preview = _FrameSimulationPreview(
+                canvas=canvas,
+                frames=frames,
+                dt=float(launcher.dt),
+            ).view()
         except Exception as exc:
             self.preview_meta.object = ""
             self.preview[:] = [
@@ -2177,13 +2257,22 @@ class _SingleExperimentController:
             self.status.object = f"Cannot generate the simulation preview: {exc}"
             self._set_run_controls_disabled(False)
             return
+        finally:
+            try:
+                if launcher is not None and getattr(launcher, "screen_manager", None):
+                    launcher.screen_manager.close()
+            except Exception:
+                pass
 
         self.preview_meta.object = self._preview_metadata_html(parameters, selected_env)
         self.preview[:] = [preview]
+        displayed_end = frames[-1].tick * float(launcher.dt)
         status = (
             f'Generated simulation preview for "{self.experiment.value}" using {selected_env}. '
             f"Reserved output directory for a future run: <code>{run_dir}</code>. "
-            "The interactive preview is capped to the first 300 steps for responsiveness."
+            f"Simulation preview ready: {len(frames)} frames generated. "
+            f"Displayed range: 0.0-{displayed_end:.1f} s simulated time. "
+            "Generated from the actual simulation engine. Outputs are not stored; use Run experiment for the full run."
         )
         if fallback_note:
             status = f"{status} {fallback_note}"
@@ -2192,7 +2281,7 @@ class _SingleExperimentController:
 
     def _on_run_experiment(self, *_: object) -> None:
         try:
-            parameters = self._build_parameters()
+            parameters = self._resolve_experiment_parameters()
             run_dir = self._build_run_directory()
         except (WorkspaceError, OSError, json.JSONDecodeError) as exc:
             self.status.object = f"Cannot start the single experiment run: {exc}"

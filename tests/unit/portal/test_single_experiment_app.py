@@ -13,10 +13,12 @@ from larvaworld.lib.reg.larvagroup import LarvaGroup
 from larvaworld.portal.canvas_widgets.environment_models import (
     CanvasArena,
     EnvironmentCanvasState,
+    LarvaPreviewFrame,
 )
 from larvaworld.portal.landing_registry import ITEMS
 from larvaworld.portal.simulation.single_experiment_app import (
     _ExperimentPreview,
+    _FrameSimulationPreview,
     _SingleExperimentController,
     _builder_obstacle_border_vertices,
     _default_run_name,
@@ -217,6 +219,41 @@ def test_single_experiment_configuration_preview_uses_mapped_canvas_state(
     assert captured["larva_groups"] is not None
     assert captured["show_group_shapes"] is False
     assert controller.preview[0] is canvas_view
+
+
+def test_single_experiment_prepare_preview_uses_resolved_parameters_boundary(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace_root = tmp_path / "workspace"
+    initialize_workspace(workspace_root)
+    set_active_workspace_path(workspace_root)
+
+    controller = _SingleExperimentController()
+    resolved = controller._build_parameters()
+
+    def fail_build_parameters():
+        raise AssertionError("_build_parameters should not be called directly")
+
+    class DummyCanvas:
+        def __init__(self, *, editable=False):
+            pass
+
+        def set_state(self, state):
+            self.state = state
+
+        def view(self):
+            return pn.pane.HTML("canvas-view")
+
+    monkeypatch.setattr(controller, "_build_parameters", fail_build_parameters)
+    monkeypatch.setattr(controller, "_resolve_experiment_parameters", lambda: resolved)
+    monkeypatch.setattr(
+        "larvaworld.portal.simulation.single_experiment_app.EnvironmentCanvas",
+        DummyCanvas,
+    )
+
+    controller._on_prepare_preview()
+    assert isinstance(controller.preview[0], pn.pane.HTML)
 
 
 def test_single_experiment_configuration_preview_uses_environment_preset_override(
@@ -755,6 +792,41 @@ def test_single_experiment_run_experiment_explicitly_closes_screen_manager(
     assert "Completed run" in controller.status.object
 
 
+def test_single_experiment_run_experiment_uses_resolved_parameters_boundary(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace_root = tmp_path / "workspace"
+    initialize_workspace(workspace_root)
+    set_active_workspace_path(workspace_root)
+
+    controller = _SingleExperimentController()
+    resolved = controller._build_parameters()
+    captured: dict[str, object] = {}
+
+    def fail_build_parameters():
+        raise AssertionError("_build_parameters should not be called directly")
+
+    def fake_execute(self, *, parameters, run_dir, selected_env):
+        captured["parameters"] = parameters
+        captured["run_dir"] = run_dir
+        captured["selected_env"] = selected_env
+
+    monkeypatch.setattr(controller, "_build_parameters", fail_build_parameters)
+    monkeypatch.setattr(controller, "_resolve_experiment_parameters", lambda: resolved)
+    monkeypatch.setattr(
+        _SingleExperimentController,
+        "_execute_run_experiment",
+        fake_execute,
+    )
+
+    controller.run_name.value = "dish_boundary"
+    controller._on_run_experiment()
+
+    assert captured["parameters"] is resolved
+    assert str(captured["run_dir"]).endswith("dish_boundary")
+
+
 def test_single_experiment_preview_status_uses_reserved_run_directory_wording(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -764,23 +836,47 @@ def test_single_experiment_preview_status_uses_reserved_run_directory_wording(
     set_active_workspace_path(workspace_root)
 
     class DummyPreviewLauncher:
-        def sim_setup(self, steps):
-            return None
+        def __init__(self):
+            self.p = util.AttrDict({"steps": 9})
+            self.dt = 0.1
 
-    class DummyPreview:
-        def __init__(self, launcher, launcher_ready=False):
-            self.launcher = launcher
+    class DummyCanvas:
+        def __init__(self, *, editable=False):
+            self.editable = editable
+            self.state = None
+            self.frames: list[LarvaPreviewFrame] = []
+
+        def set_state(self, state):
+            self.state = state
+
+        def set_larva_frame(self, frame):
+            self.frames.append(frame)
 
         def view(self):
-            return "preview"
+            return pn.pane.HTML("canvas")
+
+    frame0 = LarvaPreviewFrame(tick=0, centroids=((0.0, 0.0),))
+    frame1 = LarvaPreviewFrame(tick=1, centroids=((0.01, 0.01),))
 
     monkeypatch.setattr(
         "larvaworld.portal.simulation.single_experiment_app._SingleExperimentController._prepare_preview_launcher",
         lambda self, experiment, parameters, run_dir: (DummyPreviewLauncher(), None),
     )
     monkeypatch.setattr(
+        "larvaworld.portal.simulation.single_experiment_app.generate_preview_frames",
+        lambda launcher, preview_steps, **kwargs: [frame0, frame1],
+    )
+    monkeypatch.setattr(
+        "larvaworld.portal.simulation.single_experiment_app.EnvironmentCanvas",
+        DummyCanvas,
+    )
+    monkeypatch.setattr(
         "larvaworld.portal.simulation.single_experiment_app._ExperimentPreview",
-        DummyPreview,
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError(
+                "_ExperimentPreview should not be used in default preview path"
+            )
+        ),
     )
 
     controller = _SingleExperimentController()
@@ -788,6 +884,149 @@ def test_single_experiment_preview_status_uses_reserved_run_directory_wording(
     controller._on_generate_simulation_preview()
 
     assert "Reserved output directory for a future run" in controller.status.object
+    assert "Simulation preview ready: 2 frames generated." in controller.status.object
+    assert "Displayed range: 0.0-0.1 s simulated time." in controller.status.object
+    assert "Outputs are not stored" in controller.status.object
+
+
+def test_single_experiment_generate_preview_uses_resolved_parameters_boundary(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace_root = tmp_path / "workspace"
+    initialize_workspace(workspace_root)
+    set_active_workspace_path(workspace_root)
+
+    controller = _SingleExperimentController()
+    resolved = controller._build_parameters()
+
+    def fail_build_parameters():
+        raise AssertionError("_build_parameters should not be called directly")
+
+    class DummyPreviewLauncher:
+        def __init__(self):
+            self.p = util.AttrDict({"steps": 3})
+            self.dt = 0.1
+
+    class DummyCanvas:
+        def __init__(self, *, editable=False):
+            pass
+
+        def set_state(self, state):
+            self.state = state
+
+        def set_larva_frame(self, frame):
+            self.frame = frame
+
+        def view(self):
+            return pn.pane.HTML("canvas")
+
+    monkeypatch.setattr(controller, "_build_parameters", fail_build_parameters)
+    monkeypatch.setattr(controller, "_resolve_experiment_parameters", lambda: resolved)
+    monkeypatch.setattr(
+        "larvaworld.portal.simulation.single_experiment_app._SingleExperimentController._prepare_preview_launcher",
+        lambda self, experiment, parameters, run_dir: (DummyPreviewLauncher(), None),
+    )
+    monkeypatch.setattr(
+        "larvaworld.portal.simulation.single_experiment_app.generate_preview_frames",
+        lambda launcher, preview_steps, **kwargs: [
+            LarvaPreviewFrame(tick=0, centroids=((0.0, 0.0),))
+        ],
+    )
+    monkeypatch.setattr(
+        "larvaworld.portal.simulation.single_experiment_app.EnvironmentCanvas",
+        DummyCanvas,
+    )
+
+    controller._on_generate_simulation_preview()
+
+
+def test_frame_simulation_preview_slider_is_random_access() -> None:
+    class DummyCanvas:
+        def __init__(self):
+            self.applied_ticks: list[int] = []
+
+        def set_larva_frame(self, frame: LarvaPreviewFrame) -> None:
+            self.applied_ticks.append(frame.tick)
+
+        def view(self):
+            return pn.pane.HTML("canvas")
+
+    canvas = DummyCanvas()
+    preview = _FrameSimulationPreview(
+        canvas=canvas,
+        frames=[
+            LarvaPreviewFrame(tick=0, centroids=((0.0, 0.0),)),
+            LarvaPreviewFrame(tick=1, centroids=((0.01, 0.01),)),
+            LarvaPreviewFrame(tick=2, centroids=((0.02, 0.02),)),
+        ],
+        dt=0.1,
+    )
+
+    assert canvas.applied_ticks == [0]
+    preview.frame_slider.value = 2
+    preview.frame_slider.value = 1
+
+    assert canvas.applied_ticks == [0, 2, 1]
+    assert "Frame:</strong> 1/2" in preview.metadata.object
+    assert "Tick:</strong> 1" in preview.metadata.object
+
+
+def test_generate_preview_uses_show_group_shapes_false(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace_root = tmp_path / "workspace"
+    initialize_workspace(workspace_root)
+    set_active_workspace_path(workspace_root)
+
+    captured: dict[str, object] = {}
+
+    class DummyPreviewLauncher:
+        def __init__(self):
+            self.p = util.AttrDict({"steps": 1})
+            self.dt = 0.1
+
+    class DummyCanvas:
+        def __init__(self, *, editable=False):
+            pass
+
+        def set_state(self, state):
+            captured["state"] = state
+
+        def set_larva_frame(self, frame):
+            captured["frame"] = frame
+
+        def view(self):
+            return pn.pane.HTML("canvas")
+
+    def fake_mapping(env_params, *, larva_groups=None, show_group_shapes=True):
+        captured["show_group_shapes"] = show_group_shapes
+        return EnvironmentCanvasState(arena=CanvasArena("rectangular", (0.1, 0.1)))
+
+    monkeypatch.setattr(
+        "larvaworld.portal.simulation.single_experiment_app._SingleExperimentController._prepare_preview_launcher",
+        lambda self, experiment, parameters, run_dir: (DummyPreviewLauncher(), None),
+    )
+    monkeypatch.setattr(
+        "larvaworld.portal.simulation.single_experiment_app.generate_preview_frames",
+        lambda launcher, preview_steps, **kwargs: [
+            LarvaPreviewFrame(tick=0, centroids=((0.0, 0.0),))
+        ],
+    )
+    monkeypatch.setattr(
+        "larvaworld.portal.simulation.single_experiment_app.EnvironmentCanvas",
+        DummyCanvas,
+    )
+    monkeypatch.setattr(
+        "larvaworld.portal.simulation.single_experiment_app.env_params_to_canvas_state",
+        fake_mapping,
+    )
+
+    controller = _SingleExperimentController()
+    controller._on_generate_simulation_preview()
+
+    assert captured["show_group_shapes"] is False
 
 
 def test_single_experiment_preview_launcher_falls_back_when_overlap_elimination_breaks(
