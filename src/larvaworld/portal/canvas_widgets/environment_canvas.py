@@ -561,7 +561,7 @@ class EnvironmentCanvas:
             fill_color="color",
             fill_alpha="fill_alpha",
         )
-        self._source_group_circle_renderer = self.fig.circle(
+        self._food_highlight_renderer = self.fig.circle(
             x="x",
             y="y",
             radius="r",
@@ -570,7 +570,7 @@ class EnvironmentCanvas:
             fill_color=None,
             line_width=4,
         )
-        self.fig.circle(
+        self._source_group_circle_renderer = self.fig.circle(
             x="x",
             y="y",
             radius="r",

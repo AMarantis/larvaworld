@@ -177,6 +177,22 @@ def test_environment_canvas_legend_order_matches_builder_with_larva_extension() 
     ]
 
 
+def test_environment_canvas_source_groups_legend_targets_group_renderers() -> None:
+    canvas = EnvironmentCanvas()
+    source_group_item = next(
+        item
+        for item in canvas.fig.legend[0].items
+        if getattr(item.label, "value", None) == "Source groups"
+    )
+    data_sources = {renderer.data_source for renderer in source_group_item.renderers}
+
+    assert canvas.source_group_circle_source in data_sources
+    assert canvas.source_group_ellipse_source in data_sources
+    assert canvas.source_group_rect_source in data_sources
+    assert canvas.source_group_member_source in data_sources
+    assert canvas.food_highlight_source not in data_sources
+
+
 def test_environment_canvas_source_group_members_are_deterministic() -> None:
     canvas = EnvironmentCanvas()
     state = _state()
