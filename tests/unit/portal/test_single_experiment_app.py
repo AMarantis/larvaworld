@@ -941,7 +941,7 @@ def test_single_experiment_generate_preview_uses_resolved_parameters_boundary(
     controller._on_generate_simulation_preview()
 
 
-def test_frame_simulation_preview_slider_is_random_access() -> None:
+def test_frame_simulation_preview_player_is_random_access() -> None:
     class DummyCanvas:
         def __init__(self):
             self.applied_ticks: list[int] = []
@@ -964,12 +964,160 @@ def test_frame_simulation_preview_slider_is_random_access() -> None:
     )
 
     assert canvas.applied_ticks == [0]
-    preview.frame_slider.value = 2
-    preview.frame_slider.value = 1
+    preview.frame_player.value = 2
+    preview.frame_player.value = 1
 
     assert canvas.applied_ticks == [0, 2, 1]
     assert "Frame:</strong> 1/2" in preview.metadata.object
     assert "Tick:</strong> 1" in preview.metadata.object
+
+
+def test_frame_simulation_preview_show_frame_clamps_indices() -> None:
+    class DummyCanvas:
+        def __init__(self):
+            self.applied_ticks: list[int] = []
+
+        def set_larva_frame(self, frame: LarvaPreviewFrame) -> None:
+            self.applied_ticks.append(frame.tick)
+
+        def view(self):
+            return pn.pane.HTML("canvas")
+
+    canvas = DummyCanvas()
+    preview = _FrameSimulationPreview(
+        canvas=canvas,
+        frames=[
+            LarvaPreviewFrame(tick=0, centroids=((0.0, 0.0),)),
+            LarvaPreviewFrame(tick=1, centroids=((0.01, 0.01),)),
+            LarvaPreviewFrame(tick=2, centroids=((0.02, 0.02),)),
+        ],
+        dt=0.1,
+    )
+
+    preview._show_frame(-1)
+    preview._show_frame(999)
+
+    assert canvas.applied_ticks == [0, 0, 2]
+    assert int(preview.frame_player.value) == 2
+    assert "Frame:</strong> 2/2" in preview.metadata.object
+    assert "Tick:</strong> 2" in preview.metadata.object
+
+
+def test_generate_preview_uses_requested_preview_frame_count(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace_root = tmp_path / "workspace"
+    initialize_workspace(workspace_root)
+    set_active_workspace_path(workspace_root)
+
+    captured: dict[str, object] = {}
+
+    class DummyPreviewLauncher:
+        def __init__(self):
+            self.p = util.AttrDict({"steps": 500})
+            self.dt = 0.1
+
+    class DummyCanvas:
+        def __init__(self, *, editable=False):
+            pass
+
+        def set_state(self, state):
+            captured["state"] = state
+
+        def set_larva_frame(self, frame):
+            captured["frame"] = frame
+
+        def view(self):
+            return pn.pane.HTML("canvas")
+
+    def fake_generate_preview_frames(launcher, preview_steps, **kwargs):
+        captured["preview_steps"] = preview_steps
+        return [LarvaPreviewFrame(tick=0, centroids=((0.0, 0.0),))]
+
+    monkeypatch.setattr(
+        "larvaworld.portal.simulation.single_experiment_app._SingleExperimentController._prepare_preview_launcher",
+        lambda self, experiment, parameters, run_dir: (DummyPreviewLauncher(), None),
+    )
+    monkeypatch.setattr(
+        "larvaworld.portal.simulation.single_experiment_app.generate_preview_frames",
+        fake_generate_preview_frames,
+    )
+    monkeypatch.setattr(
+        "larvaworld.portal.simulation.single_experiment_app.EnvironmentCanvas",
+        DummyCanvas,
+    )
+
+    controller = _SingleExperimentController()
+    controller.preview_frames_input.value = 120
+    controller._on_generate_simulation_preview()
+
+    assert captured["preview_steps"] == 120
+
+
+def test_generate_preview_caps_requested_frames_by_launcher_steps(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace_root = tmp_path / "workspace"
+    initialize_workspace(workspace_root)
+    set_active_workspace_path(workspace_root)
+
+    captured: dict[str, object] = {}
+
+    class DummyPreviewLauncher:
+        def __init__(self):
+            self.p = util.AttrDict({"steps": 7})
+            self.dt = 0.1
+
+    class DummyCanvas:
+        def __init__(self, *, editable=False):
+            pass
+
+        def set_state(self, state):
+            captured["state"] = state
+
+        def set_larva_frame(self, frame):
+            captured["frame"] = frame
+
+        def view(self):
+            return pn.pane.HTML("canvas")
+
+    def fake_generate_preview_frames(launcher, preview_steps, **kwargs):
+        captured["preview_steps"] = preview_steps
+        return [LarvaPreviewFrame(tick=0, centroids=((0.0, 0.0),))]
+
+    monkeypatch.setattr(
+        "larvaworld.portal.simulation.single_experiment_app._SingleExperimentController._prepare_preview_launcher",
+        lambda self, experiment, parameters, run_dir: (DummyPreviewLauncher(), None),
+    )
+    monkeypatch.setattr(
+        "larvaworld.portal.simulation.single_experiment_app.generate_preview_frames",
+        fake_generate_preview_frames,
+    )
+    monkeypatch.setattr(
+        "larvaworld.portal.simulation.single_experiment_app.EnvironmentCanvas",
+        DummyCanvas,
+    )
+
+    controller = _SingleExperimentController()
+    controller.preview_frames_input.value = 120
+    controller._on_generate_simulation_preview()
+
+    assert captured["preview_steps"] == 7
+
+
+def test_single_experiment_action_rows_separate_preview_and_execution() -> None:
+    controller = _SingleExperimentController()
+
+    assert controller.prepare_btn in controller.preview_action_row.objects
+    assert (
+        controller.simulation_preview_btn not in controller.preview_action_row.objects
+    )
+    assert controller.run_btn not in controller.preview_action_row.objects
+    assert controller.preview_frames_input in controller.preview_options_row.objects
+    assert controller.simulation_preview_btn in controller.preview_generate_row.objects
+    assert controller.run_btn in controller.execution_action_row.objects
 
 
 def test_generate_preview_uses_show_group_shapes_false(

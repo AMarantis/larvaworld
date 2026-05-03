@@ -854,17 +854,20 @@ class _FrameSimulationPreview:
         self.canvas = canvas
         self.frames = list(frames)
         self.dt = max(0.0, float(dt))
-        self.frame_slider = pn.widgets.IntSlider(
+        self.frame_player = pn.widgets.Player(
             name="Frame",
             start=0,
             end=len(self.frames) - 1,
             value=0,
             step=1,
-            width=320,
+            interval=max(50, min(1000, int(self.dt * 1000))),
+            loop_policy="once",
+            show_loop_controls=False,
+            width=420,
         )
         self.metadata = pn.pane.HTML("", sizing_mode="stretch_width")
-        self.frame_slider.param.watch(self._on_frame_change, "value")
-        self._apply_frame(0)
+        self.frame_player.param.watch(self._on_player_change, "value")
+        self._show_frame(0)
 
     def _set_metadata(self, index: int) -> None:
         frame = self.frames[index]
@@ -880,18 +883,21 @@ class _FrameSimulationPreview:
             "</div>"
         )
 
-    def _apply_frame(self, index: int) -> None:
+    def _show_frame(self, index: int) -> None:
         clamped = max(0, min(index, len(self.frames) - 1))
+        if int(self.frame_player.value) != clamped:
+            self.frame_player.value = clamped
+            return
         self.canvas.set_larva_frame(self.frames[clamped])
         self._set_metadata(clamped)
 
-    def _on_frame_change(self, event: Any) -> None:
-        self._apply_frame(int(event.new))
+    def _on_player_change(self, event: Any) -> None:
+        self._show_frame(int(event.new))
 
     def view(self) -> pn.viewable.Viewable:
         return pn.Column(
             self.canvas.view(),
-            pn.Row(pn.Column("Frame", self.frame_slider), sizing_mode="stretch_width"),
+            pn.Row(pn.Column("Frame", self.frame_player), sizing_mode="stretch_width"),
             self.metadata,
             sizing_mode="stretch_width",
         )
@@ -931,6 +937,13 @@ class _SingleExperimentController:
             name="Run experiment",
             button_type="success",
         )
+        self.preview_frames_input = pn.widgets.IntInput(
+            name="Preview frames",
+            value=_PREVIEW_STEP_CAP,
+            start=1,
+            end=1000,
+            step=50,
+        )
         self.save_video = pn.widgets.Checkbox(name="Save video", value=False)
         self.video_filename = pn.widgets.TextInput(
             name="Video filename",
@@ -952,6 +965,28 @@ class _SingleExperimentController:
         self.simulation_preview_btn.sizing_mode = "stretch_width"
         self.run_btn.width = None
         self.run_btn.sizing_mode = "stretch_width"
+        self.preview_frames_input.width = None
+        self.preview_frames_input.sizing_mode = "stretch_width"
+        self.preview_action_row = pn.Row(
+            self.prepare_btn,
+            sizing_mode="stretch_width",
+            margin=0,
+        )
+        self.preview_options_row = pn.Row(
+            self.preview_frames_input,
+            sizing_mode="stretch_width",
+            margin=0,
+        )
+        self.preview_generate_row = pn.Row(
+            self.simulation_preview_btn,
+            sizing_mode="stretch_width",
+            margin=(4, 0, 0, 0),
+        )
+        self.execution_action_row = pn.Row(
+            self.run_btn,
+            sizing_mode="stretch_width",
+            margin=(6, 0, 0, 0),
+        )
         self.summary = pn.pane.HTML(
             "", sizing_mode="stretch_width", margin=(0, 0, 4, 0)
         )
@@ -2028,6 +2063,7 @@ class _SingleExperimentController:
         self.prepare_btn.disabled = disabled
         self.simulation_preview_btn.disabled = disabled
         self.run_btn.disabled = disabled
+        self.preview_frames_input.disabled = disabled
         self.refresh_environments_btn.disabled = disabled
 
     def _execute_run_experiment(
@@ -2223,7 +2259,8 @@ class _SingleExperimentController:
                 parameters,
                 run_dir,
             )
-            preview_steps = max(1, min(int(launcher.p.steps), _PREVIEW_STEP_CAP))
+            requested_steps = int(self.preview_frames_input.value)
+            preview_steps = max(1, min(requested_steps, int(launcher.p.steps)))
             frames = generate_preview_frames(
                 launcher,
                 preview_steps=preview_steps,
@@ -2353,13 +2390,10 @@ class _SingleExperimentController:
                 self.refresh_environments_btn,
                 media_controls,
                 self.summary,
-                pn.Row(
-                    self.prepare_btn,
-                    self.simulation_preview_btn,
-                    self.run_btn,
-                    sizing_mode="stretch_width",
-                    margin=0,
-                ),
+                self.preview_action_row,
+                self.preview_options_row,
+                self.preview_generate_row,
+                self.execution_action_row,
                 self.status,
                 sizing_mode="stretch_width",
                 margin=0,
