@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from html import escape
+import inspect
 from pathlib import Path
 
 import panel as pn
@@ -28,6 +30,15 @@ from larvaworld.portal.workspace import get_active_workspace
 
 
 __all__ = ["_ImportDatasetsController", "import_datasets_app"]
+
+
+@dataclass(frozen=True)
+class _MergeTarget:
+    target_id: str
+    parent_dir: str
+    display_name: str
+    source_path: Path
+    children: tuple[RawDatasetCandidate, ...]
 
 
 IMPORT_DATASETS_RAW_CSS = """
@@ -91,6 +102,11 @@ IMPORT_DATASETS_RAW_CSS = """
   align-items: flex-end;
 }
 
+.lw-import-datasets-source-action-row {
+  gap: 10px;
+  align-items: center;
+}
+
 .lw-import-datasets-candidate-row {
   gap: 10px;
   align-items: flex-end;
@@ -110,10 +126,6 @@ IMPORT_DATASETS_RAW_CSS = """
   min-height: 40px;
   padding-left: 16px;
   padding-right: 16px;
-}
-
-.lw-import-datasets-source-browse {
-  margin-top: 13px;
 }
 
 .lw-import-datasets-color-picker {
@@ -267,6 +279,61 @@ def _candidate_summary_html(candidate: RawDatasetCandidate | None) -> str:
     )
 
 
+def _merge_target_summary_html(target: _MergeTarget | None) -> str:
+    if target is None:
+        return (
+            '<div class="lw-import-datasets-summary">'
+            "No merge target selected yet."
+            "</div>"
+        )
+    unit = "dataset" if len(target.children) == 1 else "datasets"
+    return (
+        '<div class="lw-import-datasets-summary">'
+        f"<div><strong>Merge target</strong>: {escape(target.target_id)}</div>"
+        f"<div><strong>Parent dir</strong>: {escape(target.parent_dir)}</div>"
+        f"<div><strong>Source path</strong>: {escape(str(target.source_path))}</div>"
+        f"<div><strong>Child candidates</strong>: {len(target.children)} {unit}</div>"
+        "</div>"
+    )
+
+
+def _relative_source_dir(raw_root: Path, source_path: Path) -> str:
+    rel = source_path.resolve().relative_to(raw_root.resolve())
+    return "." if str(rel) == "." else rel.as_posix()
+
+
+def _merge_target_dataset_id(target: _MergeTarget, raw_root: Path) -> str:
+    if target.parent_dir == ".":
+        return raw_root.name
+    return Path(target.parent_dir).name
+
+
+def _merge_target_display_name(
+    parent_dir: str, raw_root: Path, children: tuple[RawDatasetCandidate, ...]
+) -> str:
+    name = raw_root.name if parent_dir == "." else parent_dir
+    unit = "dataset" if len(children) == 1 else "datasets"
+    return f"{name} ({len(children)} {unit})"
+
+
+def _lab_supports_merged_import(lab_id: str | None) -> bool:
+    if not lab_id:
+        return False
+    lab = reg.conf.LabFormat.get(str(lab_id).strip())
+    core_supplied = {"tracker", "filesystem", "source_dir", "source_files"}
+    for name, parameter in inspect.signature(lab.import_func).parameters.items():
+        if name in core_supplied:
+            continue
+        if parameter.kind in {
+            inspect.Parameter.VAR_POSITIONAL,
+            inspect.Parameter.VAR_KEYWORD,
+        }:
+            continue
+        if parameter.default is inspect.Parameter.empty:
+            return False
+    return True
+
+
 def _flow_section(title: str, *children: object) -> pn.Column:
     return pn.Column(
         pn.pane.Markdown(
@@ -295,13 +362,11 @@ def _config_family_box(title: str, *children: object) -> pn.Column:
     )
 
 
-def _half_width_row(child: object) -> pn.Row:
-    return pn.Row(
-        pn.Column(child, sizing_mode="stretch_width", margin=0),
-        pn.Spacer(sizing_mode="stretch_width"),
-        sizing_mode="stretch_width",
-        margin=0,
-    )
+def _import_failure_status_message(exc: BaseException) -> str:
+    message = str(exc)
+    if message.startswith("Import failed:"):
+        return message
+    return f"Import failed: {message}"
 
 
 class _ImportDatasetsController:
@@ -312,6 +377,9 @@ class _ImportDatasetsController:
         self._working_lab_id: str | None = None
         self._working_lab = None
         self._tracker_widget_syncing = False
+        self._action_running = False
+        self._discovered_candidates: tuple[RawDatasetCandidate, ...] = ()
+        self._merge_target_by_key: dict[str, _MergeTarget] = {}
 
         self.lab_select = pn.widgets.Select(
             name="Lab format",
@@ -420,7 +488,10 @@ class _ImportDatasetsController:
                 tone="warning",
             )
         else:
-            self.status.object = ""
+            self._set_status(
+                "Select a raw root folder, discover candidates, then import one "
+                "dataset into the active workspace."
+            )
         self._sync_controls()
 
     @staticmethod
@@ -787,10 +858,30 @@ class _ImportDatasetsController:
     def _selected_candidate(self) -> RawDatasetCandidate | None:
         return self._candidate_by_key.get(self.candidate_select.value)
 
+    def _selected_merge_target(self) -> _MergeTarget | None:
+        return self._merge_target_by_key.get(self.candidate_select.value)
+
+    def _merged_mode(self) -> bool:
+        return bool(self.merged_checkbox.value)
+
+    def _merged_import_supported(self) -> bool:
+        return _lab_supports_merged_import(self.lab_select.value)
+
     def _set_status(
         self, text: str, *, tone: str = "neutral", detail: str | None = None
     ) -> None:
         self.status.object = _status_html(text, tone=tone, detail=detail)
+
+    def _begin_action_status(
+        self, text: str, *, detail: str | None = None, tone: str = "neutral"
+    ) -> None:
+        self._action_running = True
+        self._set_status(text, tone=tone, detail=detail)
+        self._sync_controls()
+
+    def _finish_action_status(self) -> None:
+        self._action_running = False
+        self._sync_controls()
 
     def _refresh_workspace_summary(self) -> None:
         if self.workspace is None:
@@ -825,46 +916,166 @@ class _ImportDatasetsController:
             f"{candidate.parent_dir}::{candidate.candidate_id}::{candidate.source_path}"
         )
 
+    def _merge_target_option_key(self, target: _MergeTarget) -> str:
+        return f"{target.parent_dir}::{target.source_path}"
+
     def _clear_candidates(self) -> None:
+        self._discovered_candidates = ()
         self._candidate_by_key.clear()
-        self.candidate_select.options = {"Select a candidate": ""}
+        self._merge_target_by_key.clear()
+        if self._merged_mode():
+            self.candidate_select.name = "Merge target"
+            self.candidate_select.options = {"Select a merge target": ""}
+            self.candidate_summary.object = _merge_target_summary_html(None)
+        else:
+            self.candidate_select.name = "Candidate"
+            self.candidate_select.options = {"Select a candidate": ""}
+            self.candidate_summary.object = _candidate_summary_html(None)
         self.candidate_select.value = ""
         self.dataset_id_input.value = ""
-        self.candidate_summary.object = _candidate_summary_html(None)
         self._selected_record_path = None
+
+    def _clear_selection(self) -> None:
+        placeholder = (
+            "Select a merge target" if self._merged_mode() else "Select a candidate"
+        )
+        self.candidate_select.value = ""
+        self.dataset_id_input.value = ""
+        self.candidate_summary.object = (
+            _merge_target_summary_html(None)
+            if self._merged_mode()
+            else _candidate_summary_html(None)
+        )
+        if not self.candidate_select.options:
+            self.candidate_select.options = {placeholder: ""}
+
+    def _build_merge_targets(
+        self, raw_root: Path, candidates: tuple[RawDatasetCandidate, ...]
+    ) -> tuple[_MergeTarget, ...]:
+        if not candidates:
+            return ()
+        lab = reg.conf.LabFormat.get(str(self.lab_select.value).strip())
+        filesystem = lab.filesystem
+        folder_based = bool(filesystem.folder_pref or filesystem.folder_suff)
+        grouped: dict[str, list[RawDatasetCandidate]] = {}
+        source_paths: dict[str, Path] = {}
+        for candidate in candidates:
+            if folder_based:
+                source_path = candidate.source_path.resolve().parent
+                parent_dir = _relative_source_dir(raw_root, source_path)
+            else:
+                parent_dir = candidate.parent_dir
+                source_path = (
+                    raw_root.resolve()
+                    if parent_dir == "."
+                    else (raw_root / parent_dir).resolve()
+                )
+            grouped.setdefault(parent_dir, []).append(candidate)
+            source_paths[parent_dir] = source_path
+
+        targets: list[_MergeTarget] = []
+        for parent_dir in sorted(grouped):
+            children = tuple(
+                sorted(
+                    grouped[parent_dir],
+                    key=lambda candidate: (
+                        candidate.parent_dir,
+                        candidate.candidate_id,
+                        str(candidate.source_path),
+                    ),
+                )
+            )
+            targets.append(
+                _MergeTarget(
+                    target_id=parent_dir,
+                    parent_dir=parent_dir,
+                    display_name=_merge_target_display_name(
+                        parent_dir, raw_root, children
+                    ),
+                    source_path=source_paths[parent_dir],
+                    children=children,
+                )
+            )
+        return tuple(targets)
+
+    def _refresh_candidate_options(self) -> None:
+        previous_value = self.candidate_select.value
+        if self._merged_mode():
+            options: dict[str, str] = {"Select a merge target": ""}
+            self._merge_target_by_key.clear()
+            for target in self._merge_targets():
+                key = self._merge_target_option_key(target)
+                self._merge_target_by_key[key] = target
+                options[target.display_name] = key
+            self.candidate_select.name = "Merge target"
+        else:
+            options = {"Select a candidate": ""}
+            self._candidate_by_key.clear()
+            for candidate in self._discovered_candidates:
+                key = self._candidate_option_key(candidate)
+                self._candidate_by_key[key] = candidate
+                options[candidate.display_name] = key
+            self.candidate_select.name = "Candidate"
+        self.candidate_select.options = options
+        if previous_value in options.values():
+            self.candidate_select.value = previous_value
+        else:
+            self.candidate_select.value = ""
+
+    def _merge_targets(self) -> tuple[_MergeTarget, ...]:
+        raw_root = self._raw_root_path()
+        if raw_root is None:
+            return ()
+        return self._build_merge_targets(raw_root, self._discovered_candidates)
 
     def _sync_controls(self) -> None:
         workspace_ready = self._active_workspace_ready()
         source_ready = bool(
             workspace_ready and self.lab_select.value and self._raw_root_text()
         )
-        candidate_ready = self._selected_candidate() is not None
-        self.discover_button.disabled = not source_ready
-        self.candidate_select.disabled = (
-            not bool(self._candidate_by_key) or self.merged_checkbox.value
+        selection_ready = (
+            self._selected_merge_target() is not None
+            if self._merged_mode()
+            else self._selected_candidate() is not None
         )
-        self.dataset_id_input.disabled = not candidate_ready
-        self.group_id_input.disabled = not candidate_ready
-        self.color_input.disabled = not candidate_ready
-        self.import_button.disabled = not (workspace_ready and candidate_ready)
+        options_ready = (
+            bool(self._merge_target_by_key)
+            if self._merged_mode()
+            else bool(self._candidate_by_key)
+        )
+        busy = self._action_running
+        merged_supported = self._merged_import_supported()
+
+        self.discover_button.disabled = busy or not source_ready
+        self.candidate_select.disabled = busy or not options_ready
+        self.dataset_id_input.disabled = busy or not selection_ready
+        self.group_id_input.disabled = busy or not selection_ready
+        self.color_input.disabled = busy or not selection_ready
+        self.import_button.disabled = busy or not (workspace_ready and selection_ready)
         self.lab_select.disabled = (
             not bool(self.lab_select.options) or not workspace_ready
         )
-        self.raw_root_input.disabled = not workspace_ready
-        self.browse_raw_root_button.disabled = not workspace_ready
-        self.merged_checkbox.disabled = not workspace_ready
-        self.reset_button.disabled = not (
+        self.raw_root_input.disabled = not workspace_ready or busy
+        self.browse_raw_root_button.disabled = not workspace_ready or busy
+        self.merged_checkbox.disabled = (
+            not workspace_ready or busy or not merged_supported
+        )
+        self.reset_button.disabled = busy or not (
             workspace_ready and (self._raw_root_text() or self._candidate_by_key)
         )
         lab_ready = bool(self.lab_select.options)
-        self.lab_config_name_input.disabled = not lab_ready
-        self.lab_load_button.disabled = not lab_ready
-        self.lab_save_button.disabled = not lab_ready
-        self.lab_delete_button.disabled = not lab_ready or not self.lab_select.value
-        self.lab_reset_button.disabled = False
+        self.lab_config_name_input.disabled = not lab_ready or busy
+        self.lab_load_button.disabled = not lab_ready or busy
+        self.lab_save_button.disabled = not lab_ready or busy
+        self.lab_delete_button.disabled = (
+            not lab_ready or not self.lab_select.value or busy
+        )
+        self.lab_reset_button.disabled = busy
 
     def _on_lab_select_change(self, *_events) -> None:
         self._load_working_lab(self.lab_select.value)
+        if self._merged_mode() and not self._merged_import_supported():
+            self.merged_checkbox.value = False
         self._clear_candidates()
         self._refresh_workspace_summary()
         if self.workspace is not None:
@@ -883,6 +1094,23 @@ class _ImportDatasetsController:
         self._sync_controls()
 
     def _on_candidate_change(self, *_events) -> None:
+        if self._merged_mode():
+            target = self._selected_merge_target()
+            if target is None:
+                self.candidate_summary.object = _merge_target_summary_html(None)
+                self.dataset_id_input.value = ""
+                self._sync_controls()
+                return
+            self.candidate_summary.object = _merge_target_summary_html(target)
+            raw_root = self._raw_root_path()
+            if raw_root is not None:
+                self.dataset_id_input.value = _merge_target_dataset_id(target, raw_root)
+            self._set_status(
+                "Merge target selected. Review the import options and start the workspace import."
+            )
+            self._sync_controls()
+            return
+
         candidate = self._selected_candidate()
         if candidate is None:
             self.candidate_summary.object = _candidate_summary_html(None)
@@ -897,6 +1125,28 @@ class _ImportDatasetsController:
         self._sync_controls()
 
     def _on_merged_change(self, *_events) -> None:
+        if self._merged_mode() and not self._merged_import_supported():
+            self.merged_checkbox.value = False
+            self._refresh_candidate_options()
+            self._clear_selection()
+            self._set_status(
+                f'Merged import is not supported for "{self.lab_select.value}" '
+                "because this lab format requires a source id.",
+                tone="warning",
+            )
+            self._sync_controls()
+            return
+        self._refresh_candidate_options()
+        self._clear_selection()
+        if self.workspace is not None and self._discovered_candidates:
+            if self._merged_mode():
+                self._set_status(
+                    "Merged mode enabled. Select a source folder whose child datasets should be merged."
+                )
+            else:
+                self._set_status(
+                    "Merged mode disabled. Select one candidate to continue."
+                )
         self._sync_controls()
 
     def _handle_lab_load(self, _event=None) -> None:
@@ -925,18 +1175,33 @@ class _ImportDatasetsController:
         self._sync_controls()
 
     def _handle_browse_raw_root(self, _event=None) -> None:
-        fallback_dir = self.workspace.root if self.workspace is not None else None
+        if self.workspace is None:
+            self._set_status(
+                "Configure an active workspace before importing datasets.",
+                tone="warning",
+            )
+            self._sync_controls()
+            return
+        self._set_status(
+            "Opening folder picker...",
+            detail="Select the raw dataset root folder.",
+        )
+        self._sync_controls()
         selected, error = pick_directory(
-            initial_dir=self._raw_root_path(),
-            fallback_dir=fallback_dir,
+            self._raw_root_path(),
+            fallback_dir=self.workspace.root,
             title="Select raw dataset root",
         )
         if selected is not None:
             self.raw_root_input.value = str(selected)
+            self._sync_controls()
             return
         if error is not None:
             self._set_status(error, tone="warning")
             self._sync_controls()
+            return
+        self._set_status("Browse cancelled. Raw root was not changed.")
+        self._sync_controls()
 
     def _handle_discover(self, _event=None) -> None:
         raw_root = self._raw_root_path()
@@ -951,7 +1216,18 @@ class _ImportDatasetsController:
             self._set_status("Enter a raw root path before discovery.", tone="warning")
             self._sync_controls()
             return
-        candidates = discover_raw_datasets(self.lab_select.value, raw_root)
+        self._begin_action_status(
+            "Discovering raw dataset candidates...",
+            detail=str(raw_root),
+        )
+        try:
+            candidates = discover_raw_datasets(self.lab_select.value, raw_root)
+        except Exception as exc:
+            self._set_status(f"Discovery failed: {exc}", tone="danger")
+            return
+        finally:
+            self._finish_action_status()
+
         self._clear_candidates()
         if not candidates:
             self._set_status(
@@ -961,28 +1237,59 @@ class _ImportDatasetsController:
             )
             self._sync_controls()
             return
-        options: dict[str, str] = {"Select a candidate": ""}
-        for candidate in candidates:
-            key = self._candidate_option_key(candidate)
-            self._candidate_by_key[key] = candidate
-            options[candidate.display_name] = key
-        self.candidate_select.options = options
+        self._discovered_candidates = tuple(candidates)
+        self._refresh_candidate_options()
         self._set_status(
-            f"Discovered {len(candidates)} candidate(s). Select one candidate to continue.",
+            (
+                f"Discovered {len(candidates)} candidate(s). Select one candidate to continue."
+                if not self._merged_mode()
+                else "Merged mode enabled. Select a source folder whose child datasets should be merged."
+            ),
             tone="success",
             detail=str(raw_root),
         )
         self._sync_controls()
 
     def _build_import_request(self) -> ImportRequest:
-        candidate = self._selected_candidate()
         raw_root = self._raw_root_path()
-        if candidate is None or raw_root is None:
+        if raw_root is None:
+            raise RuntimeError(
+                "Import is not ready: select a raw root before importing"
+            )
+        group_id = self.group_id_input.value.strip() or None
+
+        if self._merged_mode():
+            if not self._merged_import_supported():
+                raise RuntimeError(
+                    f'Merged import is not supported for "{self.lab_select.value}" '
+                    "because this lab format requires a source id."
+                )
+            target = self._selected_merge_target()
+            if target is None:
+                raise RuntimeError(
+                    "Import is not ready: select a discovered merge target first"
+                )
+            dataset_id = (
+                self.dataset_id_input.value.strip()
+                or _merge_target_dataset_id(target, raw_root)
+            )
+            return ImportRequest(
+                lab_id=self.lab_select.value,
+                parent_dir=target.parent_dir,
+                raw_folder=raw_root,
+                group_id=group_id,
+                dataset_id=dataset_id,
+                merged=True,
+                color=(self.color_input.value or "#000000"),
+                extra_kwargs={},
+            )
+
+        candidate = self._selected_candidate()
+        if candidate is None:
             raise RuntimeError(
                 "Import is not ready: select a discovered candidate first"
             )
         dataset_id = self.dataset_id_input.value.strip() or candidate.candidate_id
-        group_id = self.group_id_input.value.strip() or None
         extra_kwargs = _candidate_import_overrides(
             self.lab_select.value,
             raw_root,
@@ -1009,18 +1316,44 @@ class _ImportDatasetsController:
             return
         try:
             request = self._build_import_request()
-            record = import_into_workspace(request, workspace=self.workspace)
         except Exception as exc:
             self._set_status(str(exc), tone="danger")
             self._sync_controls()
             return
-        self._selected_record_path = record.dataset_dir
-        self._set_status(
-            f'Dataset "{record.dataset_id}" imported into the active workspace.',
-            tone="success",
-            detail=str(record.dataset_dir),
+        dataset_id = request.dataset_id
+        raw_folder = request.raw_folder
+        detail_lines = [
+            f"Dataset ID: {dataset_id}",
+            f"Raw root: {raw_folder}",
+        ]
+        self._begin_action_status(
+            "Importing dataset into the active workspace...",
+            detail="\n".join(detail_lines),
         )
-        self._sync_controls()
+
+        def _run() -> None:
+            self._execute_import(request)
+
+        curdoc = pn.state.curdoc
+        if curdoc is not None:
+            curdoc.add_next_tick_callback(_run)
+        else:
+            _run()
+
+    def _execute_import(self, request: ImportRequest) -> None:
+        try:
+            record = import_into_workspace(request, workspace=self.workspace)
+        except Exception as exc:
+            self._set_status(_import_failure_status_message(exc), tone="danger")
+        else:
+            self._selected_record_path = record.dataset_dir
+            self._set_status(
+                f'Dataset "{record.dataset_id}" imported into the active workspace.',
+                tone="success",
+                detail=str(record.dataset_dir),
+            )
+        finally:
+            self._finish_action_status()
 
     def view(self) -> pn.viewable.Viewable:
         raw_root_row = pn.Row(
@@ -1031,7 +1364,7 @@ class _ImportDatasetsController:
         source_action_row = pn.Row(
             self.browse_raw_root_button,
             self.discover_button,
-            css_classes=["lw-import-datasets-candidate-row"],
+            css_classes=["lw-import-datasets-source-action-row"],
             sizing_mode="stretch_width",
         )
         candidate_row = pn.Row(
@@ -1062,8 +1395,9 @@ class _ImportDatasetsController:
                 self.reset_button,
                 sizing_mode="stretch_width",
             ),
+            self.status,
             pn.Spacer(height=8),
-            _half_width_row(self.workspace_summary),
+            self.workspace_summary,
         )
         lab_source_section = _flow_section(
             "Lab Format Setup",
@@ -1073,10 +1407,6 @@ class _ImportDatasetsController:
                 sizing_mode="stretch_width",
                 margin=0,
             ),
-            raw_root_row,
-            source_action_row,
-            candidate_row,
-            merged_row,
             pn.Row(
                 pn.Column(
                     self.lab_actions.view,
@@ -1087,13 +1417,17 @@ class _ImportDatasetsController:
                 sizing_mode="stretch_width",
                 margin=0,
             ),
+            raw_root_row,
+            source_action_row,
+            candidate_row,
+            merged_row,
         )
         intro = pn.pane.HTML(
             (
                 '<div class="lw-import-datasets-intro">'
                 "Import one experimental raw dataset into the active workspace through a small workspace-first pipeline, while editing the active `LabFormat` configuration in place before discovery and import. "
                 "The configuration panel exposes the registry-backed general, tracker, filesystem, preprocess, and environment sections used by the import lane, so the selected preset can be adjusted without leaving the app. "
-                "Use the raw-root and candidate controls to point the app at a local raw-data folder, resolve one import candidate, inspect warnings, and import the dataset into workspace-owned storage through the central Larvaworld backend. "
+                "Use the raw-root and candidate controls to point the app at a local raw-data folder on the machine where the portal runs (Browse opens a native folder picker for that host: macOS AppleScript, Linux zenity/kdialog/yad when installed, WSL2 Windows dialog with Linux paths, else Tk when a GUI is available), resolve one import candidate, inspect warnings, and import the dataset into workspace-owned storage through the central Larvaworld backend. "
                 "The app does not register references or set global active-dataset state. "
                 f'See the data-processing documentation on Read the Docs for the broader dataset pipeline: <a href="{escape(DOCS_DATA_PROCESSING)}" target="_blank">Read the Docs</a>.'
                 "</div>"
